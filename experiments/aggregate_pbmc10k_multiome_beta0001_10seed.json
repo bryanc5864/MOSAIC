@@ -1,0 +1,244 @@
+{
+  "dataset": "pbmc10k_multiome",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "n_seeds": 10,
+  "per_seed": [
+    {
+      "seed": 0,
+      "exp": "exp001_pbmc_beta0001",
+      "foscttm_mean": 0.131223632057694,
+      "foscttm_a_to_b": 0.16257978907070852,
+      "foscttm_b_to_a": 0.0998674750446795,
+      "lt_rna_to_atac": 0.8357958064230735,
+      "lt_atac_to_rna": 0.8625143767141467,
+      "joint_ari": 0.48974188339977826,
+      "entropy_mean": 0.7429212152284037,
+      "entropy_rho": -0.7027267324299347,
+      "wall_time_sec": 108.97970223426819
+    },
+    {
+      "seed": 1,
+      "exp": "exp001_pbmc_beta0001_seed1",
+      "foscttm_mean": 0.12338173460493705,
+      "foscttm_a_to_b": 0.13210936665461517,
+      "foscttm_b_to_a": 0.11465410255525893,
+      "lt_rna_to_atac": 0.8559674422719632,
+      "lt_atac_to_rna": 0.9111740245952402,
+      "joint_ari": 0.7458102298960199,
+      "entropy_mean": 0.7441800339822102,
+      "entropy_rho": -0.5977083347993685,
+      "wall_time_sec": 128.78775143623352
+    },
+    {
+      "seed": 2,
+      "exp": "exp001_pbmc_beta0001_seed2",
+      "foscttm_mean": 0.10487132618719137,
+      "foscttm_a_to_b": 0.11970970853793841,
+      "foscttm_b_to_a": 0.09003294383644433,
+      "lt_rna_to_atac": 0.9560293727329028,
+      "lt_atac_to_rna": 0.8468548173051402,
+      "joint_ari": 0.719790240442044,
+      "entropy_mean": 0.7299471122377621,
+      "entropy_rho": -0.7318938709268856,
+      "wall_time_sec": 139.7380392551422
+    },
+    {
+      "seed": 3,
+      "exp": "exp001_pbmc_beta0001_seed3",
+      "foscttm_mean": 0.12029530576750179,
+      "foscttm_a_to_b": 0.1566982505181003,
+      "foscttm_b_to_a": 0.08389236101690328,
+      "lt_rna_to_atac": 0.976112536494736,
+      "lt_atac_to_rna": 0.9198442891267805,
+      "joint_ari": 0.720381160521201,
+      "entropy_mean": 0.7364071361883927,
+      "entropy_rho": -0.7737221616554558,
+      "wall_time_sec": 109.9865734577179
+    },
+    {
+      "seed": 4,
+      "exp": "exp001_pbmc_beta0001_seed4",
+      "foscttm_mean": 0.12183629899043971,
+      "foscttm_a_to_b": 0.13760515688781344,
+      "foscttm_b_to_a": 0.10606744109306597,
+      "lt_rna_to_atac": 0.9450588339378926,
+      "lt_atac_to_rna": 0.939485092453331,
+      "joint_ari": 0.6689301052762198,
+      "entropy_mean": 0.7365648143608973,
+      "entropy_rho": -0.6383802828931747,
+      "wall_time_sec": 102.44683480262756
+    },
+    {
+      "seed": 5,
+      "exp": "exp001_pbmc_beta0001_seed5",
+      "foscttm_mean": 0.11655986113624119,
+      "foscttm_a_to_b": 0.1300252235470143,
+      "foscttm_b_to_a": 0.10309449872546808,
+      "lt_rna_to_atac": 0.7719189595682562,
+      "lt_atac_to_rna": 0.919755817039724,
+      "joint_ari": 0.7615373797260047,
+      "entropy_mean": 0.7426502988527662,
+      "entropy_rho": -0.5760663570063054,
+      "wall_time_sec": 100.63445210456848
+    },
+    {
+      "seed": 6,
+      "exp": "exp001_pbmc_beta0001_seed6",
+      "foscttm_mean": 0.11195557473798931,
+      "foscttm_a_to_b": 0.12510967618949986,
+      "foscttm_b_to_a": 0.09880147328647876,
+      "lt_rna_to_atac": 0.8652570114128992,
+      "lt_atac_to_rna": 0.9302839953994515,
+      "joint_ari": 0.904144855195092,
+      "entropy_mean": 0.7372965837880594,
+      "entropy_rho": -0.6473738577984912,
+      "wall_time_sec": 105.50187039375305
+    },
+    {
+      "seed": 7,
+      "exp": "exp001_pbmc_beta0001_seed7",
+      "foscttm_mean": 0.1099878105472411,
+      "foscttm_a_to_b": 0.12342656949067554,
+      "foscttm_b_to_a": 0.09654905160380667,
+      "lt_rna_to_atac": 0.965849774396178,
+      "lt_atac_to_rna": 0.8756967176855702,
+      "joint_ari": 0.7842756868572146,
+      "entropy_mean": 0.7366153588587174,
+      "entropy_rho": -0.5899321559954447,
+      "wall_time_sec": 103.0526704788208
+    },
+    {
+      "seed": 8,
+      "exp": "exp001_pbmc_beta0001_seed8",
+      "foscttm_mean": 0.12108043487310721,
+      "foscttm_a_to_b": 0.14246544637393058,
+      "foscttm_b_to_a": 0.09969542337228386,
+      "lt_rna_to_atac": 0.9781473944970361,
+      "lt_atac_to_rna": 0.9363885694063523,
+      "joint_ari": 0.7233933931835327,
+      "entropy_mean": 0.7397653640748183,
+      "entropy_rho": -0.5723534995661399,
+      "wall_time_sec": 104.83462619781494
+    },
+    {
+      "seed": 9,
+      "exp": "exp001_pbmc_beta0001_seed9",
+      "foscttm_mean": 0.12044402216370598,
+      "foscttm_a_to_b": 0.14637571379055955,
+      "foscttm_b_to_a": 0.09451233053685242,
+      "lt_rna_to_atac": 0.9747854551888879,
+      "lt_atac_to_rna": 0.9469167477660798,
+      "joint_ari": 0.7178337123614442,
+      "entropy_mean": 0.7392908454329212,
+      "entropy_rho": -0.6157608269344329,
+      "wall_time_sec": 105.45224356651306
+    }
+  ],
+  "foscttm_mean_mean": 0.11816360010660487,
+  "foscttm_mean_std": 0.007558469397275293,
+  "foscttm_a_to_b_mean": 0.13761049010608556,
+  "foscttm_a_to_b_std": 0.014352308465997618,
+  "foscttm_b_to_a_mean": 0.09871671010712417,
+  "foscttm_b_to_a_std": 0.008478946181928654,
+  "lt_rna_to_atac_mean": 0.9124922586923827,
+  "lt_rna_to_atac_std": 0.07387007153213405,
+  "lt_atac_to_rna_mean": 0.9088914447491817,
+  "lt_atac_to_rna_std": 0.034864982563015894,
+  "joint_ari_mean": 0.7235838646858551,
+  "joint_ari_std": 0.10325109859299104,
+  "entropy_mean_mean": 0.7385638763004949,
+  "entropy_mean_std": 0.00418326940058595,
+  "entropy_rho_mean": -0.6445918080005634,
+  "entropy_rho_std": 0.06964462524948631,
+  "wall_time_sec_mean": 110.94147639274597,
+  "wall_time_sec_std": 12.867415854688383,
+  "cluster_per_seed": [
+    {
+      "seed": 0,
+      "argmax_cluster_accuracy": 0.963,
+      "mean_h_cluster": 0.08441545069217682,
+      "auroc_wrong_cluster": 0.8982874463248295,
+      "n_wrong_cluster": 185
+    },
+    {
+      "seed": 1,
+      "argmax_cluster_accuracy": 0.9584,
+      "mean_h_cluster": 0.09592945128679276,
+      "auroc_wrong_cluster": 0.8376129687299345,
+      "n_wrong_cluster": 208
+    },
+    {
+      "seed": 2,
+      "argmax_cluster_accuracy": 0.9852,
+      "mean_h_cluster": 0.06665293872356415,
+      "auroc_wrong_cluster": 0.9352333454038692,
+      "n_wrong_cluster": 74
+    },
+    {
+      "seed": 3,
+      "argmax_cluster_accuracy": 0.9848,
+      "mean_h_cluster": 0.07125332206487656,
+      "auroc_wrong_cluster": 0.8948517465475223,
+      "n_wrong_cluster": 76
+    },
+    {
+      "seed": 4,
+      "argmax_cluster_accuracy": 0.9688,
+      "mean_h_cluster": 0.07573311030864716,
+      "auroc_wrong_cluster": 0.921994431387495,
+      "n_wrong_cluster": 156
+    },
+    {
+      "seed": 5,
+      "argmax_cluster_accuracy": 0.9652,
+      "mean_h_cluster": 0.0975089892745018,
+      "auroc_wrong_cluster": 0.8889158818850003,
+      "n_wrong_cluster": 174
+    },
+    {
+      "seed": 6,
+      "argmax_cluster_accuracy": 0.9744,
+      "mean_h_cluster": 0.07517322152853012,
+      "auroc_wrong_cluster": 0.9125952509236454,
+      "n_wrong_cluster": 128
+    },
+    {
+      "seed": 7,
+      "argmax_cluster_accuracy": 0.9546,
+      "mean_h_cluster": 0.07889857143163681,
+      "auroc_wrong_cluster": 0.8916362320726627,
+      "n_wrong_cluster": 227
+    },
+    {
+      "seed": 8,
+      "argmax_cluster_accuracy": 0.9396,
+      "mean_h_cluster": 0.08867282420396805,
+      "auroc_wrong_cluster": 0.8848136025193192,
+      "n_wrong_cluster": 302
+    },
+    {
+      "seed": 9,
+      "argmax_cluster_accuracy": 0.9486,
+      "mean_h_cluster": 0.08706305176019669,
+      "auroc_wrong_cluster": 0.8889077575718793,
+      "n_wrong_cluster": 257
+    }
+  ],
+  "argmax_cluster_accuracy_mean": 0.9642600000000001,
+  "argmax_cluster_accuracy_std": 0.014784691782756619,
+  "mean_h_cluster_mean": 0.08213009312748909,
+  "mean_h_cluster_std": 0.010311297168155419,
+  "auroc_wrong_cluster_mean": 0.8954848663366157,
+  "auroc_wrong_cluster_std": 0.026136338027741658
+}

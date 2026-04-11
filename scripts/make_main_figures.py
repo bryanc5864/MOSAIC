@@ -326,8 +326,9 @@ def figure_4_baselines():
     pbmc_scot, pbmc_nn, pbmc_raw = _load_baselines("pbmc10k_multiome")
     brain_scot, brain_nn, brain_raw = _load_baselines("brain3k_multiome")
 
-    # MOSAIC multi-seed: PBMC β=0.01 (paper default), Brain β=0.001 (paper default)
-    pbmc_mosaic = _load_aggregate(EXPERIMENTS_DIR / "aggregate_pbmc10k_multiome.json")
+    # MOSAIC multi-seed: both at β=0.001 (paper default after 10-seed resolution).
+    # PBMC uses the 10-seed aggregate; Brain uses the 3-seed aggregate (already tight).
+    pbmc_mosaic = _load_aggregate(EXPERIMENTS_DIR / "aggregate_pbmc10k_multiome_beta0001_10seed.json")
     brain_mosaic = _load_aggregate(EXPERIMENTS_DIR / "aggregate_brain3k_multiome_beta0.001.json")
 
     methods = ["MOSAIC\n(ours)", "NN on IB\n(no OT)", "SCOT\n(GW)", "Raw PCA/LSI\n(no IB)"]
@@ -369,7 +370,7 @@ def figure_4_baselines():
     width = 0.2
 
     titles = [
-        f"PBMC 10k (MOSAIC β=0.01, n={pbmc_mosaic['n_seeds']} seeds)",
+        f"PBMC 10k (MOSAIC β=0.001, n={pbmc_mosaic['n_seeds']} seeds)",
         f"Brain 5k (MOSAIC β=0.001, n={brain_mosaic['n_seeds']} seeds)",
     ]
     err_kw = dict(capsize=3, ecolor="#303030", elinewidth=1)
