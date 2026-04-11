@@ -288,10 +288,16 @@ def figure_5_beta_tradeoff():
 
 
 def figure_4_baselines():
-    """Load baseline metrics from JSON for both PBMC and Brain."""
+    """Baselines comparison with multi-seed error bars on MOSAIC.
+
+    MOSAIC bar heights and error bars are computed from the aggregate JSONs
+    (3-seed mean ± std). SCOT, NN-on-IB (single-seed ablation), and Raw
+    baselines are single-seed and drawn without error bars — which is the
+    honest rendering, since we only have one run of each baseline method.
+    """
     import json as _json
 
-    def _load(dataset):
+    def _load_baselines(dataset):
         d = EXPERIMENTS_DIR / f"baselines_{dataset}"
         with (d / "baseline_results.json").open() as f:
             scot = _json.load(f)["scot"]["metrics"]
@@ -301,36 +307,85 @@ def figure_4_baselines():
         raw_m = simple["raw_ot"]["metrics"]
         return scot, nn_m, raw_m
 
-    pbmc_scot, pbmc_nn, pbmc_raw = _load("pbmc10k_multiome")
-    brain_scot, brain_nn, brain_raw = _load("brain3k_multiome")
+    def _load_aggregate(path):
+        """Load mean ± std from an aggregate seeds JSON."""
+        with path.open() as f:
+            d = _json.load(f)
+        return {
+            "foscttm_mean": d["foscttm_mean_mean"],
+            "foscttm_std": d["foscttm_mean_std"],
+            "lt_a_b_mean": d["lt_rna_to_atac_mean"],
+            "lt_a_b_std": d["lt_rna_to_atac_std"],
+            "lt_b_a_mean": d["lt_atac_to_rna_mean"],
+            "lt_b_a_std": d["lt_atac_to_rna_std"],
+            "ari_mean": d["joint_ari_mean"],
+            "ari_std": d["joint_ari_std"],
+            "n_seeds": d["n_seeds"],
+        }
+
+    pbmc_scot, pbmc_nn, pbmc_raw = _load_baselines("pbmc10k_multiome")
+    brain_scot, brain_nn, brain_raw = _load_baselines("brain3k_multiome")
+
+    # MOSAIC multi-seed: PBMC β=0.01 (paper default), Brain β=0.001 (paper default)
+    pbmc_mosaic = _load_aggregate(EXPERIMENTS_DIR / "aggregate_pbmc10k_multiome.json")
+    brain_mosaic = _load_aggregate(EXPERIMENTS_DIR / "aggregate_brain3k_multiome_beta0.001.json")
 
     methods = ["MOSAIC\n(ours)", "NN on IB\n(no OT)", "SCOT\n(GW)", "Raw PCA/LSI\n(no IB)"]
 
-    def _series(scot, nn_m, raw_m):
+    def _series(mosaic_agg, scot, nn_m, raw_m):
+        # Heights and stds; std=0 for single-seed baselines so no error bar shows.
+        foscttm_h = [1 - mosaic_agg["foscttm_mean"],
+                     1 - nn_m["foscttm_mean"],
+                     1 - scot["foscttm"]["foscttm_mean"],
+                     1 - raw_m["foscttm_mean"]]
+        foscttm_err = [mosaic_agg["foscttm_std"], 0.0, 0.0, 0.0]
+        lt_a_b_h = [mosaic_agg["lt_a_b_mean"],
+                    nn_m["label_transfer_rna_to_atac"],
+                    scot["label_transfer_rna_to_atac"],
+                    raw_m["label_transfer_rna_to_atac"]]
+        lt_a_b_err = [mosaic_agg["lt_a_b_std"], 0.0, 0.0, 0.0]
+        lt_b_a_h = [mosaic_agg["lt_b_a_mean"],
+                    nn_m["label_transfer_atac_to_rna"],
+                    scot["label_transfer_atac_to_rna"],
+                    raw_m["label_transfer_atac_to_rna"]]
+        lt_b_a_err = [mosaic_agg["lt_b_a_std"], 0.0, 0.0, 0.0]
+        ari_h = [mosaic_agg["ari_mean"],
+                 nn_m["joint_clustering_ari"],
+                 scot["joint_clustering_ari"],
+                 raw_m["joint_clustering_ari"]]
+        ari_err = [mosaic_agg["ari_std"], 0.0, 0.0, 0.0]
         return {
-            "foscttm": [nn_m["foscttm_mean"], nn_m["foscttm_mean"],
-                        scot["foscttm"]["foscttm_mean"], raw_m["foscttm_mean"]],
-            "lt_a_b":  [nn_m["label_transfer_rna_to_atac"], nn_m["label_transfer_rna_to_atac"],
-                        scot["label_transfer_rna_to_atac"], raw_m["label_transfer_rna_to_atac"]],
-            "lt_b_a":  [nn_m["label_transfer_atac_to_rna"], nn_m["label_transfer_atac_to_rna"],
-                        scot["label_transfer_atac_to_rna"], raw_m["label_transfer_atac_to_rna"]],
-            "ari":     [nn_m["joint_clustering_ari"], nn_m["joint_clustering_ari"],
-                        scot["joint_clustering_ari"], raw_m["joint_clustering_ari"]],
+            "foscttm_h": foscttm_h, "foscttm_err": foscttm_err,
+            "lt_a_b_h": lt_a_b_h, "lt_a_b_err": lt_a_b_err,
+            "lt_b_a_h": lt_b_a_h, "lt_b_a_err": lt_b_a_err,
+            "ari_h": ari_h, "ari_err": ari_err,
         }
 
-    pbmc = _series(pbmc_scot, pbmc_nn, pbmc_raw)
-    brain = _series(brain_scot, brain_nn, brain_raw)
+    pbmc = _series(pbmc_mosaic, pbmc_scot, pbmc_nn, pbmc_raw)
+    brain = _series(brain_mosaic, brain_scot, brain_nn, brain_raw)
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 5), sharey=True)
     x = np.arange(len(methods))
     width = 0.2
 
-    for ax, (data, title) in zip(axes, [(pbmc, "PBMC 10k (β=0.01 IB-VAE)"),
-                                          (brain, "Brain 5k (β=0.001 IB-VAE)")]):
-        ax.bar(x - 1.5*width, 1 - np.array(data["foscttm"]), width, label="1 − FOSCTTM", color="#3770B0")
-        ax.bar(x - 0.5*width, data["lt_a_b"], width, label="LT RNA→ATAC", color="#5AA06A")
-        ax.bar(x + 0.5*width, data["lt_b_a"], width, label="LT ATAC→RNA", color="#C07030")
-        ax.bar(x + 1.5*width, data["ari"], width, label="joint ARI", color="#8860B0")
+    titles = [
+        f"PBMC 10k (MOSAIC β=0.01, n={pbmc_mosaic['n_seeds']} seeds)",
+        f"Brain 5k (MOSAIC β=0.001, n={brain_mosaic['n_seeds']} seeds)",
+    ]
+    err_kw = dict(capsize=3, ecolor="#303030", elinewidth=1)
+    for ax, data, title in zip(axes, [pbmc, brain], titles):
+        ax.bar(x - 1.5*width, data["foscttm_h"], width,
+               yerr=data["foscttm_err"], label="1 − FOSCTTM",
+               color="#3770B0", error_kw=err_kw)
+        ax.bar(x - 0.5*width, data["lt_a_b_h"], width,
+               yerr=data["lt_a_b_err"], label="LT RNA→ATAC",
+               color="#5AA06A", error_kw=err_kw)
+        ax.bar(x + 0.5*width, data["lt_b_a_h"], width,
+               yerr=data["lt_b_a_err"], label="LT ATAC→RNA",
+               color="#C07030", error_kw=err_kw)
+        ax.bar(x + 1.5*width, data["ari_h"], width,
+               yerr=data["ari_err"], label="joint ARI",
+               color="#8860B0", error_kw=err_kw)
         ax.set_xticks(x)
         ax.set_xticklabels(methods)
         ax.set_title(title)
@@ -340,8 +395,9 @@ def figure_4_baselines():
             ax.set_ylabel("metric (higher is better)")
             ax.legend(frameon=False, loc="upper right", fontsize=10)
 
-    plt.suptitle("MOSAIC vs baselines on both datasets (3000-cell subsample)",
-                 y=1.02, fontsize=14)
+    plt.suptitle("MOSAIC vs baselines (MOSAIC bars: mean ± std across seeds; "
+                 "baselines: single-seed)",
+                 y=1.02, fontsize=13)
     plt.tight_layout()
     _save(fig, "fig4_baselines_both")
 
