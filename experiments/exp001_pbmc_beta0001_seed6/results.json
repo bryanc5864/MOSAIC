@@ -1,0 +1,50 @@
+{
+  "dataset_id": "pbmc10k_multiome",
+  "experiment": "exp001_pbmc_beta0001_seed6",
+  "wall_time_sec": 105.50187039375305,
+  "rna_train": {
+    "ckpt": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_pbmc_beta0001_seed6\\ckpt_rna.pt",
+    "embeddings": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_pbmc_beta0001_seed6\\z_rna.npy",
+    "log": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_pbmc_beta0001_seed6\\train_log_rna.json",
+    "best_val": 0.0038703274137030044,
+    "best_epoch": 161,
+    "wall_time_sec": 42.5411274433136
+  },
+  "atac_train": {
+    "ckpt": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_pbmc_beta0001_seed6\\ckpt_atac.pt",
+    "embeddings": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_pbmc_beta0001_seed6\\z_atac.npy",
+    "log": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_pbmc_beta0001_seed6\\train_log_atac.json",
+    "best_val": 0.06584844986597697,
+    "best_epoch": 127,
+    "wall_time_sec": 35.21928858757019
+  },
+  "alignment": {
+    "epsilon": 0.05,
+    "cost_scale": 25.30713989858579,
+    "entropy_mean": 0.7372965837880594,
+    "entropy_std": 0.11345513061100099,
+    "top_match_prob_mean": 0.009797748900883868,
+    "procrustes": {
+      "n_clusters": 18,
+      "centroid_residual": 1.8312602043151855
+    },
+    "ot_subsample_n": 5000,
+    "ot_subsample_of": 11303
+  },
+  "metrics": {
+    "foscttm": {
+      "foscttm_a_to_b": 0.12510967618949986,
+      "foscttm_b_to_a": 0.09880147328647876,
+      "foscttm_mean": 0.11195557473798931,
+      "n_paired": 11303
+    },
+    "label_transfer_rna_to_atac": 0.8652570114128992,
+    "label_transfer_atac_to_rna": 0.9302839953994515,
+    "joint_clustering_ari": 0.904144855195092,
+    "entropy_error_corr": {
+      "spearman_rho": -0.6473738577984912,
+      "spearman_p": 0.0,
+      "n": 5000
+    }
+  }
+}
