@@ -1,0 +1,61 @@
+{
+  "sweep": [
+    {
+      "epsilon": 0.001,
+      "mean_entropy": 0.7838685116780811,
+      "std_entropy": 0.10440053960316115,
+      "mean_top1_prob": 0.002626726879694669,
+      "spearman_rho": -0.6561946592707487,
+      "ok": true
+    },
+    {
+      "epsilon": 0.002,
+      "mean_entropy": 0.8243696984185078,
+      "std_entropy": 0.10369867367493692,
+      "mean_top1_prob": 0.0017813006807145316,
+      "spearman_rho": -0.384931132412625,
+      "ok": true
+    },
+    {
+      "epsilon": 0.005,
+      "mean_entropy": 0.916086623551696,
+      "std_entropy": 0.0830295276910192,
+      "mean_top1_prob": 0.0010709122114692506,
+      "spearman_rho": -0.27897430848917465,
+      "ok": true
+    },
+    {
+      "epsilon": 0.01,
+      "mean_entropy": 0.9655948658074777,
+      "std_entropy": 0.051743291587229956,
+      "mean_top1_prob": 0.0007282343342445132,
+      "spearman_rho": -0.3002792507155653,
+      "ok": true
+    },
+    {
+      "epsilon": 0.02,
+      "mean_entropy": 0.9900472266438411,
+      "std_entropy": 0.026934848884501178,
+      "mean_top1_prob": 0.00044179599856511057,
+      "spearman_rho": -0.36347576782973395,
+      "ok": true
+    },
+    {
+      "epsilon": 0.05,
+      "mean_entropy": 0.9985247335480733,
+      "std_entropy": 0.0026313274442355183,
+      "mean_top1_prob": 0.00021267629880315395,
+      "spearman_rho": -0.3304280119064151,
+      "ok": true
+    },
+    {
+      "epsilon": 0.1,
+      "mean_entropy": 0.9996698136376301,
+      "std_entropy": 0.00030194946151455404,
+      "mean_top1_prob": 0.00014639740475461965,
+      "spearman_rho": -0.39420497218760475,
+      "ok": true
+    }
+  ],
+  "foscttm": 0.19469161058698542
+}

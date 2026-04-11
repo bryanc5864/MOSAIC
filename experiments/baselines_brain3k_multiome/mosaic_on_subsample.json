@@ -1,0 +1,8 @@
+{
+  "method": "MOSAIC (beta=0.001)",
+  "foscttm_mean": 0.05202256307658108,
+  "label_transfer_rna_to_atac": 0.9596666666666667,
+  "label_transfer_atac_to_rna": 0.9666666666666667,
+  "joint_clustering_ari": 0.8702576408347746,
+  "subsample_n": 3000
+}

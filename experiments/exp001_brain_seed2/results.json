@@ -1,0 +1,50 @@
+{
+  "dataset_id": "brain3k_multiome",
+  "experiment": "exp001_brain_seed2",
+  "wall_time_sec": 50.66436839103699,
+  "rna_train": {
+    "ckpt": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_brain_seed2\\ckpt_rna.pt",
+    "embeddings": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_brain_seed2\\z_rna.npy",
+    "log": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_brain_seed2\\train_log_rna.json",
+    "best_val": 0.0104802455753088,
+    "best_epoch": 111,
+    "wall_time_sec": 20.787402868270874
+  },
+  "atac_train": {
+    "ckpt": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_brain_seed2\\ckpt_atac.pt",
+    "embeddings": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_brain_seed2\\z_atac.npy",
+    "log": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_brain_seed2\\train_log_atac.json",
+    "best_val": 0.2100416123867035,
+    "best_epoch": 84,
+    "wall_time_sec": 17.04235005378723
+  },
+  "alignment": {
+    "epsilon": 0.05,
+    "cost_scale": 22.985511875816975,
+    "entropy_mean": 0.7322804927475801,
+    "entropy_std": 0.0950259511692591,
+    "top_match_prob_mean": 0.007101753876888598,
+    "procrustes": {
+      "n_clusters": 20,
+      "centroid_residual": 1.2417433261871338
+    },
+    "ot_subsample_n": 4000,
+    "ot_subsample_of": 4531
+  },
+  "metrics": {
+    "foscttm": {
+      "foscttm_a_to_b": 0.20339900309031286,
+      "foscttm_b_to_a": 0.04908350275731129,
+      "foscttm_mean": 0.12624125292381208,
+      "n_paired": 4531
+    },
+    "label_transfer_rna_to_atac": 0.8812624144780402,
+    "label_transfer_atac_to_rna": 0.7119841094681086,
+    "joint_clustering_ari": 0.4126527405161927,
+    "entropy_error_corr": {
+      "spearman_rho": -0.5220729566295598,
+      "spearman_p": 1.3041413843065882e-278,
+      "n": 4000
+    }
+  }
+}

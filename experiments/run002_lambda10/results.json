@@ -1,0 +1,44 @@
+{
+  "dataset_id": "pbmc10k_multiome",
+  "experiment": "run002_lambda10",
+  "wall_time_sec": 132.18700861930847,
+  "rna_train": {
+    "ckpt": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\run002_lambda10\\ckpt_rna.pt",
+    "embeddings": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\run002_lambda10\\z_rna.npy",
+    "log": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\run002_lambda10\\train_log_rna.json",
+    "best_val": 1.0962719519933064,
+    "best_epoch": 4,
+    "wall_time_sec": 33.08090829849243
+  },
+  "atac_train": {
+    "ckpt": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\run002_lambda10\\ckpt_atac.pt",
+    "embeddings": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\run002_lambda10\\z_atac.npy",
+    "log": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\run002_lambda10\\train_log_atac.json",
+    "best_val": 0.9718106587727865,
+    "best_epoch": 16,
+    "wall_time_sec": 28.772179126739502
+  },
+  "alignment": {
+    "epsilon": 0.05,
+    "cost_scale": 154.4500466981164,
+    "entropy_mean": 0.9837492508174404,
+    "entropy_std": 0.008102421465841112,
+    "top_match_prob_mean": 0.00046087354164633064
+  },
+  "metrics": {
+    "foscttm": {
+      "foscttm_a_to_b": 0.4652075415667338,
+      "foscttm_b_to_a": 0.43282891823280084,
+      "foscttm_mean": 0.4490182298997673,
+      "n_paired": 11303
+    },
+    "label_transfer_rna_to_atac": 0.18968415464920818,
+    "label_transfer_atac_to_rna": 0.14509422277271522,
+    "joint_clustering_ari": 0.38835913172991887,
+    "entropy_error_corr": {
+      "spearman_rho": -0.6515337783306642,
+      "spearman_p": 0.0,
+      "n": 11303
+    }
+  }
+}

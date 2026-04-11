@@ -1,0 +1,35 @@
+{
+  "raw_ot": {
+    "method": "RawFeaturesOT",
+    "description": "MOSAIC ablation: raw PCA+LSI with Procrustes, no IB-VAE",
+    "wall_time_sec": 2.5430452823638916,
+    "metrics": {
+      "foscttm_mean": 0.33408597310214516,
+      "foscttm_a_to_b": 0.16821640546848948,
+      "foscttm_b_to_a": 0.49995554073580084,
+      "label_transfer_rna_to_atac": 0.09533333333333334,
+      "label_transfer_atac_to_rna": 0.42866666666666664,
+      "joint_clustering_ari": 0.06261147556427496
+    }
+  },
+  "nn_on_ib": {
+    "method": "NN_on_IB",
+    "description": "MOSAIC ablation: IB-VAE latent + Procrustes, NN matching (no OT)",
+    "wall_time_sec": 1.2071456909179688,
+    "metrics": {
+      "foscttm_mean": 0.05202256307658108,
+      "foscttm_a_to_b": 0.06265677448038236,
+      "foscttm_b_to_a": 0.041388351672779815,
+      "label_transfer_rna_to_atac": 0.9596666666666667,
+      "label_transfer_atac_to_rna": 0.9666666666666667,
+      "joint_clustering_ari": 0.8702576408347746
+    }
+  },
+  "uniport": {
+    "method": "uniPort",
+    "description": "uniPort diagonal integration mode",
+    "wall_time_sec": 0.37137389183044434,
+    "metrics": {},
+    "error": "`np.Inf` was removed in the NumPy 2.0 release. Use `np.inf` instead."
+  }
+}

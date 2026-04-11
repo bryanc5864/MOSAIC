@@ -1,0 +1,17 @@
+{
+  "method": "uniPort",
+  "dataset": "citeseq_pbmc",
+  "subsample_n": 3000,
+  "seed": 0,
+  "wall_time_sec": 76.66211891174316,
+  "metrics": {
+    "foscttm": {
+      "foscttm_mean": 0.4631562187395798,
+      "foscttm_a_to_b": 0.46235700789151934,
+      "foscttm_b_to_a": 0.4639554295876403
+    },
+    "label_transfer_rna_to_atac": 0.144,
+    "label_transfer_atac_to_rna": 0.14933333333333335,
+    "joint_clustering_ari": 0.39369993919943547
+  }
+}

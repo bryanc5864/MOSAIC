@@ -1,0 +1,49 @@
+# Virtual environments
+venv_uniport/
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+
+# Raw data (public datasets — re-downloadable from URLs in src/data/datasets.py)
+data/raw/
+data/processed/
+
+# Large experiment artifacts (reproducible from code + seeds)
+# Match any .npy and .pt file under experiments/*/ — JSON summaries stay
+experiments/*/*.npy
+experiments/*/*.pt
+experiments/*/uniport_output/
+# Also the experiments/ top-level stdout/stderr logs from the shell-redirect days
+experiments/*.stdout.log
+experiments/*.stderr.log
+
+# stdout/stderr logs
+experiments/*.stdout.log
+experiments/*.stderr.log
+*.stdout.log
+*.stderr.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Task / cache
+tasks/
+.claude/
+.pytest_cache/
+
+# Figures: keep PNGs, skip PDFs (half the size for clone)
+figures/*.pdf

@@ -1,0 +1,173 @@
+{
+  "dataset": "brain3k_multiome",
+  "exp": "exp001_brain_final",
+  "n_clusters_tested": 18,
+  "mean_auroc": 0.9594185037127164,
+  "median_auroc": 0.9636572080156647,
+  "min_auroc": 0.9146595088975047,
+  "max_auroc": 0.9973130377823427,
+  "per_cluster": [
+    {
+      "target_cluster": "0",
+      "n_target_rna": 387,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.9324252107355598,
+      "mean_entropy_target": 0.593298851909034,
+      "mean_entropy_other": 0.2727832635767977
+    },
+    {
+      "target_cluster": "1",
+      "n_target_rna": 340,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.972730119825708,
+      "mean_entropy_target": 0.6280140432742183,
+      "mean_entropy_other": 0.2480210416887863
+    },
+    {
+      "target_cluster": "2",
+      "n_target_rna": 411,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.9666856515242045,
+      "mean_entropy_target": 0.6049499223430598,
+      "mean_entropy_other": 0.25979552920193894
+    },
+    {
+      "target_cluster": "3",
+      "n_target_rna": 340,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.957772331154684,
+      "mean_entropy_target": 0.7157599223800631,
+      "mean_entropy_other": 0.3001862006399594
+    },
+    {
+      "target_cluster": "4",
+      "n_target_rna": 307,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.9973130377823427,
+      "mean_entropy_target": 0.7206123383290051,
+      "mean_entropy_other": 0.24171493651084439
+    },
+    {
+      "target_cluster": "5",
+      "n_target_rna": 454,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.9673414549071789,
+      "mean_entropy_target": 0.6929357101456155,
+      "mean_entropy_other": 0.26688611045222016
+    },
+    {
+      "target_cluster": "6",
+      "n_target_rna": 43,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.9760248364899529,
+      "mean_entropy_target": 0.6510468563982433,
+      "mean_entropy_other": 0.26934835471277513
+    },
+    {
+      "target_cluster": "7",
+      "n_target_rna": 159,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.9314758247160947,
+      "mean_entropy_target": 0.6717537298510646,
+      "mean_entropy_other": 0.26295053573663296
+    },
+    {
+      "target_cluster": "8",
+      "n_target_rna": 274,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.9827191584525284,
+      "mean_entropy_target": 0.7123475067444259,
+      "mean_entropy_other": 0.255330090609914
+    },
+    {
+      "target_cluster": "9",
+      "n_target_rna": 154,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.9367865723364445,
+      "mean_entropy_target": 0.6214390230587268,
+      "mean_entropy_other": 0.2901090146126805
+    },
+    {
+      "target_cluster": "10",
+      "n_target_rna": 239,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.967224855147961,
+      "mean_entropy_target": 0.5930781353532597,
+      "mean_entropy_other": 0.2533674282112096
+    },
+    {
+      "target_cluster": "11",
+      "n_target_rna": 380,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.948426017874876,
+      "mean_entropy_target": 0.5918996795279762,
+      "mean_entropy_other": 0.28106106086128724
+    },
+    {
+      "target_cluster": "12",
+      "n_target_rna": 146,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.9932467033670465,
+      "mean_entropy_target": 0.7451091899083203,
+      "mean_entropy_other": 0.26893463659667843
+    },
+    {
+      "target_cluster": "13",
+      "n_target_rna": 181,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.9370680351361202,
+      "mean_entropy_target": 0.6520176609161699,
+      "mean_entropy_other": 0.24744920855414607
+    },
+    {
+      "target_cluster": "14",
+      "n_target_rna": 231,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.960628764507125,
+      "mean_entropy_target": 0.5855115485526207,
+      "mean_entropy_other": 0.2763761247810074
+    },
+    {
+      "target_cluster": "16",
+      "n_target_rna": 275,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.9790382022471911,
+      "mean_entropy_target": 0.6208959953627591,
+      "mean_entropy_other": 0.2425282857400827
+    },
+    {
+      "target_cluster": "17",
+      "n_target_rna": 69,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.9479667817263725,
+      "mean_entropy_target": 0.6238864678344017,
+      "mean_entropy_other": 0.2641619299291909
+    },
+    {
+      "target_cluster": "18",
+      "n_target_rna": 105,
+      "n_rna_sub": 2500,
+      "n_atac_sub_after_removal": 2500,
+      "auroc_cluster_entropy": 0.9146595088975047,
+      "mean_entropy_target": 0.5301848294983573,
+      "mean_entropy_other": 0.2814616417792081
+    }
+  ]
+}

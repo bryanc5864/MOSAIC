@@ -1,0 +1,17 @@
+{
+  "scot": {
+    "method": "SCOT",
+    "wall_time_sec": 1215.216124534607,
+    "metrics": {
+      "foscttm": {
+        "foscttm_a_to_b": 0.2848068423883155,
+        "foscttm_b_to_a": 0.21140571938617247,
+        "foscttm_mean": 0.24810628088724399,
+        "n_paired": 11303
+      },
+      "label_transfer_rna_to_atac": 0.32345395027868706,
+      "label_transfer_atac_to_rna": 0.38308413695479077,
+      "joint_clustering_ari": 0.3222647672471284
+    }
+  }
+}
