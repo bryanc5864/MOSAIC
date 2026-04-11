@@ -1,0 +1,17 @@
+{
+  "method": "uniPort",
+  "dataset": "pbmc10k_multiome",
+  "subsample_n": 3000,
+  "seed": 0,
+  "wall_time_sec": 87.99962544441223,
+  "metrics": {
+    "foscttm": {
+      "foscttm_mean": 0.5627015116149828,
+      "foscttm_a_to_b": 0.625382127375792,
+      "foscttm_b_to_a": 0.5000208958541736
+    },
+    "label_transfer_rna_to_atac": 0.134,
+    "label_transfer_atac_to_rna": 0.13633333333333333,
+    "joint_clustering_ari": 0.06651937757710262
+  }
+}

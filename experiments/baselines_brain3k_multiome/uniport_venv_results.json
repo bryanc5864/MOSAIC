@@ -1,0 +1,17 @@
+{
+  "method": "uniPort",
+  "dataset": "brain3k_multiome",
+  "subsample_n": 3000,
+  "seed": 0,
+  "wall_time_sec": 78.90382552146912,
+  "metrics": {
+    "foscttm": {
+      "foscttm_mean": 0.5094424808269423,
+      "foscttm_a_to_b": 0.5188860731354896,
+      "foscttm_b_to_a": 0.499998888518395
+    },
+    "label_transfer_rna_to_atac": 0.09533333333333334,
+    "label_transfer_atac_to_rna": 0.058666666666666666,
+    "joint_clustering_ari": 0.05008226633489266
+  }
+}

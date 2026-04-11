@@ -1,0 +1,28 @@
+# MIT License — Bryan Cheng, 2026
+# MOSAIC dependencies
+# Installed/pinned against single RTX 3080 + Python 3.11 + torch 2.6.0+cu124
+
+# Core (already present in user env — listed for reproducibility)
+torch>=2.6.0
+numpy>=1.26,<2.0
+scipy>=1.13
+scikit-learn>=1.4
+matplotlib>=3.8
+seaborn>=0.13
+pandas>=2.0
+h5py>=3.10
+pyyaml>=6.0
+
+# Single-cell stack
+anndata>=0.10
+scanpy>=1.10
+
+# Optimal transport
+pot>=0.9.4
+
+# ZINB likelihood: implemented inline in src/models/zinb.py
+# (avoided scvi-tools to keep the dependency tree small and stable)
+
+# Optional / to-install-if-available
+# episcanpy     # ATAC preprocessing — we implement TF-IDF+LSI inline if unavailable
+# scib          # integration benchmarking — we implement FOSCTTM/ARI inline if unavailable

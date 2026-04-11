@@ -1,0 +1,97 @@
+{
+  "dataset": "brain3k_multiome",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "n_seeds": 3,
+  "per_seed": [
+    {
+      "seed": 0,
+      "exp": "exp001_brain_final",
+      "foscttm_mean": 0.12700920273046654,
+      "foscttm_a_to_b": 0.1973004219643632,
+      "foscttm_b_to_a": 0.05671798349656986,
+      "lt_rna_to_atac": 0.8717722357095564,
+      "lt_atac_to_rna": 0.7483999117192672,
+      "joint_ari": 0.36650098887905014,
+      "entropy_mean": 0.7423360051723007,
+      "entropy_rho": -0.4739357849244523,
+      "wall_time_sec": 49.76885938644409
+    },
+    {
+      "seed": 1,
+      "exp": "exp001_brain_seed1",
+      "foscttm_mean": 0.134044719160573,
+      "foscttm_a_to_b": 0.21353530717748664,
+      "foscttm_b_to_a": 0.054554131143659354,
+      "lt_rna_to_atac": 0.8764069741778857,
+      "lt_atac_to_rna": 0.7587728978150519,
+      "joint_ari": 0.4442336801501596,
+      "entropy_mean": 0.7423778097632228,
+      "entropy_rho": -0.4272506439819973,
+      "wall_time_sec": 51.65340447425842
+    },
+    {
+      "seed": 2,
+      "exp": "exp001_brain_seed2",
+      "foscttm_mean": 0.12624125292381208,
+      "foscttm_a_to_b": 0.20339900309031286,
+      "foscttm_b_to_a": 0.04908350275731129,
+      "lt_rna_to_atac": 0.8812624144780402,
+      "lt_atac_to_rna": 0.7119841094681086,
+      "joint_ari": 0.4126527405161927,
+      "entropy_mean": 0.7322804927475801,
+      "entropy_rho": -0.5220729566295598,
+      "wall_time_sec": 50.66436839103699
+    }
+  ],
+  "foscttm_mean_mean": 0.12909839160495054,
+  "foscttm_mean_std": 0.004300820147601819,
+  "foscttm_a_to_b_mean": 0.20474491074405424,
+  "foscttm_a_to_b_std": 0.008200699667109096,
+  "foscttm_b_to_a_mean": 0.05345187246584684,
+  "foscttm_b_to_a_std": 0.003934787755919914,
+  "lt_rna_to_atac_mean": 0.8764805414551607,
+  "lt_rna_to_atac_std": 0.004745517081695037,
+  "lt_atac_to_rna_mean": 0.7397189730008092,
+  "lt_atac_to_rna_std": 0.0245726820172113,
+  "joint_ari_mean": 0.4077958031818008,
+  "joint_ari_std": 0.03909328846829162,
+  "entropy_mean_mean": 0.7389981025610345,
+  "entropy_mean_std": 0.005817658301268629,
+  "entropy_rho_mean": -0.4744197951786698,
+  "entropy_rho_std": 0.04741300922112687,
+  "wall_time_sec_mean": 50.69554408391317,
+  "wall_time_sec_std": 0.9426592649897488,
+  "cluster_per_seed": [
+    {
+      "seed": 0,
+      "argmax_cluster_accuracy": 0.9615,
+      "mean_h_cluster": 0.2619847059249878,
+      "auroc_wrong_cluster": 0.8609991152892869,
+      "n_wrong_cluster": 154
+    },
+    {
+      "seed": 1,
+      "argmax_cluster_accuracy": 0.952,
+      "mean_h_cluster": 0.2578689455986023,
+      "auroc_wrong_cluster": 0.783454788165266,
+      "n_wrong_cluster": 192
+    },
+    {
+      "seed": 2,
+      "argmax_cluster_accuracy": 0.96075,
+      "mean_h_cluster": 0.2340269237756729,
+      "auroc_wrong_cluster": 0.7812069591332409,
+      "n_wrong_cluster": 157
+    }
+  ],
+  "argmax_cluster_accuracy_mean": 0.9580833333333333,
+  "argmax_cluster_accuracy_std": 0.005281650625830304,
+  "mean_h_cluster_mean": 0.25129352509975433,
+  "mean_h_cluster_std": 0.015094254262123715,
+  "auroc_wrong_cluster_mean": 0.808553620862598,
+  "auroc_wrong_cluster_std": 0.04543303421613175
+}

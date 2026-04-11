@@ -1,0 +1,14 @@
+{
+  "experiment": "exp006_cross_tissue",
+  "rna_source": "exp001_pbmc_final",
+  "atac_source": "exp001_brain_beta0001",
+  "n_rna": 3000,
+  "n_atac": 3000,
+  "cross_tissue_cluster_entropy_mean": 0.6346683036506503,
+  "cross_tissue_cluster_entropy_std": 0.132873953890836,
+  "cross_tissue_cell_entropy_mean": 0.8765354221423483,
+  "cross_tissue_cell_entropy_std": 0.052249625703637774,
+  "within_pbmc_cluster_entropy_mean": 0.15303407609462738,
+  "within_brain_cluster_entropy_mean": 0.08253346383571625,
+  "n_atac_clusters": 20
+}
