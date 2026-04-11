@@ -1,0 +1,41 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1775949754.138166    9688 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1775949756.468260    9688 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+C:\Users\Maozer\AppData\Local\Programs\Python\Python311\Lib\site-packages\uniport\function.py:443: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  print('Dataset {}:'.format(i), adata.obs[source_name][0])
+
+=== Baseline 1: Raw PCA/LSI + Procrustes (no IB-VAE) ===
+
+=== Baseline 2: IB latent + NN matching (no OT) ===
+
+=== Baseline 3: uniPort ===
+Device: cuda
+Dataset 0: rna
+AnnData object with n_obs × n_vars = 3000 × 2000
+    obs: 'pair_idx', 'leiden', 'cell_type', 'domain_id', 'source'
+    var: 'gene_ids', 'feature_types', 'genome', 'pattern', 'read', 'sequence', 'n_cells', 'highly_variable', 'highly_variable_rank', 'means', 'variances', 'variances_norm', 'mean', 'std'
+    uns: 'hvg', 'leiden', 'log1p', 'neighbors', 'pca', 'umap'
+    obsm: 'X_pca', 'X_pca_std', 'X_umap', 'y_cross'
+    varm: 'PCs'
+    layers: 'counts'
+    obsp: 'connectivities', 'distances'
+Dataset 1: atac
+AnnData object with n_obs × n_vars = 3000 × 14
+    obs: 'pair_idx', 'leiden', 'cell_type', 'domain_id', 'source'
+    var: 'gene_ids', 'feature_types', 'genome', 'pattern', 'read', 'sequence'
+    uns: 'neighbors', 'pca', 'umap'
+    obsm: 'X_lsi', 'X_lsi_std', 'X_pca', 'X_umap', 'y_cross'
+    varm: 'PCs'
+    layers: 'binary', 'counts'
+    obsp: 'connectivities', 'distances'
+Reference dataset is dataset 1
+
+
+
+=== Summary (subsample 3000) ===
+method               |  FOSCTTM |  LT A->B |  LT B->A |     ARI |   wall
+----------------------------------------------------------------------
+RawFeaturesOT        |   0.2370 |   0.3270 |   0.5497 |  0.3771 |    2.2
+NN_on_IB             |   0.0979 |   0.8700 |   0.9470 |  0.8530 |    1.1
+uniport              | FAILED: `np.Inf` was removed in the NumPy 2.0 release. Use

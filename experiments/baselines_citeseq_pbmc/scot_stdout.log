@@ -1,0 +1,13 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1775949750.027249   19744 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1775949752.740887   19744 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+
+=== Running scot on citeseq_pbmc ===
+[scot] full shapes: RNA (7856, 50), ATAC (7856, 13)
+[scot] subsampled to 3000/7856
+[scot] building kNN graphs (k=10)...
+[scot] solving entropic Gromov-Wasserstein (eps=0.005, max_iter=300)...
+
+=== Baseline results summary ===
+  scot        FOSCTTM 0.5502  LT 0.061/0.080  ARI 0.3044  wall 67.7s
