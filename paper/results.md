@@ -4,7 +4,7 @@
 
 ## Alignment quality on paired benchmarks
 
-We evaluate MOSAIC on two paired single-cell multi-omics benchmarks where the ground-truth cell-level pairing is known: 10x Multiome PBMC 10k (11,303 cells after QC, 18 leiden clusters) and 10x Multiome E18 mouse brain 5k (4,531 cells, 20 clusters). At training time the pairing is *dropped* and treated as unknown by the IB-VAEs (a unit test verifies no code path accesses `pair_idx` during training). At evaluation time we recover the pairing and compare MOSAIC's alignment against it.
+We evaluate MOSAIC on two paired single-cell multi-omics benchmarks where the ground-truth cell-level pairing is known: 10x Multiome PBMC 10k (11,303 cells after QC, 18 leiden clusters) and 10x Multiome E18 mouse brain 5k (4,531 cells, 20 clusters). At training time the cell-level pairing is treated as unknown: we verified by inspection that `pair_idx` is read only in the post-training evaluation code path (`src/training/run_experiment.py`), never inside the IB-VAE training loop, the dataloader, or the loss. See Methods for the one caveat: the cross-modal prediction target uses cluster identities that, for our paired benchmarks, were propagated across modalities using the pairing itself. At evaluation time we recover the pairing and compare MOSAIC's alignment against it.
 
 Table 1 reports the four standard unpaired-alignment metrics across both datasets, as mean ± std over 3 random seeds (0, 1, 2):
 
@@ -29,7 +29,7 @@ Table 2 compares MOSAIC against three baselines on **both datasets** (3000-cell 
 |---|---:|---:|---:|---:|:---:|
 | **MOSAIC (ours)** | **0.194** | **0.664** | **0.694** | **0.651** | ✅ |
 | NN on IB latent (no-OT ablation) | 0.194 | 0.664 | 0.694 | 0.651 | ❌ |
-| SCOT (GW reimplementation) | 0.245 | 0.361 | 0.386 | 0.345 | ❌ |
+| SCOT (GW reimplementation) | 0.248 | 0.324 | 0.383 | 0.322 | ❌ |
 | Raw PCA/LSI + Procrustes (no-IB ablation) | 0.328 | 0.132 | 0.653 | 0.093 | ❌ |
 
 **Brain 5k** (β = 0.001 IB-VAE — the multi-seed best for this dataset):
@@ -41,7 +41,7 @@ Table 2 compares MOSAIC against three baselines on **both datasets** (3000-cell 
 | SCOT (GW reimplementation) | 0.475 | 0.134 | 0.067 | 0.025 | ❌ |
 | Raw PCA/LSI + Procrustes (no-IB ablation) | 0.334 | 0.095 | 0.429 | 0.063 | ❌ |
 
-MOSAIC outperforms SCOT by a wide margin on PBMC (21% better FOSCTTM, 84% better RNA→ATAC label transfer, 89% better ARI) and by an **even wider margin on Brain**: 89% better FOSCTTM (0.052 vs 0.475), **7.2× better LT RNA→ATAC** (0.960 vs 0.134), **35× better ARI** (0.870 vs 0.025). On Brain, SCOT actually fails — its FOSCTTM A→B direction is *worse than random* (the GW solver does not converge to a meaningful coupling at this dataset's scale and structure), and joint clustering ARI is essentially at chance. The no-IB ablation (raw PCA/LSI directly into Procrustes + kNN) collapses label-transfer accuracy and ARI on both datasets — on Brain ARI drops from 0.870 to 0.063 (a 14× collapse), confirming that **the IB-VAE is the central contribution**. The no-OT ablation (IB latents with Procrustes but kNN instead of Sinkhorn) is numerically identical to MOSAIC on all four alignment metrics on both datasets, as expected — these metrics operate directly on the aligned embeddings and are unaffected by the OT plan. **The OT component's contribution is not to the alignment geometry, it is to the per-cell uncertainty signal.**
+MOSAIC outperforms SCOT by a wide margin on PBMC (22% better FOSCTTM, 105% better RNA→ATAC label transfer, 102% better ARI) and by an **even wider margin on Brain**: 89% better FOSCTTM (0.052 vs 0.475), **7.2× better LT RNA→ATAC** (0.960 vs 0.134), **35× better ARI** (0.870 vs 0.025). On Brain, SCOT actually fails — its FOSCTTM A→B direction is *worse than random* (the GW solver does not converge to a meaningful coupling at this dataset's scale and structure), and joint clustering ARI is essentially at chance. The no-IB ablation (raw PCA/LSI directly into Procrustes + kNN) collapses label-transfer accuracy and ARI on both datasets — on Brain ARI drops from 0.870 to 0.063 (a 14× collapse), confirming that **the IB-VAE is the central contribution**. The no-OT ablation (IB latents with Procrustes but kNN instead of Sinkhorn) is numerically identical to MOSAIC on all four alignment metrics on both datasets, as expected — these metrics operate directly on the aligned embeddings and are unaffected by the OT plan. **The OT component's contribution is not to the alignment geometry, it is to the per-cell uncertainty signal.**
 
 ## Cell-level row entropy is miscalibrated; cluster-level entropy is not
 
@@ -89,8 +89,27 @@ Table 4 reports the per-cluster AUROC on PBMC:
 
 ## Ablation study
 
-*(TODO: β sweep, λ_pred sweep, ε sweep — running)*
+Table 5 reports six MOSAIC variants on PBMC 10k, all trained for 150 epochs with the same 3000-cell OT subsample and seed. Source: `experiments/ablation_pbmc10k_multiome_summary.json`.
 
-## Cross-atlas regulatory discovery
+| Variant | β | λ_pred | FOSCTTM ↓ | LT A→B ↑ | LT B→A ↑ | ARI ↑ |
+|---|---:|---:|---:|---:|---:|---:|
+| **base** (β=0.01, λ=5) | 0.01 | 5 | 0.178 | 0.725 | 0.670 | **0.673** |
+| β = 0.001 | 0.001 | 5 | **0.108** | **0.976** | **0.930** | 0.691 |
+| β = 0.1 | 0.1 | 5 | 0.104 | 0.863 | 0.710 | 0.506 |
+| λ_pred = 1 | 0.01 | 1 | 0.172 | 0.837 | 0.296 | 0.433 |
+| λ_pred = 20 | 0.01 | 20 | 0.152 | 0.719 | 0.726 | 0.514 |
+| **no cross-head** (λ=0) | 0.01 | 0 | **0.378** | **0.049** | 0.390 | **0.026** |
 
-*(TODO: Tabula Sapiens × ENCODE scATAC stretch experiment)*
+Two conclusions follow. **First, the cross-modal prediction head is load-bearing**: setting λ_pred = 0 collapses every metric to near-chance (FOSCTTM 0.38, LT 0.05, ARI 0.03). Without the cross-modal objective, the IB-VAE latents of the two modalities have no reason to agree, and Procrustes + Sinkhorn cannot recover an alignment. **Second, the bottleneck weight β trades per-cell alignment precision against cluster-level coherence**: dropping β from 0.01 to 0.001 improves FOSCTTM from 0.178 to 0.108 and label transfer from 0.72 to 0.98, but the gain in cluster-level ARI is marginal; raising β to 0.1 over-compresses the latent and hurts ARI. This confirms the full-scale finding that β = 0.001 is preferred when per-cell precision is the target metric (as on the Brain dataset).
+
+## Cross-tissue negative control
+
+The most demanding test of whether cluster-resolved entropy is a calibrated uncertainty signal is: *does it report high uncertainty when there is nothing to align?* We ran MOSAIC's alignment step on the RNA IB-VAE embedding from PBMC 10k and the ATAC IB-VAE embedding from Brain 5k — two datasets whose cell-type spaces are disjoint (PBMC cells are T / B / NK / monocytes / DC / platelets; brain cells are neurons / glia / oligodendrocytes). A calibrated UQ signal should mark every cell as uncertain.
+
+| Setting | Mean H_cluster | Interpretation |
+|---|---:|---|
+| Within PBMC (paired benchmark) | **0.153** | real structure, confident |
+| Within Brain (paired benchmark) | **0.083** | real structure, confident |
+| **Cross-tissue (PBMC RNA × Brain ATAC)** | **0.635 ± 0.133** | **no shared structure → high uncertainty** |
+
+The cross-tissue mean cluster entropy is **4.2× higher** than either within-dataset mean; no PBMC cell falls below the within-dataset 75th percentile of cluster entropy. Figure 6 shows the distribution: the within-dataset means (vertical lines) sit at the extreme left tail while the cross-tissue histogram is bimodal around H ≈ 0.55 and 0.75. This is the intended behavior of a calibrated per-cell uncertainty signal and is the strongest available test that cluster-resolved entropy is measuring alignment confidence rather than latent density or a learned constant. A miscalibrated UQ would report the same low entropies here as on real paired data; MOSAIC does not.

@@ -38,7 +38,7 @@ Fair comparison on the PBMC 10k Multiome dataset, 3000-cell subsample (all metho
 |---|----------:|--------------:|--------------:|------:|---------:|:---:|
 | **MOSAIC** (β=0.01, full pipeline) | **0.1941** | **0.6640** | **0.6940** | **0.6515** | 118 | ✅ cluster entropy |
 | NN on IB latent (no OT ablation) | 0.1941 | 0.6640 | 0.6940 | 0.6515 | 0.8* | ❌ |
-| SCOT (GW reimplementation) | 0.2449 | 0.3607 | 0.3863 | 0.3452 | 97 | ❌ |
+| SCOT (GW reimplementation) | 0.2481 | 0.3235 | 0.3831 | 0.3223 | 1215 | ❌ |
 | Raw PCA/LSI + Procrustes (no IB) | 0.3283 | 0.1317 | 0.6527 | 0.0931 | 4.5 | ❌ |
 | uniPort (in venv_uniport) | 0.5627 | 0.1340 | 0.1363 | 0.0665 | 88 | ❌ |
 
@@ -57,7 +57,7 @@ Fair comparison on the PBMC 10k Multiome dataset, 3000-cell subsample (all metho
 uniPort note: installed in a separate venv (`venv_uniport/`) with numpy<2 to work around uniPort 1.3's use of the deprecated `np.Inf`. Source: `experiments/baselines_pbmc10k_multiome/uniport_venv_results.json`. On PBMC, uniPort gives FOSCTTM 0.56 (**worse than random at 0.5**), LT 0.134/0.136 (at chance of 0.056 × 2.4), ARI 0.067 — strictly worse than SCOT on every metric. We attribute this to uniPort's reliance on common genes between modalities, which is tenuous in the ATAC case where the "features" are peaks.
 
 **Key comparisons (across both datasets)**:
-- **MOSAIC vs SCOT — PBMC**: FOSCTTM 0.194 vs 0.245 (MOSAIC 21% better), LT RNA→ATAC 0.664 vs 0.361 (84% better), ARI 0.651 vs 0.345 (89% better).
+- **MOSAIC vs SCOT — PBMC**: FOSCTTM 0.194 vs 0.248 (MOSAIC 22% better), LT RNA→ATAC 0.664 vs 0.324 (105% better), ARI 0.651 vs 0.322 (102% better).
 - **MOSAIC vs SCOT — Brain**: FOSCTTM **0.052 vs 0.475** (MOSAIC 89% better), LT RNA→ATAC **0.960 vs 0.134** (7.2× better), ARI **0.870 vs 0.025** (35× better). SCOT essentially fails on Brain.
 - **MOSAIC vs raw features (no IB ablation)** on both datasets: removing the IB-VAE collapses every metric. On PBMC LT 0.664 → 0.132, ARI 0.651 → 0.093. On Brain LT 0.960 → 0.095, ARI 0.870 → 0.063 — a 14× ARI drop. **The IB-VAE is the single most important component**.
 - **MOSAIC vs NN-on-IB**: numerically identical on FOSCTTM/LT/ARI on both datasets (expected — these don't use the OT plan). MOSAIC's OT step provides the per-cell *cluster-resolved entropy* signal, which NN-on-IB cannot.
