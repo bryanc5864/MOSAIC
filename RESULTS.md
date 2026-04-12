@@ -261,6 +261,58 @@ Wall times: 77–232 sec per variant on RTX 3080.
 
 **SCOT (our reimplementation)** and **uniPort**: to be run next.
 
+### Exp 10 — Calibration curves (cluster-resolved entropy as a probability estimate)
+
+The Post-Results review critique correctly noted that "calibrated" was an overclaim: AUROC measures discrimination (can the signal rank wrong cells above right cells?) but not calibration (does the signal's numerical value match the true error probability?). We computed calibration curves on all three datasets by binning cells by H_cluster into 10 quantiles and comparing mean H_cluster to the observed error rate.
+
+| Dataset | Exp | ECE ↓ | Brier ↓ | Overall error rate |
+|---|---|---:|---:|---:|
+| PBMC 10k | β=0.01 | 0.142 | 0.043 | 1.24% |
+| **PBMC 10k** | **β=0.001** | **0.050** | **0.034** | 3.70% |
+| Brain 5k | β=0.001 | 0.061 | 0.024 | 2.13% |
+| CITE-seq | β=0.001 | 0.160 | 0.052 | 3.20% |
+
+Sources: `experiments/exp001_pbmc_final/calibration_analysis.json`, `exp001_pbmc_beta0001/`, `exp001_brain_beta0001/`, `exp001_citeseq/`.
+
+**Key finding**: the calibration curves are **monotonically increasing** on all datasets (higher H_cluster → higher true error rate), confirming the signal is informative. But the ECE is 0.05–0.16 depending on dataset, meaning raw H_cluster values are NOT well-calibrated probability estimates — they systematically over-estimate uncertainty in the low-H bins (where nearly all cells are) because most cells are correct and have low but nonzero entropy. At β=0.001 on PBMC the ECE is 0.05, which is the best of the four configurations. **The correct characterization is "well-discriminating per-cell uncertainty with monotonic risk ordering" rather than "calibrated."** See `figures/fig7_calibration_curves.png`.
+
+### Exp 12 — Cross-seed entropy stability
+
+If MOSAIC's cluster-resolved entropy depends on the random seed (IB-VAE training + OT subsample), the UQ signal is not reproducible. We measured pairwise Spearman ρ between per-cell H_cluster arrays across all 45 pairs of the 10-seed PBMC β=0.001 runs, restricted to cells that appear in both subsamples (mean 2215 common cells per pair).
+
+| Metric | Value |
+|---|---:|
+| Pairwise Spearman ρ | **0.644 ± 0.073** |
+| Top-10% flagged-cell Jaccard overlap | **0.172 ± 0.062** |
+| Random Jaccard baseline (10% sets) | 0.053 |
+
+Source: computed from `experiments/exp001_pbmc_beta0001*/alignment_entropy_cluster.npy` and `ot_subsample_indices.npy`.
+
+**Interpretation**: the Spearman ρ of 0.64 indicates moderate-to-good reproducibility — the same cells tend to get similar H_cluster values across seeds. The top-10% Jaccard is 3.2× the random baseline, meaning the set of "most uncertain" cells is substantially (though not perfectly) consistent. The imperfect overlap is expected: different IB-VAE random initializations produce slightly different latent geometries, and the 5000-cell OT subsample changes, so per-cell entropy is inherently stochastic. For production use, ensemble averaging over 3–5 seeds is recommended.
+
+### Exp 3 — CITE-seq missing cell type detection
+
+Extended the leave-one-cluster-out experiment from PBMC/Brain to the CITE-seq dataset (RNA + 14 protein markers, β=0.001).
+
+| Dataset | β | Clusters tested | Mean AUROC | Median AUROC | Range |
+|---|---:|---:|---:|---:|---:|
+| CITE-seq | 0.001 | 16 | **0.946** | **0.998** | 0.318 – 0.9999 |
+
+Source: `experiments/exp001_citeseq/exp003_missing_type.json`.
+
+The median AUROC (0.998) is very strong; the mean is pulled down by one hard cluster (AUROC 0.318) that, like PBMC cluster 9 (0.671), has a transcriptionally similar cluster remaining in the target. This pattern — 1–2 hard clusters that are near-redundant with another cluster, plus near-perfect detection everywhere else — is consistent across all three datasets.
+
+### Self-critique: AUROC alone is an insufficient UQ metric
+
+Analyzing the `no_cross_head` ablation variant (λ_pred=0, alignment is destroyed) with cluster-resolved entropy reveals a subtlety:
+
+| Variant | Argmax acc | Mean H_cluster | AUROC(H→wrong) | n_wrong |
+|---|---:|---:|---:|---:|
+| Full MOSAIC (β=0.01) | **98.8%** | 0.153 | 0.894 | 62 / 5000 |
+| No cross-head (λ=0) | 24.5% | 0.800 | **0.962** | 2264 / 3000 |
+
+The `no_cross_head` variant has a HIGHER AUROC (0.962 vs 0.894) despite alignment being nearly random. This is because when 75% of cells are wrong-assigned, any per-cell feature that even weakly correlates with correctness achieves high AUROC by sheer base-rate advantage. **AUROC must always be reported alongside argmax accuracy**. The true test of a UQ signal is: "given that most cells are correctly assigned, can the signal still identify the rare failures?" Full MOSAIC passes this harder test (AUROC 0.894 with only 1.2% failures). The no_cross_head variant's high AUROC is vacuous.
+
 ## Running Commentary
 
 **2026-04-10 21:13**: Project initialized. Beginning implementation per RESEARCH_PLAN.md.
