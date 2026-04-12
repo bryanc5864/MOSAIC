@@ -1,0 +1,80 @@
+{
+  "n_bins": 10,
+  "dataset": "pbmc10k_multiome",
+  "exp": "exp001_pbmc_final",
+  "bins": [
+    {
+      "bin_lo": 0.0,
+      "bin_hi": 0.0606,
+      "n": 2059,
+      "mean_h_cluster": 0.027,
+      "true_error_rate": 0.0
+    },
+    {
+      "bin_lo": 0.0606,
+      "bin_hi": 0.1212,
+      "n": 500,
+      "mean_h_cluster": 0.0918,
+      "true_error_rate": 0.006
+    },
+    {
+      "bin_lo": 0.1212,
+      "bin_hi": 0.1817,
+      "n": 188,
+      "mean_h_cluster": 0.1432,
+      "true_error_rate": 0.0106
+    },
+    {
+      "bin_lo": 0.1817,
+      "bin_hi": 0.2423,
+      "n": 640,
+      "mean_h_cluster": 0.218,
+      "true_error_rate": 0.0047
+    },
+    {
+      "bin_lo": 0.2423,
+      "bin_hi": 0.3029,
+      "n": 608,
+      "mean_h_cluster": 0.2885,
+      "true_error_rate": 0.0148
+    },
+    {
+      "bin_lo": 0.3029,
+      "bin_hi": 0.3635,
+      "n": 926,
+      "mean_h_cluster": 0.3127,
+      "true_error_rate": 0.014
+    },
+    {
+      "bin_lo": 0.3635,
+      "bin_hi": 0.4241,
+      "n": 60,
+      "mean_h_cluster": 0.3887,
+      "true_error_rate": 0.3333
+    },
+    {
+      "bin_lo": 0.4241,
+      "bin_hi": 0.4846,
+      "n": 13,
+      "mean_h_cluster": 0.4397,
+      "true_error_rate": 0.6923
+    },
+    {
+      "bin_lo": 0.4846,
+      "bin_hi": 0.5452,
+      "n": 4,
+      "mean_h_cluster": 0.5038,
+      "true_error_rate": 0.75
+    },
+    {
+      "bin_lo": 0.5452,
+      "bin_hi": 0.6058,
+      "n": 1,
+      "mean_h_cluster": 0.5509,
+      "true_error_rate": 0.0
+    }
+  ],
+  "ece": 0.14222,
+  "overall_error_rate": 0.0124,
+  "brier_score": 0.04287
+}

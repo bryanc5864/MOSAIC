@@ -1,0 +1,80 @@
+{
+  "n_bins": 10,
+  "dataset": "citeseq_pbmc",
+  "exp": "exp001_citeseq",
+  "bins": [
+    {
+      "bin_lo": 0.0,
+      "bin_hi": 0.0751,
+      "n": 267,
+      "mean_h_cluster": 0.0661,
+      "true_error_rate": 0.0
+    },
+    {
+      "bin_lo": 0.0751,
+      "bin_hi": 0.1503,
+      "n": 854,
+      "mean_h_cluster": 0.1204,
+      "true_error_rate": 0.0047
+    },
+    {
+      "bin_lo": 0.1503,
+      "bin_hi": 0.2254,
+      "n": 1027,
+      "mean_h_cluster": 0.1738,
+      "true_error_rate": 0.0039
+    },
+    {
+      "bin_lo": 0.2254,
+      "bin_hi": 0.3005,
+      "n": 535,
+      "mean_h_cluster": 0.2692,
+      "true_error_rate": 0.0168
+    },
+    {
+      "bin_lo": 0.3005,
+      "bin_hi": 0.3756,
+      "n": 193,
+      "mean_h_cluster": 0.329,
+      "true_error_rate": 0.1658
+    },
+    {
+      "bin_lo": 0.3756,
+      "bin_hi": 0.4508,
+      "n": 47,
+      "mean_h_cluster": 0.4085,
+      "true_error_rate": 0.2553
+    },
+    {
+      "bin_lo": 0.4508,
+      "bin_hi": 0.5259,
+      "n": 13,
+      "mean_h_cluster": 0.4657,
+      "true_error_rate": 0.3077
+    },
+    {
+      "bin_lo": 0.5259,
+      "bin_hi": 0.601,
+      "n": 7,
+      "mean_h_cluster": 0.5639,
+      "true_error_rate": 0.2857
+    },
+    {
+      "bin_lo": 0.601,
+      "bin_hi": 0.6761,
+      "n": 13,
+      "mean_h_cluster": 0.6478,
+      "true_error_rate": 0.5385
+    },
+    {
+      "bin_lo": 0.6761,
+      "bin_hi": 0.7513,
+      "n": 43,
+      "mean_h_cluster": 0.7134,
+      "true_error_rate": 0.5116
+    }
+  ],
+  "ece": 0.15962,
+  "overall_error_rate": 0.032,
+  "brier_score": 0.05244
+}
