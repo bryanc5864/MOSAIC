@@ -346,19 +346,26 @@ def fig3_missing_type() -> None:
         ax.set_title(f"{name}\nmean AUROC = {data['mean_auroc']:.3f}",
                      fontsize=FST, fontweight="bold")
         ax.grid(axis="x", alpha=0.3)
-        ax.legend(frameon=False, fontsize=FSG, loc="lower right")
+        # Legend on the UPPER-LEFT (lowest-AUROC bars are bottom of sorted list,
+        # highest are top; bars fill from right, so upper-left is empty space).
+        ax.legend(frameon=False, fontsize=FSG, loc="upper left")
+
+    # Leave room on the right for the shared colorbar so it does not overlap
+    # the CITE-seq panel bars.
+    plt.tight_layout(w_pad=3, rect=[0, 0, 0.93, 0.97])
 
     sm = ScalarMappable(cmap=ENT_CMAP, norm=Normalize(0, 1))
     sm.set_array([])
-    cbar = fig.colorbar(sm, ax=axes.tolist(), fraction=0.018, pad=0.02, shrink=0.75)
-    cbar.set_label(r"Absent-type $H_{\rm cluster}$ (normalized)", fontsize=FSG)
+    cbar_ax = fig.add_axes([0.945, 0.18, 0.012, 0.65])
+    cbar = fig.colorbar(sm, cax=cbar_ax)
+    cbar.set_label(r"Absent-type $H_{\rm cluster}$ (normalized)",
+                   fontsize=FSG, labelpad=10)
     cbar.ax.tick_params(labelsize=FSG)
 
     fig.suptitle(
         "Missing cell-type detection via cluster-resolved entropy\n"
         "(leave-one-cluster-out: cell absent from ATAC reference, flagged by RNA entropy)",
-        fontsize=FST, fontweight="bold", y=1.02)
-    plt.tight_layout(w_pad=3)
+        fontsize=FST, fontweight="bold", y=1.00)
     _save(fig, "fig3_missing_type_auroc")
     print("  [fig3] done")
 
