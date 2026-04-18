@@ -92,7 +92,7 @@ def main() -> int:
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.8))
 
     # LEFT: scatter colored by cluster (gray dots with alpha)
-    ax1.scatter(H, E, s=3, alpha=0.25, c="#3770B0", edgecolors="none")
+    ax1.scatter(H, E, s=3, alpha=0.25, c="#2c7fb8", edgecolors="none")
     ax1.set_xlabel("normalized alignment entropy H")
     ax1.set_ylabel("distance to true partner (aligned latent)")
     ax1.set_title(f"per-cell calibration\nSpearman rho = {rho:.3f} (p={pval:.1e}), n={len(H)}")
@@ -100,7 +100,7 @@ def main() -> int:
 
     # RIGHT: binned calibration curve with error bars
     ax2.errorbar(bin_H, bin_E, yerr=bin_Estd, marker="o", lw=1.5, capsize=3,
-                 color="#C03030")
+                 color="#e31a1c")
     ax2.set_xlabel("mean entropy per decile")
     ax2.set_ylabel("mean distance to true partner")
     ax2.set_title("binned calibration (10 entropy deciles)")
