@@ -1,4 +1,4 @@
-# MIT License - Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC
 """Fast, memory-efficient baselines for MOSAIC comparison.
 

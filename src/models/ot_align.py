@@ -1,4 +1,4 @@
-# MIT License - Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC
 """Entropic optimal transport alignment and per-cell alignment entropy.
 

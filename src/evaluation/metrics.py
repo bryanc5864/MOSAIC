@@ -1,4 +1,4 @@
-# MIT License - Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC
 """Evaluation metrics for single-cell multi-omics alignment.
 

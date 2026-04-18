@@ -1,4 +1,4 @@
-# MIT License — Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC
 """Dataset registry: URLs, sizes, and download helpers for the four paired
 multi-omics datasets used in MOSAIC benchmarking, plus the stretch Tabula

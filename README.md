@@ -1,8 +1,12 @@
 # Calibrated Per-Cell Uncertainty for Unpaired Single-Cell Multi-Omics Integration
 
-**Authors**: Bryan Cheng, Austin Jin, Joshua Chang, Brendan Lo  
-**License**: MIT  
+**Authors**: Anonymous (double-blind review)
+**License**: MIT
 **Submitted to**: Machine Learning for Healthcare (MLHC) 2026
+
+📄 **Paper**: [`mlhc_submission/main.pdf`](mlhc_submission/main.pdf) · LaTeX source in [`mlhc_submission/main.tex`](mlhc_submission/main.tex)
+
+> This repository is anonymized for double-blind review. Author, affiliation, and funding information will be added after the review period.
 
 ---
 
@@ -128,4 +132,4 @@ All three benchmarks are publicly released demonstration datasets from 10x Genom
 
 ## License
 
-MIT License — Copyright (c) 2026 Bryan Cheng, Austin Jin, Joshua Chang, Brendan Lo
+MIT License — Copyright (c) 2026 (authors anonymized for review)

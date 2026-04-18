@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# MIT License - Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC - uniPort baseline in isolated venv
 """Run uniPort as a baseline in a venv with numpy 1.x.
 

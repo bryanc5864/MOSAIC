@@ -1,4 +1,4 @@
-# MIT License - Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC
 """Minimal reimplementation of the SCOT v1 alignment algorithm.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# MIT License - Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC
 """Sweep Sinkhorn epsilon over the saved embeddings of an existing experiment.
 
