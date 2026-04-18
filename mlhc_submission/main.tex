@@ -11,6 +11,7 @@
 \def\set@curr@file#1{\def\@curr@file{#1}}
 \makeatother
 \usepackage{siunitx}
+\usepackage{url}
 
 \graphicspath{{figures/}}
 
@@ -336,6 +337,6 @@ Brain 5k & \textbf{0.001} & $\mathbf{0.049 \pm 0.002}$ & $\mathbf{0.962 \pm 0.00
 
 \subsection*{D. Compute and reproducibility}
 
-End-to-end wall time on a single NVIDIA RTX 3080 (16~GB): $\sim$120~s per immune run, $\sim$50~s per neural run, $\sim$95~s per proteomic run. Memory peak $\sim$8~GB at $5000\times5000$ cost matrix in float64. All random seeds are set deterministically (NumPy, PyTorch, cuDNN); multi-seed results are aggregated over seeds 0--9 (immune $\beta=0.001$) and seeds 0--2 (all other configurations). Code, configurations, and aggregate result files are publicly available.
+End-to-end wall time on a single NVIDIA RTX 3080 (16~GB): $\sim$120~s per immune run, $\sim$50~s per neural run, $\sim$95~s per proteomic run. Memory peak $\sim$8~GB at $5000\times5000$ cost matrix in float64. All random seeds are set deterministically (NumPy, PyTorch, cuDNN); multi-seed results are aggregated over seeds 0--9 (immune $\beta=0.001$) and seeds 0--2 (all other configurations). An anonymized release of the full codebase, configurations, experiment JSON files, and a \texttt{README} mapping each numeric claim in the paper to its source artifact is available at \url{https://anonymous.4open.science/r/MOSAIC-private-B0DD/} for the duration of review.
 
 \end{document}
