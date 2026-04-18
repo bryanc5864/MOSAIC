@@ -113,3 +113,29 @@ The most demanding test of whether cluster-resolved entropy is a calibrated unce
 | **Cross-tissue (PBMC RNA × Brain ATAC)** | **0.635 ± 0.133** | **no shared structure → high uncertainty** |
 
 The cross-tissue mean cluster entropy is **4.2× higher** than either within-dataset mean; no PBMC cell falls below the within-dataset 75th percentile of cluster entropy. Figure 6 shows the distribution: the within-dataset means (vertical lines) sit at the extreme left tail while the cross-tissue histogram is bimodal around H ≈ 0.55 and 0.75. This is the intended behavior of a calibrated per-cell uncertainty signal and is the strongest available test that cluster-resolved entropy is measuring alignment confidence rather than latent density or a learned constant. A miscalibrated UQ would report the same low entropies here as on real paired data; MOSAIC does not.
+
+## Clinical immunodeficiency simulation
+
+To establish MOSAIC's direct medical relevance, we simulated five immune disease states on the PBMC 10k dataset by removing specific immune cell populations from the ATAC modality and testing whether cluster-resolved entropy automatically flags RNA cells whose corresponding population is absent from the reference. This models a clinically realistic scenario: a patient's transcriptome is integrated against a healthy reference protein atlas, and MOSAIC's uncertainty signal identifies which cells have no phenotypic match.
+
+We mapped PBMC leiden clusters to clinical cell types by marker gene expression (CD8A/B for CD8 T cells, NCAM1/CD56 for NK cells, MS4A1/CD20 for B cells, CD14 for monocytes, FOXP3/IL2RA for Tregs) and designed five disease scenarios:
+
+Table 6: Clinical immunodeficiency simulation on PBMC 10k.
+
+| Disease scenario | Cell type (markers) | n cells | AUROC ↑ | H (absent) / H (present) |
+|---|---|---:|---:|---:|
+| CD8 T lymphopenia (post-transplant immunosuppression) | CD8A+/NKG7+/GNLY+ | 2411 | **0.965** | 3.9× |
+| NK cell deficiency (chronic viral immunosuppression) | CD56+/NCAM1+/GNLY+ | 490 | **0.967** | 4.4× |
+| B cell aplasia (post-rituximab / X-linked agammaglobulinemia) | MS4A1/CD20+ | 875 | **0.978** | 4.2× |
+| Monocytopenia (hairy cell leukemia / bone marrow failure) | CD14+/LYZ+ | 2725 | **0.974** | 4.8× |
+| Treg deficiency (autoimmune disease context) | FOXP3+/IL2RA+ | 141 | **0.877** | 3.2× |
+
+**Mean AUROC 0.952** (range 0.877–0.978). Entropy is 3.2–4.8× higher for RNA cells whose immune population is absent from the ATAC reference. The single weaker result — Treg deficiency (AUROC 0.877, n=141) — reflects the small cluster size and transcriptional proximity of Tregs to CD4 T cells. No disease-specific training or prior knowledge of which cell type is depleted is required; MOSAIC's entropy signal automatically identifies the perturbation.
+
+## Protein marker UQ analysis (CITE-seq)
+
+MOSAIC's cluster-resolved entropy applied to RNA + surface protein alignment identifies RNA cells whose transcriptome predicts an ambiguous surface phenotype — precisely the cells that challenge clinical flow cytometry gating. We analyzed the exp001_citeseq OT subsample (3000 cells) by comparing protein marker expression between high-entropy (top 10%) and low-entropy (bottom 10%) RNA cells.
+
+High-entropy cells express: CD3+ (pan-T), CD4+ (helper/Treg), CD45RO+ (memory T), CD8a+ (cytotoxic T) — T cell populations with complex, overlapping surface phenotypes that depend on activation state, memory status, and exhaustion markers. Low-entropy cells express: CD45RA+ (naive T / terminally differentiated NK), CD56+ (NK cells), CD16+ (NK/non-classical monocyte) — populations with distinct, single-marker surface phenotypes that map cleanly to transcriptomes.
+
+This pattern is biologically well-motivated. NK cells (CD56+) and naive T cells (CD45RA+) express canonical lineage markers that are both transcriptionally and proteomically well-defined. Memory T cells (CD45RO+, CD4+, CD8a+, PD-1+, TIGIT+) occupy a complex activation/differentiation landscape where surface protein co-expression patterns depend on factors not fully captured by transcriptome alone — explaining why MOSAIC's cluster-resolved entropy is systematically higher for these cells. MOSAIC's uncertainty signal provides a data-driven map of where transcriptome-proteome concordance is high vs. low, without any supervised annotation of "ambiguous" cell types.

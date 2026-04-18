@@ -1,0 +1,45 @@
+{
+  "dataset_id": "citeseq_pbmc",
+  "experiment": "exp001_citeseq_seed2",
+  "wall_time_sec": 45.73072552680969,
+  "rna_train": {
+    "ckpt": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_citeseq_seed2\\ckpt_rna.pt",
+    "embeddings": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_citeseq_seed2\\z_rna.npy",
+    "log": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_citeseq_seed2\\train_log_rna.json",
+    "best_val": 0.03831971064209938,
+    "best_epoch": 152,
+    "wall_time_sec": 23.107110500335693
+  },
+  "atac_train": {
+    "ckpt": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_citeseq_seed2\\ckpt_atac.pt",
+    "embeddings": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_citeseq_seed2\\z_atac.npy",
+    "log": "C:\\Users\\Maozer\\projects\\MOSAIC\\experiments\\exp001_citeseq_seed2\\train_log_atac.json",
+    "best_val": 0.075461370870471,
+    "best_epoch": 118,
+    "wall_time_sec": 14.972921371459961
+  },
+  "alignment": {
+    "epsilon": 0.05,
+    "ot_subsample_n": 3000,
+    "ot_subsample_of": 7856,
+    "procrustes": {
+      "n_clusters": 17,
+      "centroid_residual": 0.7384935266831342
+    }
+  },
+  "metrics": {
+    "foscttm": {
+      "foscttm_a_to_b": 0.0941596412056093,
+      "foscttm_b_to_a": 0.08014097808937709,
+      "foscttm_mean": 0.0871503096474932,
+      "n_paired": 7856
+    },
+    "label_transfer_rna_to_atac": 0.8813645621181263,
+    "label_transfer_atac_to_rna": 0.9377545824847251,
+    "joint_clustering_ari": 0.7545149190267574,
+    "entropy_error_corr": {
+      "spearman_rho": -0.2927622107513567,
+      "spearman_p": 2.2936011271195834e-60
+    }
+  }
+}

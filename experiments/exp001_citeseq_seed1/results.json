@@ -1,0 +1,30 @@
+{
+  "dataset_id": "citeseq_pbmc",
+  "experiment": "exp001_citeseq_seed1",
+  "wall_time_sec": 5.657442569732666,
+  "alignment": {
+    "epsilon": 0.05,
+    "ot_subsample_n": 3000,
+    "ot_subsample_of": 7856,
+    "procrustes": {
+      "n_clusters": 17,
+      "centroid_residual": 0.7210699530208812
+    }
+  },
+  "metrics": {
+    "foscttm": {
+      "foscttm_a_to_b": 0.09362783767911521,
+      "foscttm_b_to_a": 0.08780689262226117,
+      "foscttm_mean": 0.09071736515068819,
+      "n_paired": 7856
+    },
+    "label_transfer_rna_to_atac": 0.8682535641547862,
+    "label_transfer_atac_to_rna": 0.9544297352342159,
+    "joint_clustering_ari": 0.7521857857762341,
+    "entropy_error_corr": {
+      "spearman_rho": -0.2798116430901825,
+      "spearman_p": 4.3508238647483824e-55,
+      "n": 3000
+    }
+  }
+}
