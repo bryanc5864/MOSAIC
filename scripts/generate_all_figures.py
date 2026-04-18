@@ -51,42 +51,55 @@ from src.utils.paths import EXPERIMENTS_DIR, FIGURES_DIR, PROCESSED_DIR
 # Global style
 # ---------------------------------------------------------------------------
 
+FS  = 17   # base font
+FST = 19   # titles
+FSL = 17   # axis labels
+FSK = 15   # tick labels
+FSG = 14   # legend / annotations
+LW  = 2.2  # line width
+MS  = 9    # marker size
+
 STYLE = {
-    "font.family": "sans-serif",
-    "font.size": 13,
-    "axes.labelsize": 14,
-    "axes.titlesize": 14,
-    "xtick.labelsize": 12,
-    "ytick.labelsize": 12,
-    "legend.fontsize": 11,
+    "font.family": "DejaVu Sans",
+    "font.size": FS,
+    "axes.labelsize": FSL,
+    "axes.titlesize": FST,
+    "xtick.labelsize": FSK,
+    "ytick.labelsize": FSK,
+    "legend.fontsize": FSG,
     "figure.dpi": 120,
     "savefig.dpi": 300,
     "savefig.bbox": "tight",
     "axes.spines.top": False,
     "axes.spines.right": False,
-    "axes.linewidth": 1.0,
-    "lines.linewidth": 1.8,
-    "xtick.major.width": 0.8,
-    "ytick.major.width": 0.8,
+    "axes.linewidth": 1.3,
+    "lines.linewidth": LW,
+    "xtick.major.width": 1.1,
+    "ytick.major.width": 1.1,
+    "xtick.major.size": 5,
+    "ytick.major.size": 5,
+    "axes.titlepad": 10,
+    "axes.labelpad": 6,
 }
 plt.rcParams.update(STYLE)
 
-# Core palette
-BLUE    = "#2166ac"
-ORANGE  = "#d6604d"
-GREEN   = "#1a9641"
-PURPLE  = "#762a83"
-AMBER   = "#f4a582"
-TEAL    = "#4dac26"
-GREY    = "#636363"
+# ColorBrewer Set1 — maximally distinct for publications
+BLUE   = "#377eb8"
+RED    = "#e41a1c"
+GREEN  = "#4daf4a"
+PURPLE = "#984ea3"
+ORANGE = "#ff7f00"
+BROWN  = "#a65628"
+GREY   = "#999999"
+TEAL   = "#17becf"
 
-MOSAIC_BLUE = "#2166ac"
-MOSAIC_RED  = "#d6604d"
+MOSAIC_BLUE = BLUE
+MOSAIC_RED  = RED
 
-# Cell-type categorical palette (tab20 variant, consistent across datasets)
+# Cell-type categorical palette — tab20 for many clusters
 CELL_CMAP = plt.get_cmap("tab20")
 
-# Entropy colormap: white → gold → red (low → high uncertainty)
+# Entropy colormap: deep purple → yellow (plasma: low=purple, high=yellow)
 ENT_CMAP = matplotlib.colormaps["plasma"]
 
 
@@ -118,8 +131,8 @@ def _cluster_label_map(n: int) -> dict[str, str]:
 def _strip_ax(ax: plt.Axes) -> None:
     ax.set_xticks([])
     ax.set_yticks([])
-    ax.set_xlabel("UMAP 1", fontsize=11)
-    ax.set_ylabel("UMAP 2", fontsize=11)
+    ax.set_xlabel("UMAP 1", fontsize=FSG)
+    ax.set_ylabel("UMAP 2", fontsize=FSG)
 
 
 def _colorbar(fig: plt.Figure, ax: plt.Axes, cmap, vmin: float, vmax: float,
@@ -127,8 +140,8 @@ def _colorbar(fig: plt.Figure, ax: plt.Axes, cmap, vmin: float, vmax: float,
     sm = ScalarMappable(cmap=cmap, norm=Normalize(vmin=vmin, vmax=vmax))
     sm.set_array([])
     cbar = fig.colorbar(sm, ax=ax, fraction=0.046, pad=0.04, shrink=0.8)
-    cbar.set_label(label, fontsize=11)
-    cbar.ax.tick_params(labelsize=10)
+    cbar.set_label(label, fontsize=FSG)
+    cbar.ax.tick_params(labelsize=FSG - 1)
 
 
 # ---------------------------------------------------------------------------
@@ -158,46 +171,49 @@ def fig1_aligned_umap(exp_name: str, dataset_id: str, label: str) -> None:
     atac_emb = embed[len(Z_rna):]
     sub_emb = rna_emb[sub_idx]  # subsample cells that have H_cluster
 
-    fig = plt.figure(figsize=(20, 5.5))
-    gs = gridspec.GridSpec(1, 4, figure=fig, wspace=0.12)
+    fig = plt.figure(figsize=(26, 7))
+    gs = gridspec.GridSpec(1, 4, figure=fig, wspace=0.22)
     axes = [fig.add_subplot(gs[0, i]) for i in range(4)]
+    panel_labels = ["A", "B", "C", "D"]
 
     # Panels A & B — RNA and ATAC colored by cluster
-    for ax, emb, mod in [(axes[0], rna_emb, "RNA"), (axes[1], atac_emb, "ATAC")]:
+    for ax, emb, mod, pl in [(axes[0], rna_emb, "RNA", "A"),
+                              (axes[1], atac_emb, "ATAC", "B")]:
         for c in clusters:
             m = leiden == c
-            ax.scatter(emb[m, 0], emb[m, 1], s=1.5, alpha=0.55,
+            ax.scatter(emb[m, 0], emb[m, 1], s=2.5, alpha=0.6,
                        color=cl2col[c], rasterized=True)
         _strip_ax(ax)
-        ax.set_title(f"({mod}) colored by cluster", fontsize=13, pad=4)
+        ax.set_title(f"({pl}) {mod} — by cluster", fontsize=FST, pad=6)
 
     # Panel C — joint colored by cluster
     ax = axes[2]
     for c in clusters:
         m = leiden == c
-        ax.scatter(rna_emb[m, 0], rna_emb[m, 1], s=1.5, alpha=0.4,
-                   color=cl2col[c], rasterized=True, label=f"C{c}")
-        ax.scatter(atac_emb[m, 0], atac_emb[m, 1], s=1.5, alpha=0.4,
+        ax.scatter(rna_emb[m, 0], rna_emb[m, 1], s=2.5, alpha=0.45,
+                   color=cl2col[c], rasterized=True)
+        ax.scatter(atac_emb[m, 0], atac_emb[m, 1], s=2.5, alpha=0.45,
                    color=cl2col[c], rasterized=True, marker="^")
     _strip_ax(ax)
-    ax.set_title("Joint (●RNA / ▲ATAC)", fontsize=13, pad=4)
-    # Compact legend: first occurrence only
-    handles = [plt.scatter([], [], s=20, color=cl2col[c], label=f"C{c}")
-               for c in clusters[:min(n_cl, 12)]]
-    ax.legend(handles=handles, loc="lower left", markerscale=2,
-              frameon=False, ncol=2, fontsize=8, handlelength=0.8)
+    ax.set_title("(C) Joint  ●RNA / ▲ATAC", fontsize=FST, pad=6)
+    handles = [plt.scatter([], [], s=45, color=cl2col[c], label=f"C{c}")
+               for c in clusters[:min(n_cl, 20)]]
+    ax.legend(handles=handles, loc="lower left", markerscale=1.2,
+              frameon=True, framealpha=0.7, ncol=2,
+              fontsize=FSG - 1, handlelength=0.9, borderpad=0.4)
 
     # Panel D — subsample cells colored by H_cluster
     ax = axes[3]
     sc = ax.scatter(sub_emb[:, 0], sub_emb[:, 1], c=H_cluster,
                     cmap=ENT_CMAP, vmin=0, vmax=1,
-                    s=3, alpha=0.7, rasterized=True)
+                    s=5, alpha=0.85, rasterized=True)
     _strip_ax(ax)
-    ax.set_title(r"Alignment uncertainty $H_{\rm cluster}$", fontsize=13, pad=4)
+    ax.set_title(r"(D) Alignment uncertainty $H_{\rm cluster}$", fontsize=FST, pad=6)
     _colorbar(fig, ax, ENT_CMAP, 0, 1, r"$H_{\rm cluster}$")
 
-    fig.suptitle(f"MOSAIC: Aligned latent space — {label}", fontsize=15,
-                 fontweight="bold", y=1.01)
+    fig.suptitle(f"MOSAIC aligned latent — {label}", fontsize=FST + 2,
+                 fontweight="bold", y=1.02)
+    plt.tight_layout(pad=1.5)
     _save(fig, f"fig1_aligned_latent_{dataset_id}")
     print(f"  [fig1] done {dataset_id}")
 
@@ -229,55 +245,53 @@ def fig2_entropy_comparison(exp_name: str, dataset_id: str, label: str) -> None:
     embed = _umap_embed(joint, n_neighbors=30, min_dist=0.3)
     sub_emb = embed[:len(Z_rna)][sub_idx]
 
-    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(22, 7))
 
     # Panel A: cell-level (wrong sign)
     ax = axes[0]
-    density = np.zeros(len(H_cell))  # dummy for alpha-like scatter
-    sc = ax.scatter(H_cell, errs, c=errs, cmap="RdYlGn_r",
-                    s=3, alpha=0.35, rasterized=True)
-    ax.set_xlabel(r"Cell-level row entropy $H_{\rm cell}$", fontsize=13)
-    ax.set_ylabel("Distance to true partner", fontsize=13)
-    ax.set_title(
-        f"(A) Cell-level entropy\n"
-        r"Spearman $\rho$ = " + f"{rho_cell:.3f}  ← anti-correlates",
-        fontsize=13, color=MOSAIC_RED)
-    # Add trend line
+    ax.scatter(H_cell, errs, c=errs, cmap="RdYlGn_r",
+               s=5, alpha=0.30, rasterized=True)
+    ax.set_xlabel(r"Cell-level row entropy $H_{\rm cell}$")
+    ax.set_ylabel("Distance to true partner")
     m, b = np.polyfit(H_cell, errs, 1)
     xl = np.array([H_cell.min(), H_cell.max()])
-    ax.plot(xl, m * xl + b, color=MOSAIC_RED, lw=2, alpha=0.9)
-    ax.grid(alpha=0.25)
+    ax.plot(xl, m * xl + b, color=RED, lw=3, alpha=0.95, zorder=5)
+    ax.set_title(
+        r"(A) Cell-level entropy  [WRONG SIGN]" + f"\nSpearman ρ = {rho_cell:.3f}",
+        color=RED)
+    ax.text(0.97, 0.05, "← anti-correlates with error", transform=ax.transAxes,
+            ha="right", va="bottom", fontsize=FSG, color=RED, style="italic")
+    ax.grid(alpha=0.2)
 
     # Panel B: cluster-level (correct sign)
     ax = axes[1]
     ax.scatter(H_cluster, errs, c=errs, cmap="RdYlGn_r",
-               s=3, alpha=0.35, rasterized=True)
-    ax.set_xlabel(r"Cluster-resolved $H_{\rm cluster}$", fontsize=13)
-    ax.set_ylabel("Distance to true partner", fontsize=13)
-    ax.set_title(
-        f"(B) Cluster-resolved entropy\n"
-        r"Spearman $\rho$ = " + f"{rho_cluster:.3f}  ← positive",
-        fontsize=13, color=MOSAIC_BLUE)
+               s=5, alpha=0.30, rasterized=True)
+    ax.set_xlabel(r"Cluster-resolved $H_{\rm cluster}$")
+    ax.set_ylabel("Distance to true partner")
     m2, b2 = np.polyfit(H_cluster, errs, 1)
     xl2 = np.array([H_cluster.min(), H_cluster.max()])
-    ax.plot(xl2, m2 * xl2 + b2, color=MOSAIC_BLUE, lw=2, alpha=0.9)
-    ax.grid(alpha=0.25)
+    ax.plot(xl2, m2 * xl2 + b2, color=BLUE, lw=3, alpha=0.95, zorder=5)
+    ax.set_title(
+        r"(B) Cluster-resolved entropy  [CORRECT]" + f"\nSpearman ρ = {rho_cluster:.3f}",
+        color=BLUE)
+    ax.text(0.97, 0.95, "↑ correlates with error", transform=ax.transAxes,
+            ha="right", va="top", fontsize=FSG, color=BLUE, style="italic")
+    ax.grid(alpha=0.2)
 
     # Panel C: UMAP spatial heatmap
     ax = axes[2]
-    sc = ax.scatter(sub_emb[:, 0], sub_emb[:, 1], c=H_cluster,
-                    cmap=ENT_CMAP, vmin=0, vmax=1,
-                    s=4, alpha=0.75, rasterized=True)
+    ax.scatter(sub_emb[:, 0], sub_emb[:, 1], c=H_cluster,
+               cmap=ENT_CMAP, vmin=0, vmax=1,
+               s=7, alpha=0.85, rasterized=True)
     _strip_ax(ax)
-    ax.set_title(
-        r"(C) $H_{\rm cluster}$ spatial distribution" + "\n(UMAP of aligned latent)",
-        fontsize=13)
+    ax.set_title(r"(C) $H_{\rm cluster}$ on UMAP" + "\n(spatial uncertainty map)")
     _colorbar(fig, ax, ENT_CMAP, 0, 1, r"$H_{\rm cluster}$")
 
     fig.suptitle(
-        f"Entropy miscalibration and fix — {label}", fontsize=15,
-        fontweight="bold", y=1.01)
-    plt.tight_layout()
+        f"Entropy miscalibration and fix — {label}",
+        fontsize=FST + 2, fontweight="bold", y=1.02)
+    plt.tight_layout(pad=1.8)
     _save(fig, f"fig2_entropy_comparison_{dataset_id}")
     print(f"  [fig2] done {dataset_id}")
 
@@ -293,7 +307,7 @@ def fig3_missing_type() -> None:
         ("CITE-seq", "exp001_citeseq", PURPLE),
     ]
 
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5.5), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(22, 8), sharey=False)
 
     for ax, (name, exp, color) in zip(axes, configs):
         path = EXPERIMENTS_DIR / exp / "exp003_missing_type.json"
@@ -307,43 +321,42 @@ def fig3_missing_type() -> None:
         clusters = [p["target_cluster"] for p in per]
         aurocs = [p["auroc_cluster_entropy"] for p in per]
         h_target = [p.get("mean_entropy_target", 0) for p in per]
-        h_other = [p.get("mean_entropy_other", 0) for p in per]
 
         order = np.argsort(aurocs)[::-1]
         clusters_s = [clusters[i] for i in order]
         aurocs_s = [aurocs[i] for i in order]
         h_t_s = [h_target[i] for i in order]
 
-        # Color bars by entropy level of the absent cluster
         h_norm = np.array(h_t_s)
         h_norm = (h_norm - h_norm.min()) / (h_norm.max() - h_norm.min() + 1e-9)
         bar_colors = [ENT_CMAP(v) for v in h_norm]
 
-        bars = ax.barh(range(len(aurocs_s))[::-1], aurocs_s,
-                       color=bar_colors, edgecolor="white", linewidth=0.5)
-        ax.axvline(0.5, color="grey", linestyle="--", lw=1.2, label="chance")
-        ax.axvline(np.mean(aurocs_s), color=color, linestyle="-", lw=2,
-                   label=f"mean={np.mean(aurocs_s):.3f}", alpha=0.9)
-        ax.set_yticks(range(len(clusters_s))[::-1])
-        ax.set_yticklabels([f"C{c}" for c in clusters_s], fontsize=9)
-        ax.set_xlim(0.45, 1.02)
-        ax.set_xlabel("AUROC")
-        ax.set_title(f"{name}\nmean AUROC = {data['mean_auroc']:.3f}", fontsize=13)
+        n = len(aurocs_s)
+        ax.barh(range(n)[::-1], aurocs_s,
+                color=bar_colors, edgecolor="white", linewidth=0.7, height=0.75)
+        ax.axvline(0.5, color=GREY, linestyle="--", lw=2, label="Chance")
+        ax.axvline(np.mean(aurocs_s), color=color, linestyle="-", lw=2.5,
+                   label=f"Mean = {np.mean(aurocs_s):.3f}", alpha=0.95)
+        ax.set_yticks(range(n)[::-1])
+        ax.set_yticklabels([f"C{c}" for c in clusters_s], fontsize=FSK)
+        ax.set_xlim(0.4, 1.05)
+        ax.set_xlabel("AUROC", fontsize=FSL)
+        ax.set_title(f"{name}\nmean AUROC = {data['mean_auroc']:.3f}",
+                     fontsize=FST, fontweight="bold")
         ax.grid(axis="x", alpha=0.3)
-        ax.legend(frameon=False, fontsize=9, loc="lower right")
+        ax.legend(frameon=False, fontsize=FSG, loc="lower right")
 
-    # Shared colorbar for entropy level
     sm = ScalarMappable(cmap=ENT_CMAP, norm=Normalize(0, 1))
     sm.set_array([])
-    cbar = fig.colorbar(sm, ax=axes.tolist(), fraction=0.02, pad=0.02, shrink=0.8)
-    cbar.set_label(r"$H_{\rm cluster}$ of absent type (normalized)", fontsize=11)
-    cbar.ax.tick_params(labelsize=10)
+    cbar = fig.colorbar(sm, ax=axes.tolist(), fraction=0.018, pad=0.02, shrink=0.75)
+    cbar.set_label(r"Absent-type $H_{\rm cluster}$ (normalized)", fontsize=FSG)
+    cbar.ax.tick_params(labelsize=FSG)
 
     fig.suptitle(
-        "Missing cell type detection via cluster-resolved entropy\n"
-        "(leave-one-cluster-out: absent from ATAC reference, flagged by RNA entropy)",
-        fontsize=14, fontweight="bold", y=1.02)
-    plt.tight_layout()
+        "Missing cell-type detection via cluster-resolved entropy\n"
+        "(leave-one-cluster-out: cell absent from ATAC reference, flagged by RNA entropy)",
+        fontsize=FST, fontweight="bold", y=1.02)
+    plt.tight_layout(w_pad=3)
     _save(fig, "fig3_missing_type_auroc")
     print("  [fig3] done")
 
@@ -393,10 +406,10 @@ def fig4_baselines() -> None:
         return raw
 
     # Build value table: rows = methods, cols = metrics, for each dataset
-    methods = ["MOSAIC (ours)", "NN on IB\n(no OT)", "SCOT\n(GW-OT)", "Raw PCA/LSI"]
-    method_colors = [MOSAIC_BLUE, GREEN, ORANGE, GREY]
+    methods = ["MOSAIC\n(ours)", "NN on IB\n(no OT)", "SCOT\n(GW-OT)", "Raw\nPCA/LSI"]
+    method_colors = [BLUE, GREEN, ORANGE, GREY]
 
-    fig, axes = plt.subplots(3, 4, figsize=(18, 13), sharey=False)
+    fig, axes = plt.subplots(3, 4, figsize=(22, 16), sharey=False)
 
     for row_i, (ds_name, mosaic_agg, scot_m, nn_m, raw_m) in enumerate([
         ("PBMC 10k (18 clusters)", pbmc_agg, pbmc_scot, pbmc_nn, pbmc_raw),
@@ -469,24 +482,23 @@ def fig4_baselines() -> None:
                           yerr=stds, capsize=4,
                           error_kw={"elinewidth": 1.2, "ecolor": "#333333"})
             ax.set_xticks(x)
-            ax.set_xticklabels(methods, rotation=25, ha="right", fontsize=9)
-            ax.set_ylim(0, 1.08)
+            ax.set_xticklabels(methods, rotation=30, ha="right", fontsize=FSK)
+            ax.set_ylim(0, 1.14)
             ax.grid(axis="y", alpha=0.3)
             if col_i == 0:
-                ax.set_ylabel(ds_name, fontsize=12, fontweight="bold")
+                ax.set_ylabel(ds_name, fontsize=FSL, fontweight="bold")
             if row_i == 0:
-                ax.set_title(ax_title, fontsize=13)
+                ax.set_title(ax_title, fontsize=FST)
 
-            # Annotate MOSAIC bar with value
             if not np.isnan(vals[0]):
-                ax.text(0, vals[0] + stds[0] + 0.02, f"{vals[0]:.3f}",
-                        ha="center", va="bottom", fontsize=9, color=MOSAIC_BLUE,
+                ax.text(0, vals[0] + stds[0] + 0.025, f"{vals[0]:.3f}",
+                        ha="center", va="bottom", fontsize=FSG, color=BLUE,
                         fontweight="bold")
 
-    fig.suptitle("MOSAIC vs baselines across three datasets\n"
-                 "(MOSAIC bars: mean±std over multiple seeds; baselines: single-seed)",
-                 fontsize=14, fontweight="bold", y=1.01)
-    plt.tight_layout(h_pad=2.5, w_pad=1.5)
+    fig.suptitle("MOSAIC vs baselines — three datasets\n"
+                 "(MOSAIC: mean ± std across seeds; baselines: single-seed)",
+                 fontsize=FST + 1, fontweight="bold", y=1.01)
+    plt.tight_layout(h_pad=3.5, w_pad=2.0)
     _save(fig, "fig4_baselines_both")
     print("  [fig4] done")
 
@@ -518,7 +530,7 @@ def fig5_beta_tradeoff() -> None:
     pbmc_keys = ["PBMC β=0.01", "PBMC β=0.001"]
     brain_keys = ["Brain β=0.01", "Brain β=0.001"]
 
-    fig, axes = plt.subplots(1, 4, figsize=(18, 5))
+    fig, axes = plt.subplots(1, 4, figsize=(22, 7))
 
     for ax, (title, key, higher) in zip(axes, metrics):
         p_vals = [data[k].get(key, float("nan")) if k in data else float("nan")
@@ -531,30 +543,30 @@ def fig5_beta_tradeoff() -> None:
                   for k in brain_keys]
 
         x = np.arange(2)
-        w = 0.35
-        ax.bar(x - w/2, p_vals, w, yerr=p_std, capsize=5,
-               label="PBMC 10k", color=MOSAIC_BLUE, edgecolor="white",
-               error_kw={"elinewidth":1.2, "ecolor":"#333"})
-        ax.bar(x + w/2, b_vals, w, yerr=b_std, capsize=5,
-               label="Brain 5k", color=GREEN, edgecolor="white",
-               error_kw={"elinewidth":1.2, "ecolor":"#333"})
+        w = 0.38
+        ax.bar(x - w/2, p_vals, w, yerr=p_std, capsize=7,
+               label="PBMC 10k", color=BLUE, edgecolor="white", linewidth=0.5,
+               error_kw={"elinewidth": LW, "ecolor": "#222"})
+        ax.bar(x + w/2, b_vals, w, yerr=b_std, capsize=7,
+               label="Brain 5k", color=GREEN, edgecolor="white", linewidth=0.5,
+               error_kw={"elinewidth": LW, "ecolor": "#222"})
 
         if not higher:
             ax.invert_yaxis()
-            ax.set_title(f"{title}\n(inverted: lower is better)", fontsize=12)
+            ax.set_title(f"{title}\n(inverted: lower=better)", fontsize=FST)
         else:
-            ax.set_title(title, fontsize=12)
+            ax.set_title(title, fontsize=FST)
 
         ax.set_xticks(x)
-        ax.set_xticklabels(beta_labels)
+        ax.set_xticklabels(beta_labels, fontsize=FSK)
         ax.grid(axis="y", alpha=0.3)
         if ax is axes[0]:
-            ax.legend(frameon=False, fontsize=10)
+            ax.legend(frameon=False, fontsize=FSG)
 
     fig.suptitle(
-        "MOSAIC: IB regularization strength — β=0.001 generalizes better\n"
+        "MOSAIC: IB regularization strength  —  β=0.001 generalizes better\n"
         "(multi-seed mean ± std; PBMC: 10 seeds, Brain: 3 seeds)",
-        fontsize=14, fontweight="bold", y=1.01)
+        fontsize=FST, fontweight="bold", y=1.02)
     plt.tight_layout()
     _save(fig, "fig5_beta_tradeoff")
     print("  [fig5] done")
@@ -588,7 +600,7 @@ def fig6_cross_tissue() -> None:
             fig6_json = json.load(f)
         break
 
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    fig, axes = plt.subplots(1, 2, figsize=(16, 7))
 
     # Panel A: histogram comparison
     ax = axes[0]
@@ -611,9 +623,9 @@ def fig6_cross_tissue() -> None:
     else:
         ax.set_title("Within-dataset $H_{\\rm cluster}$ distribution", fontsize=13)
 
-    ax.set_xlabel(r"$H_{\rm cluster}$", fontsize=13)
-    ax.set_ylabel("Density", fontsize=13)
-    ax.legend(frameon=False)
+    ax.set_xlabel(r"$H_{\rm cluster}$")
+    ax.set_ylabel("Density")
+    ax.legend(frameon=False, fontsize=FSG)
     ax.grid(alpha=0.25)
 
     # Panel B: box/violin comparison (bootstrap within vs cross)
@@ -648,13 +660,13 @@ def fig6_cross_tissue() -> None:
         ax.set_title(f"Negative control confirms\nalignment uncertainty signal\n"
                      f"(4.2× elevation, p<10⁻⁵⁰)", fontsize=13)
 
-    ax.set_ylabel(r"$H_{\rm cluster}$", fontsize=13)
+    ax.set_ylabel(r"$H_{\rm cluster}$")
     ax.grid(axis="y", alpha=0.25)
 
     fig.suptitle(
         "Cross-tissue negative control: PBMC RNA × Mouse Brain ATAC\n"
         "High entropy when nothing truly aligns confirms signal validity",
-        fontsize=14, fontweight="bold", y=1.01)
+        fontsize=FST, fontweight="bold", y=1.02)
     plt.tight_layout()
     _save(fig, "fig6_cross_tissue_negative_control")
     print("  [fig6] done")
@@ -672,7 +684,7 @@ def fig7_calibration() -> None:
         (r"CITE-seq",            "exp001_citeseq",           PURPLE),
     ]
 
-    fig, axes = plt.subplots(1, 4, figsize=(18, 5))
+    fig, axes = plt.subplots(1, 4, figsize=(22, 7))
     perfect = np.linspace(0, 1, 100)
 
     for ax, (name, exp, color) in zip(axes, configs):
@@ -691,32 +703,31 @@ def fig7_calibration() -> None:
         y = np.array([b["true_error_rate"] for b in bins])
         n = np.array([b.get("n_cells", 1) for b in bins])
 
-        ax.plot(perfect, perfect, color="grey", lw=1.5,
-                linestyle="--", label="Perfect calibration", alpha=0.7)
+        ax.plot(perfect, perfect, color=GREY, lw=2.0,
+                linestyle="--", label="Perfect", alpha=0.8)
         ax.fill_between(perfect, perfect - 0.1, perfect + 0.1,
-                        alpha=0.08, color="grey")
+                        alpha=0.10, color=GREY)
 
-        ax.plot(x, y, "o-", color=color, lw=2.2, markersize=7,
+        ax.plot(x, y, "o-", color=color, lw=LW + 0.5, markersize=MS + 1,
                 label="Observed", zorder=5)
-        # Size dots by population density
-        ax.scatter(x, y, s=n / n.max() * 120 + 20, color=color,
-                   alpha=0.8, zorder=6, edgecolors="white", lw=0.7)
+        ax.scatter(x, y, s=n / n.max() * 180 + 40, color=color,
+                   alpha=0.9, zorder=6, edgecolors="white", lw=1.0)
 
         ece = d.get("ece", float("nan"))
         brier = d.get("brier_score", float("nan"))
-        ax.set_title(f"{name}\nECE = {ece:.3f} | Brier = {brier:.3f}", fontsize=12)
-        ax.set_xlabel(r"Mean $H_{\rm cluster}$ (per decile)", fontsize=12)
+        ax.set_title(f"{name}\nECE={ece:.3f}  Brier={brier:.3f}", fontsize=FST)
+        ax.set_xlabel(r"Mean $H_{\rm cluster}$ (per decile)")
         if ax is axes[0]:
-            ax.set_ylabel("Observed error rate", fontsize=12)
-        ax.set_xlim(-0.02, 1.02)
-        ax.set_ylim(-0.02, 1.02)
+            ax.set_ylabel("Observed error rate")
+        ax.set_xlim(-0.03, 1.03)
+        ax.set_ylim(-0.03, 1.03)
         ax.grid(alpha=0.25)
-        ax.legend(frameon=False, fontsize=9)
+        ax.legend(frameon=False, fontsize=FSG)
 
     fig.suptitle(
-        r"Calibration: $H_{\rm cluster}$ as a predictor of alignment error" + "\n"
-        "(dot size ∝ bin population; shaded band = ±0.1 from perfect)",
-        fontsize=14, fontweight="bold", y=1.01)
+        r"Calibration: $H_{\rm cluster}$ predicts alignment error" + "\n"
+        "(dot size ∝ bin population; grey band = ±0.1 from perfect)",
+        fontsize=FST, fontweight="bold", y=1.02)
     plt.tight_layout()
     _save(fig, "fig7_calibration_curves")
     print("  [fig7] done")
@@ -753,7 +764,7 @@ def fig8_disease_simulation() -> None:
     with ns_path.open() as f:
         ns = json.load(f)
 
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+    fig, axes = plt.subplots(1, 2, figsize=(22, 8))
 
     for ax, data, title, color, dataset_label in [
         (axes[0], cs, "Immune disease (PBMC 10k)", MOSAIC_BLUE, "PBMC"),
@@ -782,20 +793,20 @@ def fig8_disease_simulation() -> None:
         # Annotate with AUROC and H_ratio
         for i, (au, ratio) in enumerate(zip(aurocs, ratios)):
             ax.text(au + 0.003, i, f"{au:.3f}  ({ratio:.1f}×)",
-                    va="center", ha="left", fontsize=9.5,
+                    va="center", ha="left", fontsize=FSG,
                     color="#333333")
 
         ax.axvline(0.5, color="grey", linestyle="--", lw=1.2, alpha=0.7, label="Chance")
-        ax.axvline(data["mean_auroc"], color=color, lw=2, linestyle="-",
+        ax.axvline(data["mean_auroc"], color=color, lw=LW, linestyle="-",
                    label=f"Mean = {data['mean_auroc']:.3f}", alpha=0.9)
         ax.set_yticks(y)
-        ax.set_yticklabels(names, fontsize=10)
-        ax.set_xlim(0.45, 1.08)
-        ax.set_xlabel("AUROC (detecting absent cell type via $H_{\\rm cluster}$)", fontsize=12)
-        ax.set_title(f"{title}\nmean AUROC = {data['mean_auroc']:.3f}", fontsize=13,
+        ax.set_yticklabels(names, fontsize=FSK)
+        ax.set_xlim(0.45, 1.12)
+        ax.set_xlabel("AUROC (detecting absent cell type via $H_{\\rm cluster}$)", fontsize=FSL)
+        ax.set_title(f"{title}\nmean AUROC = {data['mean_auroc']:.3f}", fontsize=FST,
                      fontweight="bold")
         ax.grid(axis="x", alpha=0.3)
-        ax.legend(frameon=False, fontsize=10, loc="lower right")
+        ax.legend(frameon=False, fontsize=FSG, loc="lower right")
 
     # Shared colorbar for H_ratio
     sm = ScalarMappable(cmap="YlOrRd",
@@ -804,13 +815,13 @@ def fig8_disease_simulation() -> None:
                             max(s.get("entropy_ratio",1) for s in ns["scenarios"]))))
     sm.set_array([])
     cbar = fig.colorbar(sm, ax=axes.tolist(), fraction=0.015, pad=0.02, shrink=0.7)
-    cbar.set_label(r"$H_{\rm cluster}$ ratio (absent / present)", fontsize=11)
-    cbar.ax.tick_params(labelsize=10)
+    cbar.set_label(r"$H_{\rm cluster}$ ratio (absent / present)", fontsize=FSG)
+    cbar.ax.tick_params(labelsize=FSK)
 
     fig.suptitle(
         "Disease simulation: cluster-resolved entropy detects absent cell populations\n"
         "(leave-one-out: cell type absent from ATAC reference, detected by RNA alignment entropy)",
-        fontsize=14, fontweight="bold", y=1.01)
+        fontsize=FST, fontweight="bold", y=1.01)
     plt.tight_layout()
     _save(fig, "fig8_disease_simulation")
     print("  [fig8] done")
@@ -842,21 +853,21 @@ def fig9_protein_uq() -> None:
     colors = [MOSAIC_RED if u else MOSAIC_BLUE for u in uncertain]
     y = np.arange(len(names))
 
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6.5))
+    fig, axes = plt.subplots(1, 2, figsize=(22, 9))
 
     # Panel A: bar chart of expression diff
     ax = axes[0]
     bars = ax.barh(y, diffs, color=colors, edgecolor="white", linewidth=0.6, height=0.65)
     ax.axvline(0, color="grey", lw=1.0)
     ax.set_yticks(y)
-    ax.set_yticklabels(names, fontsize=11)
-    ax.set_xlabel("Mean expression difference\n(high uncertainty − low uncertainty cells)", fontsize=12)
-    ax.set_title("(A) Protein marker expression\nin high- vs low-uncertainty cells", fontsize=13)
+    ax.set_yticklabels(names, fontsize=FSK)
+    ax.set_xlabel("Mean expression difference\n(high uncertainty − low uncertainty cells)", fontsize=FSL)
+    ax.set_title("(A) Protein marker expression\nin high- vs low-uncertainty cells", fontsize=FST)
 
     from matplotlib.patches import Patch
     ax.legend(handles=[Patch(color=MOSAIC_RED, label="Higher in uncertain"),
                        Patch(color=MOSAIC_BLUE, label="Lower in uncertain")],
-              frameon=False, fontsize=10, loc="lower right")
+              frameon=False, fontsize=FSG, loc="lower right")
     ax.grid(axis="x", alpha=0.3)
 
     # Panel B: significance (–log10 p-value) colored by direction
@@ -866,16 +877,16 @@ def fig9_protein_uq() -> None:
     ax.axvline(2, color="grey", linestyle="--", lw=1.2, alpha=0.7,
                label="p=0.01 threshold")
     ax.set_yticks(y)
-    ax.set_yticklabels(names, fontsize=11)
-    ax.set_xlabel("–log₁₀(Mann-Whitney p-value)", fontsize=12)
-    ax.set_title("(B) Statistical significance\n(all markers, p<0.01 threshold)", fontsize=13)
-    ax.legend(frameon=False, fontsize=10)
+    ax.set_yticklabels(names, fontsize=FSK)
+    ax.set_xlabel("–log₁₀(Mann-Whitney p-value)", fontsize=FSL)
+    ax.set_title("(B) Statistical significance\n(all markers, p<0.01 threshold)", fontsize=FST)
+    ax.legend(frameon=False, fontsize=FSG)
     ax.grid(axis="x", alpha=0.3)
 
     fig.suptitle(
         "CITE-seq protein UQ: which surface markers characterize\n"
         "cells with high vs low alignment uncertainty",
-        fontsize=14, fontweight="bold", y=1.01)
+        fontsize=FST, fontweight="bold", y=1.01)
     plt.tight_layout()
     _save(fig, "fig9_protein_uq")
     print("  [fig9] done")
@@ -920,7 +931,7 @@ def fig10_checkpoint_immunotherapy() -> None:
     cd3 = _get_marker("CD3_TotalSeqB")
     cd127 = _get_marker("CD127_TotalSeqB")
 
-    fig, axes = plt.subplots(2, 3, figsize=(18, 11))
+    fig, axes = plt.subplots(2, 3, figsize=(24, 14))
 
     def _violin_compare(ax, h_a, h_b, label_a, label_b, title, pval):
         valid_a = h_a[~np.isnan(h_a)]
@@ -936,9 +947,9 @@ def fig10_checkpoint_immunotherapy() -> None:
 
         ax.set_xticks([0, 1])
         ax.set_xticklabels([f"{label_a}\n(n={len(valid_a)})",
-                            f"{label_b}\n(n={len(valid_b)})"], fontsize=10)
-        ax.set_ylabel(r"$H_{\rm cluster}$", fontsize=12)
-        ax.set_title(title, fontsize=12)
+                            f"{label_b}\n(n={len(valid_b)})"], fontsize=FSK)
+        ax.set_ylabel(r"$H_{\rm cluster}$", fontsize=FSL)
+        ax.set_title(title, fontsize=FST)
         ax.grid(axis="y", alpha=0.3)
 
         # Significance annotation
@@ -947,7 +958,7 @@ def fig10_checkpoint_immunotherapy() -> None:
         ax.annotate("", xy=(1, y_max * 1.05), xytext=(0, y_max * 1.05),
                     arrowprops=dict(arrowstyle="-", color="black", lw=1.5))
         ax.text(0.5, y_max * 1.08, f"{sig}\np={pval:.1e}",
-                ha="center", va="bottom", fontsize=10)
+                ha="center", va="bottom", fontsize=FSG)
 
     # Panel 1: PD-1 high vs low
     if pd1 is not None:
@@ -1028,17 +1039,17 @@ def fig10_checkpoint_immunotherapy() -> None:
         ax.bar(x + w/2, means_low, w, color=MOSAIC_BLUE, label="Low checkpoint / fresh",
                edgecolor="white", linewidth=0.7)
         ax.set_xticks(x)
-        ax.set_xticklabels(analysis_labels, rotation=20, ha="right", fontsize=9)
-        ax.set_ylabel(r"Mean $H_{\rm cluster}$", fontsize=12)
-        ax.set_title("Summary: checkpoint markers\npredict alignment uncertainty", fontsize=12)
-        ax.legend(frameon=False, fontsize=9)
+        ax.set_xticklabels(analysis_labels, rotation=20, ha="right", fontsize=FSK)
+        ax.set_ylabel(r"Mean $H_{\rm cluster}$", fontsize=FSL)
+        ax.set_title("Summary: checkpoint markers\npredict alignment uncertainty", fontsize=FST)
+        ax.legend(frameon=False, fontsize=FSG)
         ax.grid(axis="y", alpha=0.3)
 
     fig.suptitle(
         "Immune checkpoint immunotherapy: alignment uncertainty in exhausted T cells\n"
         r"(CITE-seq; higher $H_{\rm cluster}$ = transcriptome–proteome discordance for immunotherapy targets)",
-        fontsize=14, fontweight="bold", y=1.01)
-    plt.tight_layout(h_pad=3.5, w_pad=2.0)
+        fontsize=FST, fontweight="bold", y=1.01)
+    plt.tight_layout(h_pad=4.0, w_pad=2.5)
     _save(fig, "fig10_checkpoint_immunotherapy")
     print("  [fig10] done")
 
