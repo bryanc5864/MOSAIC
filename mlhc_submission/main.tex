@@ -14,6 +14,17 @@
 
 \graphicspath{{figures/}}
 
+% Enlarge captions and float spacing for readability
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf,skip=6pt}
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\bottomfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.80}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+
 \theorembodyfont{\upshape}
 \theoremheaderfont{\scshape}
 \theorempostheader{:}
@@ -123,18 +134,18 @@ We evaluate on three publicly available benchmarks that collectively span immune
 \section{Results}
 \label{sec:results}
 
-\begin{figure}[t]
+\begin{figure}[tbp]
   \centering
-  \begin{minipage}[b]{0.48\textwidth}
+  \begin{minipage}[b]{0.495\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{fig1_aligned_latent_pbmc10k_multiome.png}\\
-    \small (a) PBMC 10x Multiome
+    \includegraphics[width=\linewidth]{fig1_aligned_latent_pbmc10k_multiome.png}\\[2pt]
+    {\normalsize (a) PBMC 10x Multiome}
   \end{minipage}%
   \hfill
-  \begin{minipage}[b]{0.48\textwidth}
+  \begin{minipage}[b]{0.495\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{fig1_aligned_latent_brain3k_multiome.png}\\
-    \small (b) E18 mouse brain 5k Multiome
+    \includegraphics[width=\linewidth]{fig1_aligned_latent_brain3k_multiome.png}\\[2pt]
+    {\normalsize (b) E18 mouse brain 5k Multiome}
   \end{minipage}
   \caption{UMAP of the aligned joint latent (RNA $\cup$ ATAC). After Procrustes rotation, cells of the same type from both modalities co-localize, with cell-type structure preserved.}
   \label{fig:latent}
@@ -175,9 +186,9 @@ Fig.~\ref{fig:latent} shows UMAP projections of the concatenated post-Procrustes
 }
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[tbp]
   \centering
-  \includegraphics[width=0.85\textwidth]{fig4_baselines_both.png}
+  \includegraphics[width=\textwidth]{fig4_baselines_both.png}
   \caption{Baseline comparison on PBMC and Brain. \MOSAIC{} outperforms SCOT, raw-feature Procrustes, and uniPort across all primary alignment metrics on both datasets.}
   \label{fig:baselines}
 \end{figure}
@@ -200,18 +211,18 @@ Brain 5k & \textbf{0.001} & $\mathbf{0.049 \pm 0.002}$ & $\mathbf{0.962 \pm 0.00
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[tbp]
   \centering
-  \begin{minipage}[b]{0.48\textwidth}
+  \begin{minipage}[b]{0.495\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{fig2_entropy_comparison_pbmc10k_multiome.png}\\
-    \small (a) PBMC 10k
+    \includegraphics[width=\linewidth]{fig2_entropy_comparison_pbmc10k_multiome.png}\\[2pt]
+    {\normalsize (a) PBMC 10k}
   \end{minipage}%
   \hfill
-  \begin{minipage}[b]{0.48\textwidth}
+  \begin{minipage}[b]{0.495\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{fig2_entropy_comparison_brain3k_multiome.png}\\
-    \small (b) Brain 5k
+    \includegraphics[width=\linewidth]{fig2_entropy_comparison_brain3k_multiome.png}\\[2pt]
+    {\normalsize (b) Brain 5k}
   \end{minipage}
   \caption{Cell-level row entropy (red, left) vs.\ cluster-resolved entropy (blue, right) as a function of true alignment error. Row entropy anti-correlates with error ($\rho \approx -0.5$ to $-0.65$); cluster-resolved entropy is the correct discriminator.}
   \label{fig:entropy-comparison}
@@ -221,9 +232,9 @@ Brain 5k & \textbf{0.001} & $\mathbf{0.049 \pm 0.002}$ & $\mathbf{0.962 \pm 0.00
 
 A clinically realistic deployment pattern is to align a disease atlas against a healthy reference and ask which cells are of a disease-specific type absent from the reference. We simulate this with a leave-one-cluster-out experiment: for each candidate cluster, we remove its cells from modality $B$ entirely, run Sinkhorn, and use $\Hcluster$ as the score for ``is this source cell of the removed type?'' The resulting AUROCs (Fig.~\ref{fig:missing}, Table~\ref{tab:missing}) are substantial across all three datasets; at $\beta=0.001$ on Brain, every one of 18 clusters is detected with AUROC $> 0.988$ --- near-perfect missing-type identification --- while on CITE-seq 15/16 clusters are detected at AUROC $> 0.95$ and the single hard case (AUROC 0.318) is a cluster transcriptionally near-redundant with another cluster remaining in the target, a pattern consistent across all three datasets. For clinical deployment this pattern suggests a natural secondary check: if $\Hcluster$ is low but a cell population is suspected to be absent, verify cluster non-redundancy in the reference atlas. Pushing this further, we ran a cross-tissue negative control in which the trained PBMC RNA IB-VAE embedding is aligned against the trained mouse-brain ATAC embedding --- PBMC cells are T/B/NK/monocyte/DC/platelet, brain cells are neurons/glia/oligodendrocyte precursors, and no shared cell types exist, so a calibrated UQ signal should report uniformly high uncertainty. The observed mean $\Hcluster$ is $0.635 \pm 0.133$ (cross-tissue) vs.\ $0.153$ (within-PBMC) and $0.083$ (within-Brain), a $4.2\times$ increase, with the cross-tissue distribution bimodal at $\sim 0.55$ and $0.75$ (Fig.~\ref{fig:cross-tissue}): the signal correctly flags every cross-tissue cell as highly uncertain.
 
-\begin{figure}[t]
+\begin{figure}[tbp]
   \centering
-  \includegraphics[width=0.7\textwidth]{fig3_missing_type_auroc.png}
+  \includegraphics[width=\textwidth]{fig3_missing_type_auroc.png}
   \caption{Leave-one-cluster-out missing-type AUROC. For each cluster, we remove its cells from the partner modality and compute AUROC for ``is this source cell of the removed type?'' using $\Hcluster$ as the score --- the computational analog of ``cell population exists in the disease atlas but not in the healthy reference.''}
   \label{fig:missing}
 \end{figure}
@@ -244,18 +255,18 @@ CITE-seq & 0.001 & 0.946 & 0.998 & 0.318 -- 1.000 \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[tbp]
   \centering
-  \includegraphics[width=0.7\textwidth]{fig6_cross_tissue_negative_control.png}
+  \includegraphics[width=\textwidth]{fig6_cross_tissue_negative_control.png}
   \caption{Cross-tissue negative control: PBMC RNA aligned against mouse-brain ATAC. No shared cell types exist. Mean cluster entropy is $4.2\times$ higher than within-dataset controls.}
   \label{fig:cross-tissue}
 \end{figure}
 
 The final piece of the uncertainty picture concerns the distinction between discrimination and calibration, and between single-seed and ensemble reliability. $\Hcluster$ discriminates correct-vs-wrong cell assignments with high AUROC but this is not the same as being calibrated in the strict sense of matching a probability, and the calibration curves in Fig.~\ref{fig:calibration} make this explicit: binning cells by $\Hcluster$ into deciles and plotting mean $\Hcluster$ vs.\ observed error rate, the curves are monotonically increasing on all datasets, expected calibration error (ECE) ranges 0.05--0.16 with PBMC $\beta=0.001$ best at 0.050, and Brier scores are 0.024--0.052. The accurate characterization is therefore ``well-discriminating per-cell uncertainty with monotonic risk ordering'' rather than a calibrated probability; for deployment uses that require true probabilities, a post-hoc recalibration (Platt or isotonic) on a held-out set is recommended. Cross-seed reproducibility is moderate but not perfect: pairwise Spearman $\rho$ of per-cell $\Hcluster$ across 10 PBMC $\beta=0.001$ seeds is $0.644 \pm 0.073$, top-10\% flagged-cell Jaccard overlap is $0.172$ vs.\ $0.053$ random ($3.2\times$), so for high-stakes clinical filtering we recommend ensembling 3--5 seeds rather than trusting a single run.
 
-\begin{figure}[t]
+\begin{figure}[tbp]
   \centering
-  \includegraphics[width=0.85\textwidth]{fig7_calibration_curves.png}
+  \includegraphics[width=\textwidth]{fig7_calibration_curves.png}
   \caption{Calibration curves: mean $\Hcluster$ per decile vs.\ observed error rate. Monotonically increasing on all datasets; ECE 0.05--0.16.}
   \label{fig:calibration}
 \end{figure}
@@ -280,9 +291,9 @@ We carry four assumptions throughout the theorem statements in \S\ref{sec:method
 
 Fig.~\ref{fig:beta} shows $\beta$ sensitivity on PBMC and Brain: $\beta=0.001$ is the recommended default across all datasets, and the uncertainty AUROC is roughly insensitive to $\beta$, so the UQ signal is robust to this choice even when the alignment metrics themselves shift. End-to-end wall time on a single NVIDIA RTX 3080 with 16 GB RAM is $\sim$120 s per PBMC run, $\sim$50 s per Brain run, and $\sim$95 s per CITE-seq run; the Sinkhorn step uses a seeded 5000-cell subsample for the uncertainty analysis (full-dataset metrics FOSCTTM/LT/ARI are computed without subsampling), and memory peak is $\sim$8 GB at $5000 \times 5000$ cost matrix in float64. All seeds are set deterministically (NumPy, PyTorch, cuDNN); multi-seed results (mean $\pm$ std) are aggregated over seeds 0--9 on PBMC $\beta=0.001$ and seeds 0--2 on all other configurations; the uniPort baseline is run from a separate Python virtual environment with \texttt{numpy<2} and \texttt{anndata 0.11.4} because uniPort 1.3 depends on the deprecated \texttt{np.Inf}, and code, configs, and all aggregate JSON result files will be linked upon de-anonymization.
 
-\begin{figure}[h]
+\begin{figure}[tbp]
   \centering
-  \includegraphics[width=0.7\textwidth]{fig5_beta_tradeoff.png}
+  \includegraphics[width=\textwidth]{fig5_beta_tradeoff.png}
   \caption{$\beta$ sensitivity on PBMC and Brain. $\beta=0.001$ is the recommended default; the UQ AUROC is roughly insensitive to $\beta$, so the UQ signal is robust to this choice.}
   \label{fig:beta}
 \end{figure}
