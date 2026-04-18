@@ -1,0 +1,276 @@
+{
+  "experiment": "protein_uq_analysis",
+  "dataset": "citeseq_pbmc",
+  "source_exp": "exp001_citeseq",
+  "n_cells_analyzed": 3000,
+  "top10pct_threshold": 0.30478206276893616,
+  "bottom10pct_threshold": 0.07622842490673065,
+  "marker_analysis": [
+    {
+      "marker": "CD45RA_TotalSeqB",
+      "clinical_interpretation": "Naive T / terminally differentiated",
+      "mean_high_entropy": 1.6690757274627686,
+      "mean_low_entropy": 4.3930535316467285,
+      "expression_diff_high_minus_low": -2.72397780418396,
+      "mannwhitney_p": 1.842040905015162e-78,
+      "is_enriched_in_uncertain": false
+    },
+    {
+      "marker": "CD3_TotalSeqB",
+      "clinical_interpretation": "T cell lineage (pan-T)",
+      "mean_high_entropy": 1.6465693712234497,
+      "mean_low_entropy": -0.7456763982772827,
+      "expression_diff_high_minus_low": 2.3922457695007324,
+      "mannwhitney_p": 5.993444211708256e-55,
+      "is_enriched_in_uncertain": true
+    },
+    {
+      "marker": "CD56_TotalSeqB",
+      "clinical_interpretation": "NK cell",
+      "mean_high_entropy": -0.8815726637840271,
+      "mean_low_entropy": 1.2989658117294312,
+      "expression_diff_high_minus_low": -2.1805384159088135,
+      "mannwhitney_p": 2.984850818791745e-63,
+      "is_enriched_in_uncertain": false
+    },
+    {
+      "marker": "CD4_TotalSeqB",
+      "clinical_interpretation": "Helper T / Treg",
+      "mean_high_entropy": 1.3526860475540161,
+      "mean_low_entropy": -0.823265790939331,
+      "expression_diff_high_minus_low": 2.1759519577026367,
+      "mannwhitney_p": 4.7981380275298895e-34,
+      "is_enriched_in_uncertain": true
+    },
+    {
+      "marker": "CD16_TotalSeqB",
+      "clinical_interpretation": "NK / non-classical monocyte",
+      "mean_high_entropy": 0.28067687153816223,
+      "mean_low_entropy": 2.175602912902832,
+      "expression_diff_high_minus_low": -1.8949260711669922,
+      "mannwhitney_p": 5.517203089968009e-38,
+      "is_enriched_in_uncertain": false
+    },
+    {
+      "marker": "CD45RO_TotalSeqB",
+      "clinical_interpretation": "Memory T",
+      "mean_high_entropy": 1.1043108701705933,
+      "mean_low_entropy": -0.7202797532081604,
+      "expression_diff_high_minus_low": 1.8245906829833984,
+      "mannwhitney_p": 1.3123349480327488e-52,
+      "is_enriched_in_uncertain": true
+    },
+    {
+      "marker": "CD8a_TotalSeqB",
+      "clinical_interpretation": "Cytotoxic T",
+      "mean_high_entropy": 0.38583192229270935,
+      "mean_low_entropy": -0.9216917157173157,
+      "expression_diff_high_minus_low": 1.3075236082077026,
+      "mannwhitney_p": 3.387253046746562e-14,
+      "is_enriched_in_uncertain": true
+    },
+    {
+      "marker": "CD19_TotalSeqB",
+      "clinical_interpretation": "B cell",
+      "mean_high_entropy": -2.338477373123169,
+      "mean_low_entropy": -1.0572307109832764,
+      "expression_diff_high_minus_low": -1.2812466621398926,
+      "mannwhitney_p": 9.258991640152328e-26,
+      "is_enriched_in_uncertain": false
+    },
+    {
+      "marker": "TIGIT_TotalSeqB",
+      "clinical_interpretation": "T cell exhaustion checkpoint",
+      "mean_high_entropy": -1.3181143999099731,
+      "mean_low_entropy": -0.46360301971435547,
+      "expression_diff_high_minus_low": -0.8545113801956177,
+      "mannwhitney_p": 1.596262923672097e-28,
+      "is_enriched_in_uncertain": false
+    },
+    {
+      "marker": "CD14_TotalSeqB",
+      "clinical_interpretation": "Classical monocyte",
+      "mean_high_entropy": 0.13505040109157562,
+      "mean_low_entropy": -0.6944542527198792,
+      "expression_diff_high_minus_low": 0.829504668712616,
+      "mannwhitney_p": 0.007661473260128192,
+      "is_enriched_in_uncertain": true
+    },
+    {
+      "marker": "CD127_TotalSeqB",
+      "clinical_interpretation": "Memory T / T cell survival",
+      "mean_high_entropy": -0.6462317109107971,
+      "mean_low_entropy": -1.1698116064071655,
+      "expression_diff_high_minus_low": 0.5235798954963684,
+      "mannwhitney_p": 5.808116704055745e-06,
+      "is_enriched_in_uncertain": true
+    },
+    {
+      "marker": "CD15_TotalSeqB",
+      "clinical_interpretation": "Granulocyte",
+      "mean_high_entropy": 0.5927030444145203,
+      "mean_low_entropy": 0.7905776500701904,
+      "expression_diff_high_minus_low": -0.19787460565567017,
+      "mannwhitney_p": 1.848107914858561e-14,
+      "is_enriched_in_uncertain": false
+    },
+    {
+      "marker": "PD-1_TotalSeqB",
+      "clinical_interpretation": "T cell exhaustion checkpoint",
+      "mean_high_entropy": -0.7029407620429993,
+      "mean_low_entropy": -0.7634359002113342,
+      "expression_diff_high_minus_low": 0.06049513816833496,
+      "mannwhitney_p": 0.019296498276293088,
+      "is_enriched_in_uncertain": true
+    },
+    {
+      "marker": "CD25_TotalSeqB",
+      "clinical_interpretation": "Treg / activated T",
+      "mean_high_entropy": -1.2795672416687012,
+      "mean_low_entropy": -1.2987507581710815,
+      "expression_diff_high_minus_low": 0.01918351650238037,
+      "mannwhitney_p": 0.06555972746208494,
+      "is_enriched_in_uncertain": true
+    }
+  ],
+  "per_cluster_entropy": [
+    {
+      "cluster": "12",
+      "n": 53,
+      "mean_h": 0.6916579604148865,
+      "std_h": 0.08200357854366302,
+      "high_entropy_frac": 0.9811320754716981
+    },
+    {
+      "cluster": "14",
+      "n": 38,
+      "mean_h": 0.4012518525123596,
+      "std_h": 0.07488592714071274,
+      "high_entropy_frac": 0.9210526315789473
+    },
+    {
+      "cluster": "13",
+      "n": 109,
+      "mean_h": 0.3122516870498657,
+      "std_h": 0.04591349884867668,
+      "high_entropy_frac": 0.6880733944954128
+    },
+    {
+      "cluster": "1",
+      "n": 15,
+      "mean_h": 0.29390525817871094,
+      "std_h": 0.06435605138540268,
+      "high_entropy_frac": 0.4
+    },
+    {
+      "cluster": "15",
+      "n": 27,
+      "mean_h": 0.29071924090385437,
+      "std_h": 0.12976610660552979,
+      "high_entropy_frac": 0.4444444444444444
+    },
+    {
+      "cluster": "9",
+      "n": 150,
+      "mean_h": 0.2802540063858032,
+      "std_h": 0.050552017986774445,
+      "high_entropy_frac": 0.26
+    },
+    {
+      "cluster": "5",
+      "n": 372,
+      "mean_h": 0.27893635630607605,
+      "std_h": 0.025741873309016228,
+      "high_entropy_frac": 0.10215053763440861
+    },
+    {
+      "cluster": "2",
+      "n": 61,
+      "mean_h": 0.2640610635280609,
+      "std_h": 0.04518866166472435,
+      "high_entropy_frac": 0.13114754098360656
+    },
+    {
+      "cluster": "8",
+      "n": 214,
+      "mean_h": 0.19866615533828735,
+      "std_h": 0.05801481008529663,
+      "high_entropy_frac": 0.03271028037383177
+    },
+    {
+      "cluster": "10",
+      "n": 28,
+      "mean_h": 0.18764261901378632,
+      "std_h": 0.08334343135356903,
+      "high_entropy_frac": 0.17857142857142858
+    },
+    {
+      "cluster": "7",
+      "n": 180,
+      "mean_h": 0.18247880041599274,
+      "std_h": 0.06766442954540253,
+      "high_entropy_frac": 0.06111111111111111
+    },
+    {
+      "cluster": "4",
+      "n": 532,
+      "mean_h": 0.17334802448749542,
+      "std_h": 0.054600685834884644,
+      "high_entropy_frac": 0.018796992481203006
+    },
+    {
+      "cluster": "11",
+      "n": 27,
+      "mean_h": 0.1674889773130417,
+      "std_h": 0.0788043662905693,
+      "high_entropy_frac": 0.07407407407407407
+    },
+    {
+      "cluster": "0",
+      "n": 630,
+      "mean_h": 0.148946613073349,
+      "std_h": 0.019562270492315292,
+      "high_entropy_frac": 0.0
+    },
+    {
+      "cluster": "6",
+      "n": 222,
+      "mean_h": 0.08659934997558594,
+      "std_h": 0.015971964225172997,
+      "high_entropy_frac": 0.0
+    },
+    {
+      "cluster": "3",
+      "n": 331,
+      "mean_h": 0.07581182569265366,
+      "std_h": 0.015403122641146183,
+      "high_entropy_frac": 0.0
+    },
+    {
+      "cluster": "16",
+      "n": 11,
+      "mean_h": 0.0002188221551477909,
+      "std_h": 0.0003084347699768841,
+      "high_entropy_frac": 0.0
+    }
+  ],
+  "summary": {
+    "markers_enriched_in_uncertain": [
+      "CD3_TotalSeqB",
+      "CD4_TotalSeqB",
+      "CD45RO_TotalSeqB",
+      "CD8a_TotalSeqB",
+      "CD14_TotalSeqB",
+      "CD127_TotalSeqB",
+      "PD-1_TotalSeqB"
+    ],
+    "markers_enriched_in_certain": [
+      "CD45RA_TotalSeqB",
+      "CD56_TotalSeqB",
+      "CD16_TotalSeqB",
+      "CD19_TotalSeqB",
+      "TIGIT_TotalSeqB",
+      "CD15_TotalSeqB"
+    ]
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "experiment": "clinical_disease_sim",
+  "dataset": "pbmc10k_multiome",
+  "source_exp": "exp001_pbmc_beta0001",
+  "n_scenarios": 5,
+  "mean_auroc": 0.9520023961777397,
+  "min_auroc": 0.8770834418620804,
+  "max_auroc": 0.9775295462184874,
+  "scenarios": [
+    {
+      "name": "CD8_T_lymphopenia",
+      "description": "CD8 T cell depletion (post-transplant immunosuppression / viral-induced)",
+      "clusters": [
+        "0",
+        "14"
+      ],
+      "markers": "CD8A+, CD8B+, NKG7+, GNLY+",
+      "n_target": 2411,
+      "n_rna_sub": 3000,
+      "n_atac_sub": 3000,
+      "n_remaining_clusters_atac": 16,
+      "auroc": 0.9646547832902254,
+      "mean_h_target": 0.5186768620130081,
+      "mean_h_other": 0.1317554211261911,
+      "entropy_ratio": 3.936664294945679
+    },
+    {
+      "name": "NK_cell_deficiency",
+      "description": "NK cell deficiency (chronic viral infection immunosuppression)",
+      "clusters": [
+        "4"
+      ],
+      "markers": "NCAM1/CD56+, NKG7+, GNLY+, FCGR3A+",
+      "n_target": 490,
+      "n_rna_sub": 3000,
+      "n_atac_sub": 3000,
+      "n_remaining_clusters_atac": 17,
+      "auroc": 0.9668379543052281,
+      "mean_h_target": 0.5018345062033137,
+      "mean_h_other": 0.11524716967594119,
+      "entropy_ratio": 4.354419354630588
+    },
+    {
+      "name": "B_cell_aplasia",
+      "description": "B cell aplasia (post-rituximab therapy / X-linked agammaglobulinemia)",
+      "clusters": [
+        "11",
+        "15"
+      ],
+      "markers": "MS4A1/CD20+",
+      "n_target": 875,
+      "n_rna_sub": 3000,
+      "n_atac_sub": 3000,
+      "n_remaining_clusters_atac": 16,
+      "auroc": 0.9775295462184874,
+      "mean_h_target": 0.48249422595245545,
+      "mean_h_other": 0.11572429485645053,
+      "entropy_ratio": 4.1693425442856435
+    },
+    {
+      "name": "Monocytopenia",
+      "description": "Monocytopenia (hairy cell leukemia / bone marrow failure)",
+      "clusters": [
+        "6"
+      ],
+      "markers": "CD14+, LYZ+, CST3+",
+      "n_target": 2725,
+      "n_rna_sub": 3000,
+      "n_atac_sub": 3000,
+      "n_remaining_clusters_atac": 17,
+      "auroc": 0.9739062552126774,
+      "mean_h_target": 0.5320991858291237,
+      "mean_h_other": 0.10985278553130624,
+      "entropy_ratio": 4.843747778043227
+    },
+    {
+      "name": "Treg_deficiency",
+      "description": "Regulatory T cell deficiency (autoimmune disease context)",
+      "clusters": [
+        "5"
+      ],
+      "markers": "FOXP3+, IL2RA/CD25+",
+      "n_target": 141,
+      "n_rna_sub": 3000,
+      "n_atac_sub": 3000,
+      "n_remaining_clusters_atac": 17,
+      "auroc": 0.8770834418620804,
+      "mean_h_target": 0.3441524816319734,
+      "mean_h_other": 0.10744412619059296,
+      "entropy_ratio": 3.203083256701146
+    }
+  ]
+}
