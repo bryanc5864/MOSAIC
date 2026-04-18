@@ -137,14 +137,14 @@ We evaluate on three publicly available benchmarks that collectively span immune
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\textwidth]{fig1_aligned_latent_pbmc10k_multiome.png}
-  \caption{UMAP of the aligned joint latent on 10x Multiome PBMC 10k (RNA $\cup$ ATAC). After Procrustes rotation, cells of the same immune type from both modalities co-localize.}
+  \caption{\textbf{MOSAIC aligned latent — PBMC 10k.} Four-panel UMAP of the 64-dimensional IB-VAE latent after Procrustes rotation. \emph{Left to right:} RNA-only colored by Leiden cluster; ATAC-only (same embedding); joint overlay (circles = RNA, triangles = ATAC); joint colored by cluster-resolved entropy $\Hcluster$ (viridis scale, low = certain). Cells of the same immune type co-localize across modalities; high-entropy cells (yellow/white) concentrate at cluster boundaries and sparse populations.}
   \label{fig:latent-pbmc}
 \end{figure}
 
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\textwidth]{fig1_aligned_latent_brain3k_multiome.png}
-  \caption{UMAP of the aligned joint latent on 10x Multiome E18 mouse brain 5k (RNA $\cup$ ATAC). Neural cell-type structure is preserved across modalities.}
+  \caption{\textbf{MOSAIC aligned latent — Brain 5k.} Same four-panel layout as Fig.~\ref{fig:latent-pbmc} for E18 mouse brain. Neural progenitor, neuronal, and glial cell-type topology is preserved after Procrustes alignment. Entropy is concentrated at transitional states (radial glia$\to$neuron boundaries) and rare clusters.}
   \label{fig:latent-brain}
 \end{figure}
 
@@ -211,14 +211,14 @@ Brain 5k & \textbf{0.001} & $\mathbf{0.049 \pm 0.002}$ & $\mathbf{0.962 \pm 0.00
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\textwidth]{fig2_entropy_comparison_pbmc10k_multiome.png}
-  \caption{PBMC 10k: cell-level row entropy (left) vs.\ cluster-resolved entropy (right) as a function of true alignment error. Row entropy anti-correlates with error ($\rho = -0.65$); cluster-resolved entropy is the correct discriminator.}
+  \caption{\textbf{PBMC 10k entropy miscalibration.} \emph{(A)} Cell-level row entropy $H_{\rm cell}$ vs.\ true alignment error: anti-correlates ($\rho=-0.65$, red trend line), the opposite of a useful uncertainty signal. \emph{(B)} Cluster-resolved $\Hcluster$ vs.\ true error: positive correlation (blue line) — the marginalization cure. \emph{(C)} Spatial UMAP heatmap of $\Hcluster$: high uncertainty (yellow) concentrates at cluster boundaries and rare populations, consistent with biological interpretation.}
   \label{fig:entropy-pbmc}
 \end{figure}
 
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\textwidth]{fig2_entropy_comparison_brain3k_multiome.png}
-  \caption{Brain 5k: cell-level row entropy (left) vs.\ cluster-resolved entropy (right) as a function of true alignment error. Same pattern as PBMC --- raw row entropy has the wrong sign ($\rho \approx -0.5$); cluster-resolved entropy is well-behaved.}
+  \caption{\textbf{Brain 5k entropy miscalibration.} Same three-panel layout as Fig.~\ref{fig:entropy-pbmc}. Row entropy has the wrong sign ($\rho \approx -0.5$); cluster-resolved entropy is correctly ordered. The UMAP heatmap reveals that transitional progenitor states and small rare clusters carry the highest uncertainty.}
   \label{fig:entropy-brain}
 \end{figure}
 
@@ -270,6 +270,35 @@ The final piece of the uncertainty picture concerns the distinction between disc
 \label{sec:discussion}
 
 \MOSAIC{} is the first method we are aware of that provides per-cell uncertainty for unpaired single-cell multi-omics alignment, and the clinical utility is in the filtering, triage, and missing-type detection use cases that an uncaptured alignment error silently corrupts. The technical contribution is the cluster-resolved marginalization: row entropy of an entropic Sinkhorn plan is directionally miscalibrated as a per-cell uncertainty signal because of the geometry of dense clusters, and marginalizing over partner cluster labels is a cheap, principled fix that we conjecture applies broadly to OT-based integration methods. Practitioner-facing deployment guidance falls out of the experiments above: for disease-atlas $\times$ healthy-reference comparison, deploy \MOSAIC{} with $\beta = 0.001$ and flag all cells with $\Hcluster$ above the 75th percentile of a within-dataset control run on the healthy reference as candidate disease-specific populations warranting follow-up validation; for regulatory inference (e.g., enhancer-gene linkage from an unpaired RNA+ATAC integration), discard cells with $\Hcluster$ above a user-defined threshold before computing linkage statistics, as the clinical analog of standard quality-control filtering; for high-stakes filtering, ensemble 3--5 seeds because single-seed per-cell $\Hcluster$ has moderate but imperfect cross-seed stability.
+
+\subsection{Clinical and translational applications}
+
+To illustrate how $\Hcluster$ maps to specific disease contexts, we ran three targeted downstream analyses on the existing embeddings without any additional training. First, a \emph{disease simulation} study: for five PBMC immune disease scenarios (CD8 T lymphopenia, NK deficiency, B cell aplasia, monocytopenia, Treg deficiency) and five brain neurological scenarios (excitatory neuron loss modelling Alzheimer's disease, inhibitory neuron loss modelling epilepsy, oligodendrocyte loss modelling multiple sclerosis, astrocyte depletion, microglia depletion via PLX5622 model), we removed the target cell population from the ATAC reference and measured AUROC for detecting absent cells via $\Hcluster$ (Fig.~\ref{fig:disease-sim}). Mean AUROC was $0.952$ on PBMC immune diseases and $0.993$ on brain neurological conditions, with entropy ratios (absent/present mean $\Hcluster$) of 3.2--4.8$\times$ (immune) and 10--27$\times$ (neural). The elevated ratio in brain is expected: E18 mouse brain clusters are more transcriptomically distinct than PBMC immune clusters, making absent-type signal sharper.
+
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\textwidth]{fig8_disease_simulation.png}
+  \caption{\textbf{Disease simulation: detecting clinically absent cell types.} \emph{Left:} Five PBMC immune disease scenarios (mean AUROC 0.952). \emph{Right:} Five brain neurological disease scenarios (mean AUROC 0.993). Bar color encodes cluster-resolved entropy ratio (absent/present $H_{\rm cluster}$, warmer = stronger signal). Dotted line = chance (AUROC 0.5); solid colored line = dataset mean.}
+  \label{fig:disease-sim}
+\end{figure}
+
+Second, a \emph{protein marker UQ} analysis on CITE-seq: we compared protein expression between the top and bottom 10\% of cells ranked by $\Hcluster$ (Fig.~\ref{fig:protein-uq}). High-uncertainty cells are enriched for T cell markers (CD3, CD4, CD45RO, CD8a) and depleted for lineage-committed markers (CD45RA for naive T, CD56/CD16 for NK). This is biologically coherent: T cells, especially memory subtypes, exhibit the most transcriptome-to-proteome discordance because T cell activation induces rapid surface protein remodeling that lags behind transcriptional changes. The signal correctly identifies which cells are hardest to align and why.
+
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\textwidth]{fig9_protein_uq.png}
+  \caption{\textbf{CITE-seq protein marker uncertainty analysis.} \emph{(A)} Mean protein expression difference (high-uncertainty minus low-uncertainty cells) for all 14 ADT markers. \emph{(B)} Statistical significance ($-\log_{10}$ Mann-Whitney $p$-value). Red = enriched in uncertain cells (T/memory T markers); blue = depleted (NK/naive T markers). All markers significant at $p < 10^{-13}$.}
+  \label{fig:protein-uq}
+\end{figure}
+
+Third, an \emph{immune checkpoint immunotherapy} analysis: PD-1$^+$TIGIT$^+$ double-positive exhausted T cells (the primary target of checkpoint inhibitor therapy) show mean $\Hcluster = 0.238$ vs.\ $0.201$ for PD-1$^-$TIGIT$^-$ fresh cells ($p = 9.2 \times 10^{-5}$, Mann-Whitney; Fig.~\ref{fig:checkpoint}). CD4$^+$PD-1$^+$ Treg/exhausted-CD4 T cells have substantially higher entropy than CD8a$^+$PD-1$^+$ effector-exhausted T cells ($H = 0.241$ vs.\ $0.188$, $p = 3.6 \times 10^{-18}$), suggesting that CD4 exhausted T cells have more uncertain transcriptome-to-proteome correspondence --- clinically important because CD4 exhaustion status is a predictor of checkpoint inhibitor response, and alignment uncertainty here flags cells where transcriptomic readout may not reliably predict surface PD-1 expression.
+
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\textwidth]{fig10_checkpoint_immunotherapy.png}
+  \caption{\textbf{Immune checkpoint immunotherapy entropy analysis (CITE-seq).} Violin plots of $\Hcluster$ for checkpoint-high vs.\ checkpoint-low cell subsets. Exhausted T cells (PD-1$^+$, TIGIT$^+$, PD-1$^+$TIGIT$^+$ double-positive) show significantly higher alignment uncertainty, and CD4$^+$PD-1$^+$ cells are more uncertain than CD8a$^+$PD-1$^+$ cells, identifying the subset where transcriptome-proteome discordance is highest for immunotherapy biomarker readout.}
+  \label{fig:checkpoint}
+\end{figure}
 
 The limitations are substantial and we state them plainly. The Procrustes rotation and $\Hcluster$ both require cluster labels, and paired-benchmark evaluation uses Leiden labels propagated via ground-truth pairing; in genuinely unpaired clinical deployment, labels must come from joint clustering, external references such as celltypist or Azimuth, or known cell-type annotations, and the downstream clinical interpretation of $\Hcluster$ is conditional on having a sensible cluster assignment upstream --- poor cluster assignments will propagate into poor uncertainty estimates. \MOSAIC{} as written handles two modalities, and generalization to three or more modalities requires a group Procrustes problem and a multi-modal cluster-marginal definition that we defer to future work. $\Hcluster$ is well-discriminating (AUROC 0.88--0.95) but not strictly probability-calibrated (ECE 0.05--0.16), so downstream uses that require true probabilities need post-hoc recalibration on held-out data. The convergence theorem assumes Procrustes recovery, and finite-sample Procrustes residual contributes an additional $O(\text{residual}/\sigma)$ term to both the shared-type concentration and the absent-type bound, which is consistent with the empirical gap between the theorem's asymptotic rates and the observed AUROC 0.96. Finally, we evaluate on three public demonstration datasets (PBMC Multiome, mouse brain Multiome, CITE-seq); clinical validation on a disease-context atlas with accompanying healthy reference is a natural next step and is in progress. Open questions for follow-up include end-to-end learning of the cluster assignment that $\Hcluster$ depends on (closing the loop on the label-free setting), multi-modal ($\geq 3$) generalization via group Procrustes, and a principled uncertainty decomposition for populations present in some but not all modalities (richer than the binary present/absent framing).
 
