@@ -46,50 +46,83 @@ The pipeline has three stages:
 .
 ├── LICENSE
 ├── README.md
-├── RESEARCH_PLAN.md          # Original research plan
-├── RESULTS.md                # Comprehensive experimental results
-├── TRAINING_LOG.md           # Full log of all training runs
-├── REVIEW_REPORT_PRE_TRAINING.md
-├── REVIEW_REPORT_POST_RESULTS.md
+├── CITATION.cff
+├── requirements.txt
 ├── src/
 │   ├── models/               # IB-VAE encoder/decoder definitions
 │   ├── data/                 # Preprocessing and data loading
 │   ├── training/             # Training loops and logging
-│   ├── evaluation/           # Alignment metrics (FOSCTTM, LT, ARI)
-│   └── utils/                # Paths, helpers, Sinkhorn solver
+│   ├── evaluation/           # FOSCTTM, label-transfer, ARI, cluster entropy
+│   └── utils/                # Paths, Sinkhorn solver, helpers
 ├── scripts/                  # Experiment runners and figure generation
-│   ├── run_experiment.py
-│   ├── generate_all_figures.py
-│   ├── rare_cell_detection.py
-│   ├── checkpoint_immunotherapy_analysis.py
-│   └── ...
-├── experiments/              # JSON results for every experiment run
+├── experiments/              # JSON results for every experiment
 ├── figures/                  # Publication-quality figures (PNG + PDF)
-├── mlhc_submission/          # MLHC 2026 paper (LaTeX + compiled PDF)
-│   ├── main.tex
-│   ├── main.pdf
-│   └── figures/
-└── paper/                    # Draft paper sections (Markdown)
+└── mlhc_submission/          # MLHC 2026 paper (LaTeX + compiled PDF)
+    ├── main.tex
+    ├── main.pdf
+    ├── references.bib
+    └── figures/
 ```
 
 ---
 
 ## Reproducing the results
 
-All experiments were run on a single NVIDIA RTX 3080 (16 GB). Wall time: ~120 s (PBMC), ~50 s (brain), ~95 s (CITE-seq) per run.
+All experiments were run on a single NVIDIA RTX 3080 (16 GB). Wall time: ~120 s (PBMC), ~50 s (brain), ~95 s (CITE-seq) per alignment run.
 
 ```bash
-# Install dependencies
+# 1. Install dependencies (Python 3.11+ recommended)
 pip install -r requirements.txt
 
-# Run primary alignment experiment
+# 2. Run the primary alignment experiment for a dataset
 python scripts/run_experiment.py --dataset pbmc10k_multiome --beta 0.001
 
-# Regenerate all figures
+# 3. Multi-seed replication (seeds 0-9 for PBMC; 0-2 for Brain/CITE-seq)
+python scripts/run_experiment.py --dataset brain3k_multiome --beta 0.001 --seed 0
+python scripts/aggregate_seeds.py --dataset brain3k_multiome --beta 0.001
+
+# 4. Downstream experiments
+python scripts/missing_type_exp.py           # leave-one-cluster-out
+python scripts/cross_tissue_exp.py           # PBMC RNA x Brain ATAC control
+python scripts/clinical_disease_sim.py       # 5 immunodeficiency scenarios
+python scripts/neuro_disease_sim.py          # 5 CNS disease scenarios
+python scripts/checkpoint_immunotherapy_analysis.py
+python scripts/protein_uq_analysis.py
+python scripts/rare_cell_detection.py
+
+# 5. Regenerate every figure in the paper
 python scripts/generate_all_figures.py
 ```
 
-Aggregate results across seeds are in `experiments/aggregate_*.json`. All random seeds are set deterministically.
+### Mapping paper claims to artifacts
+
+| Paper claim | Aggregate JSON |
+|---|---|
+| PBMC 10-seed alignment metrics | `experiments/aggregate_pbmc10k_multiome_beta0001_10seed.json` |
+| Brain 3-seed alignment metrics | `experiments/aggregate_brain3k_multiome_beta0.001.json` |
+| CITE-seq 3-seed alignment metrics | `experiments/aggregate_citeseq_3seed.json` |
+| Missing cell-type detection AUROC | `experiments/*/exp003_missing_type.json` |
+| Cross-tissue negative control | `experiments/exp006_cross_tissue/results.json` |
+| Calibration curves (ECE, Brier) | `experiments/*/calibration_analysis.json` |
+| Immunodeficiency simulation | `experiments/clinical_disease_sim/results.json` |
+| Neurological disease simulation | `experiments/neuro_disease_sim/results.json` |
+| Checkpoint-immunotherapy entropy | `experiments/checkpoint_immunotherapy/results.json` |
+| Protein marker UQ analysis | `experiments/protein_uq_analysis/results.json` |
+| Rare-cell sanity check | `experiments/rare_cell_detection/results.json` |
+
+All random seeds are set deterministically (NumPy, PyTorch, cuDNN). Baselines (SCOT, uniPort) use a separate virtual environment pinned to `numpy<2`; see `scripts/run_uniport_venv.py`.
+
+---
+
+## Data
+
+All three benchmarks are publicly released demonstration datasets from 10x Genomics with no identifying patient information. Data paths are configured in `src/utils/paths.py`; raw data is expected under `data/raw/`.
+
+| Dataset | Modalities | Cells (paired) | Clusters | Source |
+|---|---|---|---|---|
+| PBMC 10k | RNA + ATAC | 11,303 | 18 | 10x Genomics Multiome demo |
+| E18 mouse brain 5k | RNA + ATAC | 4,531 | 20 | 10x Genomics Multiome demo |
+| PBMC 10k CITE-seq | RNA + 14 ADT proteins | ~10,000 | 16 | 10x Genomics CITE-seq demo |
 
 ---
 
