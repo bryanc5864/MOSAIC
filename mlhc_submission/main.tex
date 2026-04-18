@@ -185,7 +185,7 @@ Figs.~\ref{fig:latent-pbmc} and~\ref{fig:latent-brain} show UMAP projections of 
   & uniPort & 0.563 & 0.134 & 0.136 & 0.067 & No \\
 \midrule
 \multirow{4}{*}{Brain 5k}
-  & \textbf{MOSAIC} ($\beta=0.001$) & \textbf{0.052} & \textbf{0.960} & \textbf{0.967} & \textbf{0.870} & Yes \\
+  & \textbf{MOSAIC} ($\beta=0.001$) & \textbf{0.052} & \textbf{0.960} & \textbf{0.967} & \textbf{0.932} & Yes \\
   & SCOT  & 0.475 & 0.134 & 0.067 & 0.025 & No \\
   & Raw PCA/LSI + Procrustes & 0.334 & 0.095 & 0.429 & 0.063 & No \\
   & uniPort & 0.509 & 0.095 & 0.059 & 0.050 & No \\
@@ -207,7 +207,7 @@ Figs.~\ref{fig:latent-pbmc} and~\ref{fig:latent-brain} show UMAP projections of 
   \label{fig:baselines}
 \end{figure}
 
-Table~\ref{tab:multiseed} reports 10-seed (PBMC $\beta=0.001$) and 3-seed (all others) means $\pm$ std. The recommended default $\beta = 0.001$ is strictly or tied-better than $\beta = 0.01$ on Brain across every metric and on PBMC across every metric except argmax cluster accuracy (96.4\% vs.\ 98.4\%); PBMC $\beta=0.001$ ARI has higher seed variance (std 0.103 vs.\ 0.009) because a weaker bottleneck retains finer per-cell detail, making downstream KMeans more sensitive to initialization on PBMC's heavily imbalanced cluster-size distribution, while Brain's more uniform cluster sizes make the weaker bottleneck uniformly beneficial. The central per-cell uncertainty result appears in Figs.~\ref{fig:entropy-pbmc} and~\ref{fig:entropy-brain}: cell-level row entropy on the Sinkhorn plan has Spearman $\rho = -0.648$ (PBMC) and $-0.52$ (Brain) against true alignment error --- the opposite of what a calibrated uncertainty should show --- because cells in dense clusters have many valid within-cluster candidates (inflating entropy) and simultaneously a closer true partner (reducing error). Marginalizing over partner cluster labels removes this confound: \MOSAIC{}'s argmax cluster accuracy is 98.4\% on PBMC ($\beta=0.01$) and 98.2\% on Brain ($\beta=0.001$), and $\Hcluster$ discriminates wrong-cluster cells with AUROC $0.883 \pm 0.010$ (PBMC) and $0.946 \pm 0.017$ (Brain). This is the calibrated per-cell uncertainty signal the paper claims, and it is structurally downstream of the cluster-centroid cross-modal target discussed in \S\ref{sec:methods}.
+Table~\ref{tab:multiseed} reports 10-seed (PBMC $\beta=0.001$) and 3-seed (all others) means $\pm$ std. The recommended default $\beta = 0.001$ is strictly or tied-better than $\beta = 0.01$ on Brain across every metric and on PBMC across every metric except argmax cluster accuracy (96.4\% vs.\ 98.4\%); PBMC $\beta=0.001$ ARI has higher seed variance (std 0.103 vs.\ 0.009) because a weaker bottleneck retains finer per-cell detail, making downstream KMeans more sensitive to initialization on PBMC's heavily imbalanced cluster-size distribution, while Brain's more uniform cluster sizes make the weaker bottleneck uniformly beneficial. The central per-cell uncertainty result appears in Figs.~\ref{fig:entropy-pbmc} and~\ref{fig:entropy-brain}: cell-level row entropy on the Sinkhorn plan has Spearman $\rho = -0.648$ (PBMC) and $-0.36$ (Brain) against true alignment error --- the opposite of what a calibrated uncertainty should show --- because cells in dense clusters have many valid within-cluster candidates (inflating entropy) and simultaneously a closer true partner (reducing error). Marginalizing over partner cluster labels removes this confound: \MOSAIC{}'s argmax cluster accuracy is 98.4\% on PBMC ($\beta=0.01$) and 98.2\% on Brain ($\beta=0.001$), and $\Hcluster$ discriminates wrong-cluster cells with AUROC $0.883 \pm 0.010$ (PBMC) and $0.946 \pm 0.017$ (Brain). This is the calibrated per-cell uncertainty signal the paper claims, and it is structurally downstream of the cluster-centroid cross-modal target discussed in \S\ref{sec:methods}.
 
 \begin{table}[t]
 \centering
@@ -235,7 +235,7 @@ Brain 5k & \textbf{0.001} & $\mathbf{0.049 \pm 0.002}$ & $\mathbf{0.962 \pm 0.00
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\textwidth]{fig2_entropy_comparison_brain3k_multiome.png}
-  \caption{\textbf{Brain 5k entropy miscalibration.} Same three-panel layout as Fig.~\ref{fig:entropy-pbmc}. Row entropy has the wrong sign ($\rho \approx -0.5$); cluster-resolved entropy is correctly ordered. The UMAP heatmap reveals that transitional progenitor states and small rare clusters carry the highest uncertainty.}
+  \caption{\textbf{Brain 5k entropy miscalibration.} Same three-panel layout as Fig.~\ref{fig:entropy-pbmc}. Row entropy has the wrong sign ($\rho \approx -0.36$); cluster-resolved entropy is correctly ordered. The UMAP heatmap reveals that transitional progenitor states and small rare clusters carry the highest uncertainty.}
   \label{fig:entropy-brain}
 \end{figure}
 
