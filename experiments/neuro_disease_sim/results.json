@@ -1,0 +1,74 @@
+{
+  "experiment": "neuro_disease_sim",
+  "dataset": "brain3k_multiome",
+  "source_exp": "exp001_brain_beta0001",
+  "mean_auroc": 0.9927018928074325,
+  "min_auroc": 0.9857668461936906,
+  "max_auroc": 0.9987261002886003,
+  "scenarios": [
+    {
+      "name": "Excitatory_neuron_loss",
+      "description": "Excitatory neuron loss (Alzheimer's disease / neurodegeneration)",
+      "target_clusters": [
+        "5",
+        "2"
+      ],
+      "n_target": 865,
+      "auroc": 0.9935097488112283,
+      "mean_h_target": 0.6464307030467589,
+      "mean_h_other": 0.024284078231622652,
+      "entropy_ratio": 26.61952810730855
+    },
+    {
+      "name": "Inhibitory_neuron_loss",
+      "description": "Inhibitory neuron loss (epilepsy / interneuron dysfunction)",
+      "target_clusters": [
+        "0",
+        "11"
+      ],
+      "n_target": 767,
+      "auroc": 0.9909329670007245,
+      "mean_h_target": 0.664967096783001,
+      "mean_h_other": 0.036433839850622936,
+      "entropy_ratio": 18.25135916250759
+    },
+    {
+      "name": "Oligodendrocyte_loss",
+      "description": "Oligodendrocyte loss (multiple sclerosis / leukodystrophy)",
+      "target_clusters": [
+        "3",
+        "4"
+      ],
+      "n_target": 647,
+      "auroc": 0.9857668461936906,
+      "mean_h_target": 0.6416333927435313,
+      "mean_h_other": 0.03333056102683419,
+      "entropy_ratio": 19.250602839446866
+    },
+    {
+      "name": "Astrocyte_loss",
+      "description": "Astrocyte depletion (reactive astrogliosis / ALS context)",
+      "target_clusters": [
+        "1"
+      ],
+      "n_target": 340,
+      "auroc": 0.9945738017429193,
+      "mean_h_target": 0.7676187712445202,
+      "mean_h_other": 0.047165677312161196,
+      "entropy_ratio": 16.274944302487466
+    },
+    {
+      "name": "Microglia_depletion",
+      "description": "Microglia depletion (PLX5622 CSF1R inhibition, preclinical model)",
+      "target_clusters": [
+        "19",
+        "15"
+      ],
+      "n_target": 36,
+      "auroc": 0.9987261002886003,
+      "mean_h_target": 0.8316272133740651,
+      "mean_h_other": 0.08251094691083596,
+      "entropy_ratio": 10.078992479297913
+    }
+  ]
+}
