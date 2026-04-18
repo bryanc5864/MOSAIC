@@ -1,10 +1,10 @@
 # Results
 
-*MOSAIC: Multi-Omics Stochastic Alignment via Information-theoretic Coupling*
+*Calibrated Per-Cell Uncertainty for Unpaired Single-Cell Multi-Omics Integration*
 
 ## Alignment quality on paired benchmarks
 
-We evaluate MOSAIC on two paired single-cell multi-omics benchmarks where the ground-truth cell-level pairing is known: 10x Multiome PBMC 10k (11,303 cells after QC, 18 leiden clusters) and 10x Multiome E18 mouse brain 5k (4,531 cells, 20 clusters). At training time the cell-level pairing is treated as unknown: we verified by inspection that `pair_idx` is read only in the post-training evaluation code path (`src/training/run_experiment.py`), never inside the IB-VAE training loop, the dataloader, or the loss. See Methods for the one caveat: the cross-modal prediction target uses cluster identities that, for our paired benchmarks, were propagated across modalities using the pairing itself. At evaluation time we recover the pairing and compare MOSAIC's alignment against it.
+We evaluate the method on two paired single-cell multi-omics benchmarks where the ground-truth cell-level pairing is known: 10x Multiome PBMC 10k (11,303 cells after QC, 18 leiden clusters) and 10x Multiome E18 mouse brain 5k (4,531 cells, 20 clusters). At training time the cell-level pairing is treated as unknown: we verified by inspection that `pair_idx` is read only in the post-training evaluation code path (`src/training/run_experiment.py`), never inside the IB-VAE training loop, the dataloader, or the loss. See Methods for the one caveat: the cross-modal prediction target uses cluster identities that, for our paired benchmarks, were propagated across modalities using the pairing itself. At evaluation time we recover the pairing and compare the method's alignment against it.
 
 Table 1 reports the four standard unpaired-alignment metrics across both datasets, as mean ± std over 3 random seeds (0, 1, 2):
 
@@ -17,17 +17,17 @@ Table 1 reports the four standard unpaired-alignment metrics across both dataset
 
 ★ Lowering the IB-VAE bottleneck weight from β=0.01 to β=0.001 improves every metric on both datasets: per-cell (FOSCTTM, label transfer) and cluster-level (joint ARI). On Brain this is immediate and large (ARI 0.408 → 0.935, FOSCTTM 0.129 → 0.049, LT 87.7% → 96.2%). On PBMC the 3-seed initial run showed an ARI regression (0.687 → 0.652) that turned out to be sampling error from one unlucky KMeans initialization; the 10-seed re-run gives ARI 0.724, better than β=0.01's 0.687, and tightens the std from 0.141 to 0.103. We therefore recommend β=0.001 as the default for both datasets. The 10-seed PBMC result is reported here because the 3-seed interval was too wide to distinguish β=0.001 from β=0.01 on the cluster-level metric; the 10-seed result resolves this cleanly.
 
-FOSCTTM measures, for each cell, the fraction of cells in the other modality that are closer to it than its true partner (random alignment gives ≈ 0.5, perfect alignment gives 0). On PBMC MOSAIC achieves 0.188 — the average cell is closer to its true partner than it is to ~81% of other cells in the other modality. On Brain the result is even sharper (0.129). Label transfer accuracy, measured as a 15-nearest-neighbor classifier transferring leiden labels from one modality to the other through the aligned latent space, reaches 68–88% across datasets (chance rate is ~5.6% for PBMC at 18 clusters, ~5% for Brain at 20 clusters). All metrics are tightly distributed across seeds (std < 1% of the mean for FOSCTTM and LT RNA→ATAC on both datasets).
+FOSCTTM measures, for each cell, the fraction of cells in the other modality that are closer to it than its true partner (random alignment gives ≈ 0.5, perfect alignment gives 0). On PBMC the method achieves 0.188 — the average cell is closer to its true partner than it is to ~81% of other cells in the other modality. On Brain the result is even sharper (0.129). Label transfer accuracy, measured as a 15-nearest-neighbor classifier transferring leiden labels from one modality to the other through the aligned latent space, reaches 68–88% across datasets (chance rate is ~5.6% for PBMC at 18 clusters, ~5% for Brain at 20 clusters). All metrics are tightly distributed across seeds (std < 1% of the mean for FOSCTTM and LT RNA→ATAC on both datasets).
 
 ## Baseline comparison
 
-Table 2 compares MOSAIC against three baselines on **both datasets** (3000-cell seeded subsample per dataset, identical preprocessing and metrics code for every method).
+Table 2 compares the method against three baselines on **both datasets** (3000-cell seeded subsample per dataset, identical preprocessing and metrics code for every method).
 
 **PBMC 10k** (β = 0.01 IB-VAE):
 
 | Method | FOSCTTM ↓ | LT RNA→ATAC ↑ | LT ATAC→RNA ↑ | ARI ↑ | Per-cell UQ |
 |---|---:|---:|---:|---:|:---:|
-| **MOSAIC (ours)** | **0.194** | **0.664** | **0.694** | **0.651** | ✅ |
+| **the method (ours)** | **0.194** | **0.664** | **0.694** | **0.651** | ✅ |
 | NN on IB latent (no-OT ablation) | 0.194 | 0.664 | 0.694 | 0.651 | ❌ |
 | SCOT (GW reimplementation) | 0.248 | 0.324 | 0.383 | 0.322 | ❌ |
 | Raw PCA/LSI + Procrustes (no-IB ablation) | 0.328 | 0.132 | 0.653 | 0.093 | ❌ |
@@ -36,12 +36,12 @@ Table 2 compares MOSAIC against three baselines on **both datasets** (3000-cell 
 
 | Method | FOSCTTM ↓ | LT RNA→ATAC ↑ | LT ATAC→RNA ↑ | ARI ↑ | Per-cell UQ |
 |---|---:|---:|---:|---:|:---:|
-| **MOSAIC (ours)** | **0.052** | **0.960** | **0.967** | **0.870** | ✅ |
+| **the method (ours)** | **0.052** | **0.960** | **0.967** | **0.870** | ✅ |
 | NN on IB latent (no-OT ablation) | 0.052 | 0.960 | 0.967 | 0.870 | ❌ |
 | SCOT (GW reimplementation) | 0.475 | 0.134 | 0.067 | 0.025 | ❌ |
 | Raw PCA/LSI + Procrustes (no-IB ablation) | 0.334 | 0.095 | 0.429 | 0.063 | ❌ |
 
-MOSAIC outperforms SCOT by a wide margin on PBMC (22% better FOSCTTM, 105% better RNA→ATAC label transfer, 102% better ARI) and by an **even wider margin on Brain**: 89% better FOSCTTM (0.052 vs 0.475), **7.2× better LT RNA→ATAC** (0.960 vs 0.134), **35× better ARI** (0.870 vs 0.025). On Brain, SCOT actually fails — its FOSCTTM A→B direction is *worse than random* (the GW solver does not converge to a meaningful coupling at this dataset's scale and structure), and joint clustering ARI is essentially at chance. The no-IB ablation (raw PCA/LSI directly into Procrustes + kNN) collapses label-transfer accuracy and ARI on both datasets — on Brain ARI drops from 0.870 to 0.063 (a 14× collapse), confirming that **the IB-VAE is the central contribution**. The no-OT ablation (IB latents with Procrustes but kNN instead of Sinkhorn) is numerically identical to MOSAIC on all four alignment metrics on both datasets, as expected — these metrics operate directly on the aligned embeddings and are unaffected by the OT plan. **The OT component's contribution is not to the alignment geometry, it is to the per-cell uncertainty signal.**
+the method outperforms SCOT by a wide margin on PBMC (22% better FOSCTTM, 105% better RNA→ATAC label transfer, 102% better ARI) and by an **even wider margin on Brain**: 89% better FOSCTTM (0.052 vs 0.475), **7.2× better LT RNA→ATAC** (0.960 vs 0.134), **35× better ARI** (0.870 vs 0.025). On Brain, SCOT actually fails — its FOSCTTM A→B direction is *worse than random* (the GW solver does not converge to a meaningful coupling at this dataset's scale and structure), and joint clustering ARI is essentially at chance. The no-IB ablation (raw PCA/LSI directly into Procrustes + kNN) collapses label-transfer accuracy and ARI on both datasets — on Brain ARI drops from 0.870 to 0.063 (a 14× collapse), confirming that **the IB-VAE is the central contribution**. The no-OT ablation (IB latents with Procrustes but kNN instead of Sinkhorn) is numerically identical to the method on all four alignment metrics on both datasets, as expected — these metrics operate directly on the aligned embeddings and are unaffected by the OT plan. **The OT component's contribution is not to the alignment geometry, it is to the per-cell uncertainty signal.**
 
 ## Cell-level row entropy is miscalibrated; cluster-level entropy is not
 
@@ -60,11 +60,11 @@ Table 3 summarizes cluster-resolved entropy performance across both datasets, as
 | PBMC 10k | **98.4% ± 0.5%** | 0.151 ± 0.003 | **0.883 ± 0.010** |
 | Brain 5k | **95.8% ± 0.5%** | 0.251 ± 0.015 | **0.809 ± 0.045** |
 
-Across 5000 cells on PBMC, MOSAIC's top-1 cluster assignment from the transport plan marginal is correct for 98.4% of cells on average, with the lowest seed achieving 97.9% and the highest 98.8%. On Brain, 95.8% correct on average (95.2-96.2% across seeds). The AUROC for detecting the wrong cells via $H_{\text{cluster}}$ is 0.883 ± 0.010 on PBMC and 0.809 ± 0.045 on Brain — the small fraction of mis-assigned cells are exactly the cells MOSAIC flags with elevated cluster entropy, giving a calibrated UQ signal that tells downstream users when to trust an alignment and when to double-check it. The AUROC is tighter on PBMC than Brain because Brain has more very small clusters where the test is statistically noisier.
+Across 5000 cells on PBMC, the method's top-1 cluster assignment from the transport plan marginal is correct for 98.4% of cells on average, with the lowest seed achieving 97.9% and the highest 98.8%. On Brain, 95.8% correct on average (95.2-96.2% across seeds). The AUROC for detecting the wrong cells via $H_{\text{cluster}}$ is 0.883 ± 0.010 on PBMC and 0.809 ± 0.045 on Brain — the small fraction of mis-assigned cells are exactly the cells the method flags with elevated cluster entropy, giving a calibrated UQ signal that tells downstream users when to trust an alignment and when to double-check it. The AUROC is tighter on PBMC than Brain because Brain has more very small clusters where the test is statistically noisier.
 
 ## Missing cell type detection
 
-The most demanding test of the UQ signal is: *can MOSAIC tell when a cell type is entirely absent from the target modality?* We run a leave-one-cluster-out study: for each of PBMC's 12 clusters with 30 ≤ N ≤ 1500 cells, we remove that cluster from the ATAC modality, run Sinkhorn on the remaining cells, compute per-source-cell cluster entropy, and report the AUROC for classifying "this RNA cell is of the removed type" using cluster entropy as the score.
+The most demanding test of the UQ signal is: *can the method tell when a cell type is entirely absent from the target modality?* We run a leave-one-cluster-out study: for each of PBMC's 12 clusters with 30 ≤ N ≤ 1500 cells, we remove that cluster from the ATAC modality, run Sinkhorn on the remaining cells, compute per-source-cell cluster entropy, and report the AUROC for classifying "this RNA cell is of the removed type" using cluster entropy as the score.
 
 Table 4 reports the per-cluster AUROC on PBMC:
 
@@ -89,7 +89,7 @@ Table 4 reports the per-cluster AUROC on PBMC:
 
 ## Ablation study
 
-Table 5 reports six MOSAIC variants on PBMC 10k, all trained for 150 epochs with the same 3000-cell OT subsample and seed. Source: `experiments/ablation_pbmc10k_multiome_summary.json`.
+Table 5 reports six the method variants on PBMC 10k, all trained for 150 epochs with the same 3000-cell OT subsample and seed. Source: `experiments/ablation_pbmc10k_multiome_summary.json`.
 
 | Variant | β | λ_pred | FOSCTTM ↓ | LT A→B ↑ | LT B→A ↑ | ARI ↑ |
 |---|---:|---:|---:|---:|---:|---:|
@@ -104,7 +104,7 @@ Two conclusions follow. **First, the cross-modal prediction head is load-bearing
 
 ## Cross-tissue negative control
 
-The most demanding test of whether cluster-resolved entropy is a calibrated uncertainty signal is: *does it report high uncertainty when there is nothing to align?* We ran MOSAIC's alignment step on the RNA IB-VAE embedding from PBMC 10k and the ATAC IB-VAE embedding from Brain 5k — two datasets whose cell-type spaces are disjoint (PBMC cells are T / B / NK / monocytes / DC / platelets; brain cells are neurons / glia / oligodendrocytes). A calibrated UQ signal should mark every cell as uncertain.
+The most demanding test of whether cluster-resolved entropy is a calibrated uncertainty signal is: *does it report high uncertainty when there is nothing to align?* We ran the method's alignment step on the RNA IB-VAE embedding from PBMC 10k and the ATAC IB-VAE embedding from Brain 5k — two datasets whose cell-type spaces are disjoint (PBMC cells are T / B / NK / monocytes / DC / platelets; brain cells are neurons / glia / oligodendrocytes). A calibrated UQ signal should mark every cell as uncertain.
 
 | Setting | Mean H_cluster | Interpretation |
 |---|---:|---|
@@ -112,11 +112,11 @@ The most demanding test of whether cluster-resolved entropy is a calibrated unce
 | Within Brain (paired benchmark) | **0.083** | real structure, confident |
 | **Cross-tissue (PBMC RNA × Brain ATAC)** | **0.635 ± 0.133** | **no shared structure → high uncertainty** |
 
-The cross-tissue mean cluster entropy is **4.2× higher** than either within-dataset mean; no PBMC cell falls below the within-dataset 75th percentile of cluster entropy. Figure 6 shows the distribution: the within-dataset means (vertical lines) sit at the extreme left tail while the cross-tissue histogram is bimodal around H ≈ 0.55 and 0.75. This is the intended behavior of a calibrated per-cell uncertainty signal and is the strongest available test that cluster-resolved entropy is measuring alignment confidence rather than latent density or a learned constant. A miscalibrated UQ would report the same low entropies here as on real paired data; MOSAIC does not.
+The cross-tissue mean cluster entropy is **4.2× higher** than either within-dataset mean; no PBMC cell falls below the within-dataset 75th percentile of cluster entropy. Figure 6 shows the distribution: the within-dataset means (vertical lines) sit at the extreme left tail while the cross-tissue histogram is bimodal around H ≈ 0.55 and 0.75. This is the intended behavior of a calibrated per-cell uncertainty signal and is the strongest available test that cluster-resolved entropy is measuring alignment confidence rather than latent density or a learned constant. A miscalibrated UQ would report the same low entropies here as on real paired data; the method does not.
 
 ## Clinical immunodeficiency simulation
 
-To establish MOSAIC's direct medical relevance, we simulated five immune disease states on the PBMC 10k dataset by removing specific immune cell populations from the ATAC modality and testing whether cluster-resolved entropy automatically flags RNA cells whose corresponding population is absent from the reference. This models a clinically realistic scenario: a patient's transcriptome is integrated against a healthy reference protein atlas, and MOSAIC's uncertainty signal identifies which cells have no phenotypic match.
+To establish the method's direct medical relevance, we simulated five immune disease states on the PBMC 10k dataset by removing specific immune cell populations from the ATAC modality and testing whether cluster-resolved entropy automatically flags RNA cells whose corresponding population is absent from the reference. This models a clinically realistic scenario: a patient's transcriptome is integrated against a healthy reference protein atlas, and the method's uncertainty signal identifies which cells have no phenotypic match.
 
 We mapped PBMC leiden clusters to clinical cell types by marker gene expression (CD8A/B for CD8 T cells, NCAM1/CD56 for NK cells, MS4A1/CD20 for B cells, CD14 for monocytes, FOXP3/IL2RA for Tregs) and designed five disease scenarios:
 
@@ -130,12 +130,12 @@ Table 6: Clinical immunodeficiency simulation on PBMC 10k.
 | Monocytopenia (hairy cell leukemia / bone marrow failure) | CD14+/LYZ+ | 2725 | **0.974** | 4.8× |
 | Treg deficiency (autoimmune disease context) | FOXP3+/IL2RA+ | 141 | **0.877** | 3.2× |
 
-**Mean AUROC 0.952** (range 0.877–0.978). Entropy is 3.2–4.8× higher for RNA cells whose immune population is absent from the ATAC reference. The single weaker result — Treg deficiency (AUROC 0.877, n=141) — reflects the small cluster size and transcriptional proximity of Tregs to CD4 T cells. No disease-specific training or prior knowledge of which cell type is depleted is required; MOSAIC's entropy signal automatically identifies the perturbation.
+**Mean AUROC 0.952** (range 0.877–0.978). Entropy is 3.2–4.8× higher for RNA cells whose immune population is absent from the ATAC reference. The single weaker result — Treg deficiency (AUROC 0.877, n=141) — reflects the small cluster size and transcriptional proximity of Tregs to CD4 T cells. No disease-specific training or prior knowledge of which cell type is depleted is required; the method's entropy signal automatically identifies the perturbation.
 
 ## Protein marker UQ analysis (CITE-seq)
 
-MOSAIC's cluster-resolved entropy applied to RNA + surface protein alignment identifies RNA cells whose transcriptome predicts an ambiguous surface phenotype — precisely the cells that challenge clinical flow cytometry gating. We analyzed the exp001_citeseq OT subsample (3000 cells) by comparing protein marker expression between high-entropy (top 10%) and low-entropy (bottom 10%) RNA cells.
+the method's cluster-resolved entropy applied to RNA + surface protein alignment identifies RNA cells whose transcriptome predicts an ambiguous surface phenotype — precisely the cells that challenge clinical flow cytometry gating. We analyzed the exp001_citeseq OT subsample (3000 cells) by comparing protein marker expression between high-entropy (top 10%) and low-entropy (bottom 10%) RNA cells.
 
 High-entropy cells express: CD3+ (pan-T), CD4+ (helper/Treg), CD45RO+ (memory T), CD8a+ (cytotoxic T) — T cell populations with complex, overlapping surface phenotypes that depend on activation state, memory status, and exhaustion markers. Low-entropy cells express: CD45RA+ (naive T / terminally differentiated NK), CD56+ (NK cells), CD16+ (NK/non-classical monocyte) — populations with distinct, single-marker surface phenotypes that map cleanly to transcriptomes.
 
-This pattern is biologically well-motivated. NK cells (CD56+) and naive T cells (CD45RA+) express canonical lineage markers that are both transcriptionally and proteomically well-defined. Memory T cells (CD45RO+, CD4+, CD8a+, PD-1+, TIGIT+) occupy a complex activation/differentiation landscape where surface protein co-expression patterns depend on factors not fully captured by transcriptome alone — explaining why MOSAIC's cluster-resolved entropy is systematically higher for these cells. MOSAIC's uncertainty signal provides a data-driven map of where transcriptome-proteome concordance is high vs. low, without any supervised annotation of "ambiguous" cell types.
+This pattern is biologically well-motivated. NK cells (CD56+) and naive T cells (CD45RA+) express canonical lineage markers that are both transcriptionally and proteomically well-defined. Memory T cells (CD45RO+, CD4+, CD8a+, PD-1+, TIGIT+) occupy a complex activation/differentiation landscape where surface protein co-expression patterns depend on factors not fully captured by transcriptome alone — explaining why the method's cluster-resolved entropy is systematically higher for these cells. the method's uncertainty signal provides a data-driven map of where transcriptome-proteome concordance is high vs. low, without any supervised annotation of "ambiguous" cell types.

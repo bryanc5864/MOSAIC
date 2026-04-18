@@ -1,10 +1,10 @@
 # Methods
 
-*MOSAIC: Multi-Omics Stochastic Alignment via Information-theoretic Coupling*
+*Calibrated Per-Cell Uncertainty for Unpaired Single-Cell Multi-Omics Integration*
 
 ## Overview
 
-MOSAIC takes two single-cell modalities $A$ (RNA) and $B$ (ATAC) measured on disjoint cell populations (or paired cells whose correspondence is treated as unknown) and produces (i) a joint latent space in which paired cells map close together and (ii) a per-cell **cluster-resolved alignment uncertainty** score that is calibrated against true alignment error. The pipeline has three stages:
+the method takes two single-cell modalities $A$ (RNA) and $B$ (ATAC) measured on disjoint cell populations (or paired cells whose correspondence is treated as unknown) and produces (i) a joint latent space in which paired cells map close together and (ii) a per-cell **cluster-resolved alignment uncertainty** score that is calibrated against true alignment error. The pipeline has three stages:
 
 1. Per-modality **Information Bottleneck VAE** (IB-VAE) with a cross-modal prediction head, trained independently on each modality but with a shared cluster-centroid target that encourages cross-modal latent agreement.
 2. **Orthogonal Procrustes** post-alignment of the ATAC latent onto the RNA latent frame using shared cluster centroids.
@@ -40,7 +40,7 @@ via POT's sinkhorn (not the log-domain variant — the latter OOMs at 11k × 11k
 
 For each source cell $i$ the transport plan row $P_{i \cdot}$ is a distribution over partner cells. Naively taking its entropy $H(P_{i \cdot}) = -\sum_j P_{ij} \log P_{ij}$ gives a signal that anti-correlates with true alignment error (Spearman $\rho = -0.65$ on PBMC) because cells in dense clusters have many valid within-cluster candidates and a closer true partner. We replace this with **cluster-resolved entropy**: marginalize the plan over the partner's cluster labels,
 $$p(c | i) = \frac{\sum_{j : \text{cluster}(j) = c} P_{ij}}{\sum_j P_{ij}}, \qquad H_{\text{cluster}}(i) = -\sum_c p(c|i) \log p(c|i) \;/\; \log K$$
-normalized to $[0, 1]$ by the number of partner clusters $K$. This marginalizes away within-cluster ambiguity and tracks only the cross-cluster alignment confidence. The argmax over $c$ is MOSAIC's predicted partner cluster for cell $i$, and its accuracy against the true partner cluster (recovered from `pair_idx` at evaluation time) is the primary validation of the UQ signal.
+normalized to $[0, 1]$ by the number of partner clusters $K$. This marginalizes away within-cluster ambiguity and tracks only the cross-cluster alignment confidence. The argmax over $c$ is the method's predicted partner cluster for cell $i$, and its accuracy against the true partner cluster (recovered from `pair_idx` at evaluation time) is the primary validation of the UQ signal.
 
 ## Evaluation metrics
 
@@ -62,8 +62,8 @@ atac.obs["leiden"] = rna.obs["leiden"].values
 
 However, because `y_cross` was precomputed using paired cluster labels, the training signal does carry **cluster-level** paired information (not cell-level). For a fully unpaired application (two modalities profiled on different cell populations), a practitioner would need to replace the paired-GT cluster propagation with one of: (a) clustering each modality independently and then finding cluster correspondences via an external label source or a separate matching step, (b) using known biological cell-type labels from either modality as the cluster label, or (c) the same joint latent matching run iteratively in an EM-like outer loop. We leave these extensions to future work.
 
-This caveat is important because it bounds the claims we can make: the FOSCTTM and label-transfer numbers reported in Table 1 reflect MOSAIC's ability to recover **cell-level pairing given cluster-level correspondences**, not to recover pairing from nothing. The strongest positive claim we make — and the one supported by the cross-tissue negative control in §"Cross-tissue negative control" — is that the cluster-resolved entropy is a well-calibrated per-cell uncertainty signal *given* the paired benchmark setup.
+This caveat is important because it bounds the claims we can make: the FOSCTTM and label-transfer numbers reported in Table 1 reflect the method's ability to recover **cell-level pairing given cluster-level correspondences**, not to recover pairing from nothing. The strongest positive claim we make — and the one supported by the cross-tissue negative control in §"Cross-tissue negative control" — is that the cluster-resolved entropy is a well-calibrated per-cell uncertainty signal *given* the paired benchmark setup.
 
 ## Implementation and reproducibility
 
-All code is available at the project repository, released under the MIT license. All seeds are set deterministically (NumPy, PyTorch, and cuDNN). Training uses a single NVIDIA RTX 3080 GPU. Wall-clock times are ≈ 120 seconds per dataset per seed for the full MOSAIC pipeline. Multi-seed results (reported as mean ± std over 3 seeds) are computed by running the pipeline with seeds 0, 1, 2 and aggregating via `scripts/aggregate_seeds.py`. The uniPort baseline is run from a separate Python virtual environment (`venv_uniport/`) with `numpy<2` and `anndata 0.11.4` because uniPort 1.3 uses `np.Inf`, which was removed in NumPy 2.0.
+All code is available at the project repository, released under the MIT license. All seeds are set deterministically (NumPy, PyTorch, and cuDNN). Training uses a single NVIDIA RTX 3080 GPU. Wall-clock times are ≈ 120 seconds per dataset per seed for the full the method pipeline. Multi-seed results (reported as mean ± std over 3 seeds) are computed by running the pipeline with seeds 0, 1, 2 and aggregating via `scripts/aggregate_seeds.py`. The uniPort baseline is run from a separate Python virtual environment (`venv_uniport/`) with `numpy<2` and `anndata 0.11.4` because uniPort 1.3 uses `np.Inf`, which was removed in NumPy 2.0.
