@@ -171,49 +171,51 @@ def fig1_aligned_umap(exp_name: str, dataset_id: str, label: str) -> None:
     atac_emb = embed[len(Z_rna):]
     sub_emb = rna_emb[sub_idx]  # subsample cells that have H_cluster
 
-    fig = plt.figure(figsize=(26, 7))
-    gs = gridspec.GridSpec(1, 4, figure=fig, wspace=0.22)
-    axes = [fig.add_subplot(gs[0, i]) for i in range(4)]
-    panel_labels = ["A", "B", "C", "D"]
+    fig = plt.figure(figsize=(22, 20))
+    gs = gridspec.GridSpec(2, 2, figure=fig, wspace=0.28, hspace=0.32)
+    ax_rna  = fig.add_subplot(gs[0, 0])
+    ax_atac = fig.add_subplot(gs[0, 1])
+    ax_jnt  = fig.add_subplot(gs[1, 0])
+    ax_ent  = fig.add_subplot(gs[1, 1])
 
     # Panels A & B — RNA and ATAC colored by cluster
-    for ax, emb, mod, pl in [(axes[0], rna_emb, "RNA", "A"),
-                              (axes[1], atac_emb, "ATAC", "B")]:
+    for ax, emb, mod, pl in [(ax_rna,  rna_emb,  "RNA",  "A"),
+                              (ax_atac, atac_emb, "ATAC", "B")]:
         for c in clusters:
             m = leiden == c
-            ax.scatter(emb[m, 0], emb[m, 1], s=2.5, alpha=0.6,
+            ax.scatter(emb[m, 0], emb[m, 1], s=6, alpha=0.65,
                        color=cl2col[c], rasterized=True)
         _strip_ax(ax)
-        ax.set_title(f"({pl}) {mod} — by cluster", fontsize=FST, pad=6)
+        ax.set_title(f"({pl}) {mod} — by cluster", fontsize=FST, pad=8)
 
     # Panel C — joint colored by cluster
-    ax = axes[2]
+    ax = ax_jnt
     for c in clusters:
         m = leiden == c
-        ax.scatter(rna_emb[m, 0], rna_emb[m, 1], s=2.5, alpha=0.45,
+        ax.scatter(rna_emb[m, 0], rna_emb[m, 1], s=6, alpha=0.50,
                    color=cl2col[c], rasterized=True)
-        ax.scatter(atac_emb[m, 0], atac_emb[m, 1], s=2.5, alpha=0.45,
+        ax.scatter(atac_emb[m, 0], atac_emb[m, 1], s=6, alpha=0.50,
                    color=cl2col[c], rasterized=True, marker="^")
     _strip_ax(ax)
-    ax.set_title("(C) Joint  ●RNA / ▲ATAC", fontsize=FST, pad=6)
-    handles = [plt.scatter([], [], s=45, color=cl2col[c], label=f"C{c}")
+    ax.set_title("(C) Joint  ●RNA / ▲ATAC", fontsize=FST, pad=8)
+    handles = [plt.scatter([], [], s=60, color=cl2col[c], label=f"C{c}")
                for c in clusters[:min(n_cl, 20)]]
     ax.legend(handles=handles, loc="lower left", markerscale=1.2,
               frameon=True, framealpha=0.7, ncol=2,
-              fontsize=FSG - 1, handlelength=0.9, borderpad=0.4)
+              fontsize=FSG, handlelength=0.9, borderpad=0.4)
 
     # Panel D — subsample cells colored by H_cluster
-    ax = axes[3]
+    ax = ax_ent
     sc = ax.scatter(sub_emb[:, 0], sub_emb[:, 1], c=H_cluster,
                     cmap=ENT_CMAP, vmin=0, vmax=1,
-                    s=5, alpha=0.85, rasterized=True)
+                    s=10, alpha=0.88, rasterized=True)
     _strip_ax(ax)
-    ax.set_title(r"(D) Alignment uncertainty $H_{\rm cluster}$", fontsize=FST, pad=6)
+    ax.set_title(r"(D) Alignment uncertainty $H_{\rm cluster}$", fontsize=FST, pad=8)
     _colorbar(fig, ax, ENT_CMAP, 0, 1, r"$H_{\rm cluster}$")
 
     fig.suptitle(f"MOSAIC aligned latent — {label}", fontsize=FST + 2,
-                 fontweight="bold", y=1.02)
-    plt.tight_layout(pad=1.5)
+                 fontweight="bold", y=1.01)
+    plt.tight_layout()
     _save(fig, f"fig1_aligned_latent_{dataset_id}")
     print(f"  [fig1] done {dataset_id}")
 
@@ -245,12 +247,12 @@ def fig2_entropy_comparison(exp_name: str, dataset_id: str, label: str) -> None:
     embed = _umap_embed(joint, n_neighbors=30, min_dist=0.3)
     sub_emb = embed[:len(Z_rna)][sub_idx]
 
-    fig, axes = plt.subplots(1, 3, figsize=(22, 7))
+    fig, axes = plt.subplots(1, 3, figsize=(24, 10))
 
     # Panel A: cell-level (wrong sign)
     ax = axes[0]
     ax.scatter(H_cell, errs, c=errs, cmap="RdYlGn_r",
-               s=5, alpha=0.30, rasterized=True)
+               s=8, alpha=0.30, rasterized=True)
     ax.set_xlabel(r"Cell-level row entropy $H_{\rm cell}$")
     ax.set_ylabel("Distance to true partner")
     m, b = np.polyfit(H_cell, errs, 1)
@@ -266,7 +268,7 @@ def fig2_entropy_comparison(exp_name: str, dataset_id: str, label: str) -> None:
     # Panel B: cluster-level (correct sign)
     ax = axes[1]
     ax.scatter(H_cluster, errs, c=errs, cmap="RdYlGn_r",
-               s=5, alpha=0.30, rasterized=True)
+               s=8, alpha=0.30, rasterized=True)
     ax.set_xlabel(r"Cluster-resolved $H_{\rm cluster}$")
     ax.set_ylabel("Distance to true partner")
     m2, b2 = np.polyfit(H_cluster, errs, 1)
@@ -283,7 +285,7 @@ def fig2_entropy_comparison(exp_name: str, dataset_id: str, label: str) -> None:
     ax = axes[2]
     ax.scatter(sub_emb[:, 0], sub_emb[:, 1], c=H_cluster,
                cmap=ENT_CMAP, vmin=0, vmax=1,
-               s=7, alpha=0.85, rasterized=True)
+               s=12, alpha=0.88, rasterized=True)
     _strip_ax(ax)
     ax.set_title(r"(C) $H_{\rm cluster}$ on UMAP" + "\n(spatial uncertainty map)")
     _colorbar(fig, ax, ENT_CMAP, 0, 1, r"$H_{\rm cluster}$")
