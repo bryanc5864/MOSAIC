@@ -1,9 +1,9 @@
-# MOSAIC: Multi-Omics Stochastic Alignment via Information-theoretic Coupling
+# Calibrated Per-Cell Uncertainty for Unpaired Single-Cell Multi-Omics Integration
 
 **Field**: Computational genomics — single-cell multi-omics integration
 **Constraints**: Data — public datasets only, <10 GB total on disk | Compute — 1× NVIDIA RTX 3080 (10 GB VRAM), local workstation
 **Date**: 2026-04-10
-**License**: MIT — Bryan Cheng, 2026
+**License**: MIT — Bryan Cheng, Austin Jin, Joshua Chang, Brendan Lo, 2026
 **Target venue**: RECOMB 2026 (Thessaloniki); backups Cell Systems / Genome Research / JCB
 
 > **Note on compute deviation from the author-provided plan.** The original plan assumed 10× RTX 2080 Ti. The executing environment has one RTX 3080 (10 GB). Implications, baked in below:
@@ -16,7 +16,7 @@
 
 ## 1. Abstract
 
-Unpaired single-cell multi-omics integration — aligning scRNA-seq and scATAC-seq cells measured in different experiments — is routinely performed by methods (SCOT, uniPort, CMOT, MultiVI) that return point-estimate matchings with no per-cell confidence. Downstream analyses therefore cannot tell a trustworthy alignment from an artifact. MOSAIC closes this gap by combining **Information Bottleneck (IB) autoencoders** — which pre-filter each modality to retain only cross-modally predictive features — with **entropic optimal transport** (Sinkhorn), producing a transport plan whose per-row Shannon entropy serves as a calibrated per-cell alignment uncertainty score. We prove, under sub-Gaussian embedding assumptions, that alignment entropy converges to zero for shared cell types and remains bounded away from zero for cell types absent from one modality. Empirically, we evaluate on four paired ground-truth multi-omics datasets (10x Multiome PBMC, 10x Multiome Brain, SHARE-seq skin, CITE-seq PBMC), benchmark against seven baselines, demonstrate that alignment entropy correctly detects missing cell types (AUROC), and apply the method to an unpaired cross-atlas setting (Tabula Sapiens subset × ENCODE scATAC) to surface putative enhancer-priming regulatory states.
+Unpaired single-cell multi-omics integration — aligning scRNA-seq and scATAC-seq cells measured in different experiments — is routinely performed by methods (SCOT, uniPort, CMOT, MultiVI) that return point-estimate matchings with no per-cell confidence. Downstream analyses therefore cannot tell a trustworthy alignment from an artifact. the method closes this gap by combining **Information Bottleneck (IB) autoencoders** — which pre-filter each modality to retain only cross-modally predictive features — with **entropic optimal transport** (Sinkhorn), producing a transport plan whose per-row Shannon entropy serves as a calibrated per-cell alignment uncertainty score. We prove, under sub-Gaussian embedding assumptions, that alignment entropy converges to zero for shared cell types and remains bounded away from zero for cell types absent from one modality. Empirically, we evaluate on four paired ground-truth multi-omics datasets (10x Multiome PBMC, 10x Multiome Brain, SHARE-seq skin, CITE-seq PBMC), benchmark against seven baselines, demonstrate that alignment entropy correctly detects missing cell types (AUROC), and apply the method to an unpaired cross-atlas setting (Tabula Sapiens subset × ENCODE scATAC) to surface putative enhancer-priming regulatory states.
 
 ## 2. Background & Motivation
 
@@ -24,7 +24,7 @@ Unpaired single-cell multi-omics integration — aligning scRNA-seq and scATAC-s
 
 **Why per-cell uncertainty matters.** Silent misalignment corrupts joint clustering, regulatory inference, and spatial deconvolution downstream. A calibrated per-cell score would enable users to (a) filter low-confidence matches, (b) detect cell populations present in one modality but absent in the other, and (c) distinguish genuine biology from batch effects that resemble alignment uncertainty.
 
-**The gap MOSAIC fills.** Entropic OT naturally produces a probability distribution over candidate matches. Prior work treats this as a computational convenience to be rounded into a hard assignment. We treat it as a first-class output: the Shannon entropy of each row *is* the per-cell alignment uncertainty, and under suitable conditions it has a formal interpretation. To make this work in practice, the latent space fed into OT must be clean — IB regularization (Alemi et al. 2017; Tishby & Zaslavsky 2015) provides the mechanism to discard modality-specific noise.
+**The gap the method fills.** Entropic OT naturally produces a probability distribution over candidate matches. Prior work treats this as a computational convenience to be rounded into a hard assignment. We treat it as a first-class output: the Shannon entropy of each row *is* the per-cell alignment uncertainty, and under suitable conditions it has a formal interpretation. To make this work in practice, the latent space fed into OT must be clean — IB regularization (Alemi et al. 2017; Tishby & Zaslavsky 2015) provides the mechanism to discard modality-specific noise.
 
 **Why no existing method combines IB + OT with per-cell UQ.** IB-VAEs are used for disentanglement and representation compression, not as a preprocessor for transport. OT methods in multi-omics use raw or VAE embeddings without a bottleneck, so their cost matrices are noisy and the resulting transport plans are high-entropy for reasons unrelated to true biological ambiguity. Coupling the two cleanly, and giving the row-entropy a formal meaning, is novel.
 
@@ -32,7 +32,7 @@ Unpaired single-cell multi-omics integration — aligning scRNA-seq and scATAC-s
 
 ### 3.1 Overview
 
-The MOSAIC pipeline has four stages:
+The the method pipeline has four stages:
 
 ```
 Raw counts ──► Preprocess ──► IB-VAE (per modality) ──► Entropic OT ──► H_i + matches
@@ -105,10 +105,10 @@ Raw counts ──► Preprocess ──► IB-VAE (per modality) ──► Entrop
 Every experiment logs to `TRAINING_LOG.md` and updates `RESULTS.md`. Every metric is computed by code whose commit hash is pinned in the experiment config.
 
 **Exp 1 — Alignment accuracy on paired data (primary).**
-- *Objective*: Is MOSAIC competitive with or better than existing unpaired-integration methods when judged against ground-truth pairings?
-- *Setup*: All four paired datasets, run sequentially: 10x Multiome PBMC → 10x Multiome Brain → CITE-seq PBMC → SHARE-seq skin. PBMC is the debugging + hyperparameter-tuning target; the other three are held for reporting (no hyperparameter tuning on them). Split into the two modalities, *drop pairing*, run MOSAIC, compare to true pairing.
+- *Objective*: Is the method competitive with or better than existing unpaired-integration methods when judged against ground-truth pairings?
+- *Setup*: All four paired datasets, run sequentially: 10x Multiome PBMC → 10x Multiome Brain → CITE-seq PBMC → SHARE-seq skin. PBMC is the debugging + hyperparameter-tuning target; the other three are held for reporting (no hyperparameter tuning on them). Split into the two modalities, *drop pairing*, run the method, compare to true pairing.
 - *Metrics*: FOSCTTM (lower = better), label-transfer accuracy (cell type classifier trained on RNA, evaluated on ATAC via aligned embedding, higher = better), ARI of joint clustering vs. known cell-type labels.
-- *Success*: MOSAIC achieves FOSCTTM ≤ the best of (SCOT, uniPort) on at least 2 of 4 datasets, or a principled explanation if not.
+- *Success*: the method achieves FOSCTTM ≤ the best of (SCOT, uniPort) on at least 2 of 4 datasets, or a principled explanation if not.
 
 **Exp 2 — Entropy calibration.**
 - *Objective*: Is per-cell alignment entropy correlated with actual alignment error?
@@ -118,7 +118,7 @@ Every experiment logs to `TRAINING_LOG.md` and updates `RESULTS.md`. Every metri
 
 **Exp 3 — Missing cell type detection.**
 - *Objective*: Does alignment entropy flag cells whose type is absent from the target modality?
-- *Setup*: Remove one cell type from the ATAC modality (e.g., platelets from PBMC, which are small in count). Run MOSAIC. Measure whether RNA cells of the removed type have elevated H̃_i.
+- *Setup*: Remove one cell type from the ATAC modality (e.g., platelets from PBMC, which are small in count). Run the method. Measure whether RNA cells of the removed type have elevated H̃_i.
 - *Metrics*: AUROC for (removed-type vs. kept-type) classification via H̃_i threshold.
 - *Success*: AUROC ≥ 0.8 on at least one held-out type; report across all candidate holdouts.
 
@@ -132,7 +132,7 @@ Every experiment logs to `TRAINING_LOG.md` and updates `RESULTS.md`. Every metri
 - *Metrics*: wall-clock time, peak RAM, peak VRAM. (Note: scales down from original plan due to single-GPU constraint.)
 
 **Exp 6 — Cross-atlas regulatory discovery (stretch).**
-- *Setup*: Tabula Sapiens RNA subset (lung, ~10–20K cells) × ENCODE scATAC cortex subset. Apply MOSAIC, find high-entropy cell populations, GO-enrichment and enhancer-priming analysis.
+- *Setup*: Tabula Sapiens RNA subset (lung, ~10–20K cells) × ENCODE scATAC cortex subset. Apply the method, find high-entropy cell populations, GO-enrichment and enhancer-priming analysis.
 - *Success*: at least one qualitatively interpretable high-entropy population surfaces, with biological interpretation supported by marker genes / known enhancer maps.
 
 ### 4.2 Baselines
@@ -241,9 +241,9 @@ See Exp 4 above. Ablations are first-class experiments.
 
 ### 7.3 Definition of Success
 
-- **Full success**: MOSAIC beats or matches SCOT/uniPort on FOSCTTM AND entropy calibration ρ ≥ 0.4 AND missing-type AUROC ≥ 0.8 AND at least one ablation shows a clear component contribution AND cross-atlas application surfaces an interpretable finding.
+- **Full success**: the method beats or matches SCOT/uniPort on FOSCTTM AND entropy calibration ρ ≥ 0.4 AND missing-type AUROC ≥ 0.8 AND at least one ablation shows a clear component contribution AND cross-atlas application surfaces an interpretable finding.
 - **Partial success**: The UQ component (ρ and AUROC) is calibrated, even if raw alignment accuracy only ties existing methods. This is still a clear paper because no baseline provides UQ at all.
-- **Failure**: Alignment entropy is uncorrelated with error, and MOSAIC is strictly worse than baselines on FOSCTTM. In that case, report honestly, diagnose (is the IB collapsing? is ε poorly chosen?), and pivot scope — most likely to an analytical / theoretical paper about when entropic OT couplings do and do not carry calibrated uncertainty.
+- **Failure**: Alignment entropy is uncorrelated with error, and the method is strictly worse than baselines on FOSCTTM. In that case, report honestly, diagnose (is the IB collapsing? is ε poorly chosen?), and pivot scope — most likely to an analytical / theoretical paper about when entropic OT couplings do and do not carry calibrated uncertainty.
 
 ## 8. Risk Mitigation
 
@@ -254,7 +254,7 @@ See Exp 4 above. Ablations are first-class experiments.
 | Alignment entropy uncalibrated in practice | M | H | Exp 2 is exactly the test. If it fails, diagnose with ablations, consider temperature scaling of Sinkhorn or learned calibration layer. |
 | Dataset download fails / license issue | L | M | Primary dataset (10x Multiome PBMC) is a long-standing public demo; backup is GEO downloads. |
 | SHARE-seq / Tabula Sapiens >10 GB | M | L | Tissue / cell-count subsampling documented in §5.1; budget applies to *processed* footprint. |
-| Baseline install conflicts (POT vs scvi-tools versions) | M | M | Separate conda environments for MOSAIC vs. SCOT / uniPort if needed; shared evaluation env reads outputs from disk. |
+| Baseline install conflicts (POT vs scvi-tools versions) | M | M | Separate conda environments for the method vs. SCOT / uniPort if needed; shared evaluation env reads outputs from disk. |
 | Enhancer-priming discovery (Exp 6) is unsupported | M | L | Exp 6 is a stretch; negative result is still reported. Primary paper claims do not depend on it. |
 
 ## 9. Timeline

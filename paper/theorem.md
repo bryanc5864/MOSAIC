@@ -1,10 +1,10 @@
 # Theorem: Convergence of cluster-resolved alignment entropy
 
-*MOSAIC appendix — informal statement and proof sketch*
+*the method appendix — informal statement and proof sketch*
 
 ## Setup
 
-Let $\mathcal{A}$ and $\mathcal{B}$ be two single-cell modalities with a shared set of $K$ cell types. For each type $k \in [K]$, let $n$ cells be drawn independently from a distribution on the modality's feature space. After applying MOSAIC's per-modality IB-VAE encoder and the cluster-centroid Procrustes rotation, each cell is mapped to a 64-dimensional latent vector. Denote by $z_i^A \in \mathbb{R}^{64}$ (resp. $z_j^B$) the latent of the $i$-th cell of modality A (resp. $j$-th cell of modality B). Each cell has a known type label $c_i \in [K]$ (in the paired-benchmark setting, propagated via the ground-truth pairing; in the general setting, provided by an external label source or joint clustering).
+Let $\mathcal{A}$ and $\mathcal{B}$ be two single-cell modalities with a shared set of $K$ cell types. For each type $k \in [K]$, let $n$ cells be drawn independently from a distribution on the modality's feature space. After applying the method's per-modality IB-VAE encoder and the cluster-centroid Procrustes rotation, each cell is mapped to a 64-dimensional latent vector. Denote by $z_i^A \in \mathbb{R}^{64}$ (resp. $z_j^B$) the latent of the $i$-th cell of modality A (resp. $j$-th cell of modality B). Each cell has a known type label $c_i \in [K]$ (in the paired-benchmark setting, propagated via the ground-truth pairing; in the general setting, provided by an external label source or joint clustering).
 
 **Assumptions**:
 
@@ -12,7 +12,7 @@ Let $\mathcal{A}$ and $\mathcal{B}$ be two single-cell modalities with a shared 
    $$\mathbb{E}[\exp(\langle u, z_i^A - \mu_k^A \rangle)] \leq \exp(\sigma^2 \|u\|^2 / 2) \quad \forall u \in \mathbb{R}^{64}$$
    and symmetrically for modality B with means $\mu_k^B$.
 
-2. **Procrustes recovery.** The MOSAIC Procrustes rotation exactly aligns the type centroids across modalities: after applying the rotation, $\mu_k^A = \mu_k^B$ for all $k$. (In practice this is approximate; the finite-sample error contributes an additional $O(\sigma/\sqrt{n})$ term to the bounds below.)
+2. **Procrustes recovery.** The the method Procrustes rotation exactly aligns the type centroids across modalities: after applying the rotation, $\mu_k^A = \mu_k^B$ for all $k$. (In practice this is approximate; the finite-sample error contributes an additional $O(\sigma/\sqrt{n})$ term to the bounds below.)
 
 3. **Type separation.** The minimum pairwise cross-type distance is $\Delta := \min_{k \neq \ell} \|\mu_k - \mu_\ell\| > 0$.
 
@@ -34,7 +34,7 @@ where $K_{\text{present}}$ is the number of types present in modality B after re
 
 ## Corollary (calibrated missing-type detection)
 
-Combining Theorems 1 and 2, there exists a threshold $\tau \in (0, 1)$ such that for sufficiently large $n$ (polynomial in $K$ and $1/\sigma$), thresholding on $H_{\text{cluster}}(i) < \tau$ classifies cells of shared types correctly (low entropy) and cells of absent types correctly (high entropy) with probability at least $1 - \exp(-c' n)$ for a constant $c'$. This is the formal statement underlying MOSAIC's missing-type detection experiment.
+Combining Theorems 1 and 2, there exists a threshold $\tau \in (0, 1)$ such that for sufficiently large $n$ (polynomial in $K$ and $1/\sigma$), thresholding on $H_{\text{cluster}}(i) < \tau$ classifies cells of shared types correctly (low entropy) and cells of absent types correctly (high entropy) with probability at least $1 - \exp(-c' n)$ for a constant $c'$. This is the formal statement underlying the method's missing-type detection experiment.
 
 ## Proof sketch
 

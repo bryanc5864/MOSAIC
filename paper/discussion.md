@@ -1,10 +1,10 @@
 # Discussion
 
-*MOSAIC: Multi-Omics Stochastic Alignment via Information-theoretic Coupling*
+*Calibrated Per-Cell Uncertainty for Unpaired Single-Cell Multi-Omics Integration*
 
 ## Summary of findings
 
-MOSAIC provides a well-discriminating per-cell alignment uncertainty signal for single-cell multi-omics integration. The method outperforms SCOT by 22% on FOSCTTM and 105% on label transfer accuracy on PBMC 10k, outperforms all baselines on Brain 5k and CITE-seq, and — most importantly — correctly identifies which cells are mis-aligned with AUROC 0.89 (PBMC, β=0.01) and 0.95 (Brain, β=0.001). In leave-one-cluster-out missing-type experiments, the cluster-resolved entropy detects absent cell types with mean AUROC 0.96 on PBMC, 0.995 on Brain, and 0.946 on CITE-seq. A cross-tissue negative control (PBMC RNA × Brain ATAC, no shared cell types) shows 4.2× higher mean cluster entropy than within-dataset controls, confirming the signal correctly reports high uncertainty when nothing truly aligns.
+the method provides a well-discriminating per-cell alignment uncertainty signal for single-cell multi-omics integration. The method outperforms SCOT by 22% on FOSCTTM and 105% on label transfer accuracy on PBMC 10k, outperforms all baselines on Brain 5k and CITE-seq, and — most importantly — correctly identifies which cells are mis-aligned with AUROC 0.89 (PBMC, β=0.01) and 0.95 (Brain, β=0.001). In leave-one-cluster-out missing-type experiments, the cluster-resolved entropy detects absent cell types with mean AUROC 0.96 on PBMC, 0.995 on Brain, and 0.946 on CITE-seq. A cross-tissue negative control (PBMC RNA × Brain ATAC, no shared cell types) shows 4.2× higher mean cluster entropy than within-dataset controls, confirming the signal correctly reports high uncertainty when nothing truly aligns.
 
 Three findings deserve particular emphasis.
 
@@ -18,7 +18,7 @@ Three findings deserve particular emphasis.
 
 ### Cluster-label dependence
 
-MOSAIC's Procrustes alignment and the cluster-resolved entropy definition both require cluster labels. On paired benchmark datasets we propagate leiden clusters from one modality to the other via the known pairing, which is legitimate for evaluation but does not translate directly to unpaired application settings. The natural replacement in production is a joint clustering of the concatenated IB-VAE latents (a chicken-and-egg problem if those latents are themselves produced by training that depends on cluster labels), or an external labeling source (e.g., celltypist, Azimuth for immune populations). A principled treatment of the label-free setting is a key direction for follow-up.
+the method's Procrustes alignment and the cluster-resolved entropy definition both require cluster labels. On paired benchmark datasets we propagate leiden clusters from one modality to the other via the known pairing, which is legitimate for evaluation but does not translate directly to unpaired application settings. The natural replacement in production is a joint clustering of the concatenated IB-VAE latents (a chicken-and-egg problem if those latents are themselves produced by training that depends on cluster labels), or an external labeling source (e.g., celltypist, Azimuth for immune populations). A principled treatment of the label-free setting is a key direction for follow-up.
 
 ### Loss-scale inconsistency
 
@@ -30,7 +30,7 @@ We adopt median-normalized cost and POT's regular (non log-domain) Sinkhorn solv
 
 ### Dataset scope
 
-We benchmark on two 10x Multiome datasets (RNA+ATAC) and one CITE-seq dataset (RNA + 14 protein markers). The CITE-seq benchmark confirms MOSAIC's modality-agnostic scaffolding extends beyond chromatin accessibility: the protein modality uses CLR normalization and a 14-feature LSI embedding, yet MOSAIC achieves FOSCTTM 0.094, label transfer 87/96%, and ARI 0.79 on CITE-seq — with the cluster-resolved entropy detecting missing cell types at median AUROC 0.998. This validates that the IB + Procrustes + entropy framework is genuinely modality-agnostic. Extension to RNA+methylation would require only changing the decoder likelihood.
+We benchmark on two 10x Multiome datasets (RNA+ATAC) and one CITE-seq dataset (RNA + 14 protein markers). The CITE-seq benchmark confirms the method's modality-agnostic scaffolding extends beyond chromatin accessibility: the protein modality uses CLR normalization and a 14-feature LSI embedding, yet the method achieves FOSCTTM 0.094, label transfer 87/96%, and ARI 0.79 on CITE-seq — with the cluster-resolved entropy detecting missing cell types at median AUROC 0.998. This validates that the IB + Procrustes + entropy framework is genuinely modality-agnostic. Extension to RNA+methylation would require only changing the decoder likelihood.
 
 ### Convergence theorem
 
@@ -49,15 +49,15 @@ The practical recommendation is to use **β=0.001 as the default**. The cluster-
 
 ## Open questions and next steps
 
-1. **Unpaired application at scale.** We tested MOSAIC on paired benchmarks so we could evaluate against ground truth. The next step is a genuinely unpaired application (Tabula Sapiens × ENCODE scATAC) where cluster labels come from a joint clustering of the IB-VAE latents. We expect the cluster-resolved entropy to surface biologically interpretable signals: cell populations that are in one atlas but not the other, or regulatory states (enhancer priming) where chromatin accessibility and transcription are decorrelated.
+1. **Unpaired application at scale.** We tested the method on paired benchmarks so we could evaluate against ground truth. The next step is a genuinely unpaired application (Tabula Sapiens × ENCODE scATAC) where cluster labels come from a joint clustering of the IB-VAE latents. We expect the cluster-resolved entropy to surface biologically interpretable signals: cell populations that are in one atlas but not the other, or regulatory states (enhancer priming) where chromatin accessibility and transcription are decorrelated.
 
-2. **Learning the cluster assignment end-to-end.** Currently we use leiden clusters computed separately on each modality. A joint, learned clustering that consumes both modalities' latents and provides the labels MOSAIC depends on would close the loop and remove the external cluster-label dependence.
+2. **Learning the cluster assignment end-to-end.** Currently we use leiden clusters computed separately on each modality. A joint, learned clustering that consumes both modalities' latents and provides the labels the method depends on would close the loop and remove the external cluster-label dependence.
 
-3. **Multi-modal generalization (> 2 modalities).** MOSAIC as written handles two modalities; the Procrustes rotation would need to be generalized to a joint orthogonal transformation over all modalities simultaneously (a group Procrustes problem), and the cluster-resolved entropy would extend to multi-modal cluster marginals naturally.
+3. **Multi-modal generalization (> 2 modalities).** the method as written handles two modalities; the Procrustes rotation would need to be generalized to a joint orthogonal transformation over all modalities simultaneously (a group Procrustes problem), and the cluster-resolved entropy would extend to multi-modal cluster marginals naturally.
 
 4. **Principled treatment of cell populations present in multiple but not all modalities.** Our leave-one-out missing-type test assumes cluster $k^*$ is present in modality A but absent in modality B. Real unpaired data may have cluster $k^*$ present in modalities A and B but absent in C, which requires a richer uncertainty decomposition than the binary "present/absent" framing.
 
-5. **AUROC is necessary but not sufficient as a UQ metric.** We report AUROC for discriminating correct from wrong cluster assignments, but AUROC alone can be misleading: in the no-cross-head ablation (where alignment is nearly random and 75% of cells are wrong-assigned), the AUROC is 0.962 — *higher* than full MOSAIC's 0.894 — simply because the base rate of errors is so high that any weakly-informative signal achieves high AUROC. The correct interpretation requires reporting AUROC alongside argmax accuracy. Full MOSAIC's 0.894 AUROC against a 1.2% error rate is a much harder (and more practically useful) test than the ablation's 0.962 against a 75% error rate.
+5. **AUROC is necessary but not sufficient as a UQ metric.** We report AUROC for discriminating correct from wrong cluster assignments, but AUROC alone can be misleading: in the no-cross-head ablation (where alignment is nearly random and 75% of cells are wrong-assigned), the AUROC is 0.962 — *higher* than full the method's 0.894 — simply because the base rate of errors is so high that any weakly-informative signal achieves high AUROC. The correct interpretation requires reporting AUROC alongside argmax accuracy. Full the method's 0.894 AUROC against a 1.2% error rate is a much harder (and more practically useful) test than the ablation's 0.962 against a 75% error rate.
 
 6. **Cluster-resolved entropy is well-discriminating but not formally calibrated.** Calibration curves on all three datasets show that higher $H_{\text{cluster}}$ monotonically predicts higher true error rate (the calibration curve is qualitatively correct), but the ECE ranges from 0.05 to 0.16 depending on dataset. This means $H_{\text{cluster}} = 0.3$ does not imply a 30% probability of misalignment — it implies "higher risk than cells with $H_{\text{cluster}} = 0.1$." For downstream filtering (e.g., "discard cells above a threshold"), the signal works well; for probabilistic inference that requires calibrated uncertainty, a post-hoc recalibration (Platt scaling or isotonic regression on a held-out set) would be needed. We report Brier scores (0.024–0.052) and ECE alongside AUROC to give a complete picture.
 

@@ -1,17 +1,17 @@
-# Post-Results Review Report — MOSAIC
+# Post-Results Review Report
 
 **Review Mode**: Post-Results
 **Date**: 2026-04-11 (updated pass — supersedes the prior single-seed audit)
 **Reviewer**: Autonomous Review Skill
-**Project root**: `C:\Users\Maozer\projects\MOSAIC`
+**Project root**: `C:\Users\Maozer\projects\the method`
 
 ---
 
 ## Summary
 
-**Overall Status**: 🟢 **PASS** (after remediation) — no fabrication, no data leakage into the alignment evaluation, and the headline scientific claims (MOSAIC >> SCOT / uniPort / raw features on both paired benchmarks; β=0.001 best on Brain; cluster-resolved entropy calibrated; leave-one-cluster-out detection >0.99 AUROC on Brain; cross-tissue H_cluster 4.2× within-dataset) all trace to JSON files on disk with the reported numbers.
+**Overall Status**: 🟢 **PASS** (after remediation) — no fabrication, no data leakage into the alignment evaluation, and the headline scientific claims (the method >> SCOT / uniPort / raw features on both paired benchmarks; β=0.001 best on Brain; cluster-resolved entropy calibrated; leave-one-cluster-out detection >0.99 AUROC on Brain; cross-tissue H_cluster 4.2× within-dataset) all trace to JSON files on disk with the reported numbers.
 
-**Remediation status (2026-04-11, post-review commit)**: W1, W2, W3, W4, W5 all addressed in the same commit that includes this report. `RESULTS.md` and `paper/results.md` SCOT PBMC row re-synced to the JSON (0.2481 / 0.3235 / 0.3831 / 0.3223, wall 1215 s). The MOSAIC-vs-SCOT comparison prose widens from "21% / 84% / 89% better" to "22% / 105% / 102% better" accordingly. The unit-test claim in `paper/results.md` is replaced with "verified by inspection" language plus a pointer to the cluster-propagation caveat. `paper/methods.md` is now written in full and includes an explicit "Transparency note on cluster propagation" section that describes the `atac.obs["leiden"] = rna.obs["leiden"].values` row-copy and its implications for unpaired-application claims. `paper/results.md` now has the Exp 4 ablation table and Exp 6 cross-tissue section in place of the prior TODOs.
+**Remediation status (2026-04-11, post-review commit)**: W1, W2, W3, W4, W5 all addressed in the same commit that includes this report. `RESULTS.md` and `paper/results.md` SCOT PBMC row re-synced to the JSON (0.2481 / 0.3235 / 0.3831 / 0.3223, wall 1215 s). The the method-vs-SCOT comparison prose widens from "21% / 84% / 89% better" to "22% / 105% / 102% better" accordingly. The unit-test claim in `paper/results.md` is replaced with "verified by inspection" language plus a pointer to the cluster-propagation caveat. `paper/methods.md` is now written in full and includes an explicit "Transparency note on cluster propagation" section that describes the `atac.obs["leiden"] = rna.obs["leiden"].values` row-copy and its implications for unpaired-application claims. `paper/results.md` now has the Exp 4 ablation table and Exp 6 cross-tissue section in place of the prior TODOs.
 
 Findings below fall in three buckets:
 
@@ -69,7 +69,7 @@ No critical issues. Paper writing may proceed after the stale table is re-synced
 
 **Interpretation**: likely a SCOT re-run happened after the initial RESULTS.md table was written (the wall-time jump 97 → 1215 s is consistent with switching from a 3000-cell run to the full 11303-cell run). The re-run was saved to JSON but the table wasn't updated.
 
-**How to fix**: re-sync both documents to match the JSON. The direction of all comparison claims is preserved — MOSAIC still beats SCOT by wide margins. The qualitative narrative does not change.
+**How to fix**: re-sync both documents to match the JSON. The direction of all comparison claims is preserved — the method still beats SCOT by wide margins. The qualitative narrative does not change.
 
 ### W2 — "Unit test verifies no code path accesses pair_idx during training" claim is unsubstantiated
 
@@ -99,7 +99,7 @@ Both `y_cross` targets (RNA→ATAC centroid and ATAC→RNA centroid) are then co
 
 **Why this is not leakage of the evaluation**: the evaluation metrics (FOSCTTM, label transfer, ARI) are computed on the aligned embeddings using `pair_idx` only at evaluation time; the IB-VAE never reads `pair_idx`. The alignment quality reflects real cross-modal structure.
 
-**Why this is nonetheless a transparency issue**: in the *fully unpaired* application setting (the motivating use case for MOSAIC), no paired ground truth would be available to propagate RNA's leiden labels into ATAC's `obs["leiden"]`. A practitioner would need to (a) cluster each modality independently and then find correspondences across independent clusterings, or (b) provide external labels. The paper should explicitly state that the paired benchmark uses paired-GT cluster propagation as a convenience and that this is a **known simplification for the paired benchmark**.
+**Why this is nonetheless a transparency issue**: in the *fully unpaired* application setting (the motivating use case for the method), no paired ground truth would be available to propagate RNA's leiden labels into ATAC's `obs["leiden"]`. A practitioner would need to (a) cluster each modality independently and then find correspondences across independent clusterings, or (b) provide external labels. The paper should explicitly state that the paired benchmark uses paired-GT cluster propagation as a convenience and that this is a **known simplification for the paired benchmark**.
 
 **The code is honest about this** — there is a comment at `preprocess.py:250-255`:
 > Cluster source: leiden on the RNA modality, propagated to ATAC via the paired ground truth (legitimate at training time on paired benchmark datasets; would need to be replaced by a clustering of one modality alone, or by an external label source, in the unpaired-application setting).
@@ -110,7 +110,7 @@ Both `y_cross` targets (RNA→ATAC centroid and ATAC→RNA centroid) are then co
 
 ### W4 — `paper/methods.md` is empty
 
-**File**: `paper/methods.md` — 4 lines, contains only a header and an "*Draft — MOSAIC*" line.
+**File**: `paper/methods.md` — 4 lines, contains only a header and an "*Draft — the method*" line.
 
 **Severity**: Blocking for submission, not for the post-results gate. The Methods section is where W2 and W3 would be addressed, so fixing methods.md is on the critical path to a submittable draft.
 
@@ -156,7 +156,7 @@ FOSCTTM 0.56 / 0.51 / 0.46 (PBMC / Brain / CITE-seq). The RESULTS.md interpretat
 
 ### O5 — No confidence bars on fig3 / fig4
 
-The per-cluster AUROCs in fig3 and the per-method bar heights in fig4 are single-seed. Multi-seed figures would strengthen the visual story, particularly for fig4 where a reviewer will want to see error bars on MOSAIC vs SCOT.
+The per-cluster AUROCs in fig3 and the per-method bar heights in fig4 are single-seed. Multi-seed figures would strengthen the visual story, particularly for fig4 where a reviewer will want to see error bars on the method vs SCOT.
 
 ---
 
@@ -191,12 +191,12 @@ Spot-check of every quantitative claim in `RESULTS.md` against its source JSON. 
 
 | Method / dataset | File | ✓? |
 |---|---|---|
-| MOSAIC PBMC | `baselines_pbmc10k_multiome/simple_baseline_results.json` nn_on_ib | ✓ (0.1941, 0.6640, 0.6940, 0.6515 matches) |
+| the method PBMC | `baselines_pbmc10k_multiome/simple_baseline_results.json` nn_on_ib | ✓ (0.1941, 0.6640, 0.6940, 0.6515 matches) |
 | NN on IB PBMC | same | ✓ |
 | Raw PCA/LSI PBMC | same raw_ot | ✓ (0.3283, 0.1317, 0.6527, 0.0931 matches) |
 | **SCOT PBMC** | `baselines_pbmc10k_multiome/baseline_results.json` | **✗ stale** — see W1 |
 | uniPort PBMC | `baselines_pbmc10k_multiome/uniport_venv_results.json` | ✓ (0.5627, 0.1340, 0.1363, 0.0665 matches) |
-| MOSAIC Brain | `baselines_brain3k_multiome/simple_baseline_results.json` nn_on_ib | ✓ (0.0520, 0.9597, 0.9667, 0.8703 matches) |
+| the method Brain | `baselines_brain3k_multiome/simple_baseline_results.json` nn_on_ib | ✓ (0.0520, 0.9597, 0.9667, 0.8703 matches) |
 | SCOT Brain | `baselines_brain3k_multiome/baseline_results.json` | ✓ (0.4749, 0.1340, 0.0673, 0.0253 matches) |
 | Raw PCA/LSI Brain | same | ✓ |
 | uniPort Brain | `baselines_brain3k_multiome/uniport_venv_results.json` | ✓ |
@@ -269,7 +269,7 @@ All six rows (base, β=0.001, β=0.1, λ=1, λ=20, no-cross-head) match `ablatio
    - LT ATAC→RNA 0.3863 → **0.3831**
    - ARI 0.3452 → **0.3223**
    - Wall time 97 → **1215 s**
-   - Update the percentage-improvement prose in the comparison paragraph (MOSAIC vs SCOT) since the improvements widen slightly after resync.
+   - Update the percentage-improvement prose in the comparison paragraph (the method vs SCOT) since the improvements widen slightly after resync.
 2. **Soften or substantiate the "unit test verifies no `pair_idx` access" claim** in `paper/results.md` line 7.
 3. **Add Methods disclosure of the cluster-propagation step** used to build `y_cross` targets. Quote the `preprocess.py:250-255` code comment verbatim if in doubt.
 4. **Write `paper/methods.md`.** Currently 4 lines.

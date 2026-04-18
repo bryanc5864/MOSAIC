@@ -1,4 +1,4 @@
-# Results — MOSAIC
+# Results
 
 **Last Updated**: 2026-04-17
 **Status**: In Progress — Phase 4 — Healthcare/medicine validation complete (CITE-seq 3-seed, clinical disease simulation, protein UQ analysis)
@@ -11,8 +11,8 @@
 
 | Dataset | Method | FOSCTTM ↓ | LT RNA→ATAC ↑ | LT ATAC→RNA ↑ | ARI ↑ | Mean H_cell |
 |---|---|----------:|--------------:|--------------:|------:|------------:|
-| pbmc10k_multiome | **MOSAIC** | **0.1880 ± 0.0059** | **0.6893 ± 0.0045** | **0.7713 ± 0.0285** | **0.6874 ± 0.0094** | 0.7701 ± 0.0027 |
-| brain3k_multiome | **MOSAIC** | **0.1291 ± 0.0043** | **0.8765 ± 0.0047** | **0.7397 ± 0.0246** | 0.4078 ± 0.0391 | 0.7390 ± 0.0058 |
+| pbmc10k_multiome | **the method** | **0.1880 ± 0.0059** | **0.6893 ± 0.0045** | **0.7713 ± 0.0285** | **0.6874 ± 0.0094** | 0.7701 ± 0.0027 |
+| brain3k_multiome | **the method** | **0.1291 ± 0.0043** | **0.8765 ± 0.0047** | **0.7397 ± 0.0246** | 0.4078 ± 0.0391 | 0.7390 ± 0.0058 |
 
 Per-seed breakdown (for traceability):
 
@@ -32,11 +32,11 @@ Per-seed breakdown (for traceability):
 
 Fair comparison on the PBMC 10k Multiome dataset, 3000-cell subsample (all methods use the same seeded indices):
 
-**PBMC 10k (β=0.01 IB-VAE; baselines independent of MOSAIC β):**
+**PBMC 10k (β=0.01 IB-VAE; baselines independent of the method β):**
 
 | Method | FOSCTTM ↓ | LT RNA→ATAC ↑ | LT ATAC→RNA ↑ | ARI ↑ | Wall (s) | Per-cell UQ? |
 |---|----------:|--------------:|--------------:|------:|---------:|:---:|
-| **MOSAIC** (β=0.01, full pipeline) | **0.1941** | **0.6640** | **0.6940** | **0.6515** | 118 | ✅ cluster entropy |
+| **the method** (β=0.01, full pipeline) | **0.1941** | **0.6640** | **0.6940** | **0.6515** | 118 | ✅ cluster entropy |
 | NN on IB latent (no OT ablation) | 0.1941 | 0.6640 | 0.6940 | 0.6515 | 0.8* | ❌ |
 | SCOT (GW reimplementation) | 0.2481 | 0.3235 | 0.3831 | 0.3223 | 1215 | ❌ |
 | Raw PCA/LSI + Procrustes (no IB) | 0.3283 | 0.1317 | 0.6527 | 0.0931 | 4.5 | ❌ |
@@ -46,7 +46,7 @@ Fair comparison on the PBMC 10k Multiome dataset, 3000-cell subsample (all metho
 
 | Method | FOSCTTM ↓ | LT RNA→ATAC ↑ | LT ATAC→RNA ↑ | ARI ↑ | Wall (s) | Per-cell UQ? |
 |---|----------:|--------------:|--------------:|------:|---------:|:---:|
-| **MOSAIC** (β=0.001, full pipeline) | **0.0520** | **0.9597** | **0.9667** | **0.8703** | ~50 | ✅ cluster entropy |
+| **the method** (β=0.001, full pipeline) | **0.0520** | **0.9597** | **0.9667** | **0.8703** | ~50 | ✅ cluster entropy |
 | NN on IB latent (no OT ablation) | 0.0520 | 0.9597 | 0.9667 | 0.8703 | 1.2* | ❌ |
 | SCOT (GW reimplementation) | 0.4749 | 0.1340 | 0.0673 | 0.0253 | 37 | ❌ |
 | Raw PCA/LSI + Procrustes (no IB) | 0.3341 | 0.0953 | 0.4287 | 0.0626 | 2.5 | ❌ |
@@ -56,7 +56,7 @@ Fair comparison on the PBMC 10k Multiome dataset, 3000-cell subsample (all metho
 
 | Method | FOSCTTM ↓ | LT RNA→ADT ↑ | LT ADT→RNA ↑ | ARI ↑ | Wall (s) | Per-cell UQ? |
 |---|----------:|--------------:|--------------:|------:|---------:|:---:|
-| **MOSAIC** (β=0.001, **3-seed mean±std**) | **0.0905 ± 0.0027** | **0.8738 ± 0.0055** | **0.9507 ± 0.0094** | **0.7659 ± 0.0177** | ~95 | ✅ cluster entropy |
+| **the method** (β=0.001, **3-seed mean±std**) | **0.0905 ± 0.0027** | **0.8738 ± 0.0055** | **0.9507 ± 0.0094** | **0.7659 ± 0.0177** | ~95 | ✅ cluster entropy |
 | NN on IB latent (no OT ablation) | 0.0979 | 0.8700 | 0.9470 | 0.8530 | 1.1* | ❌ |
 | SCOT (GW reimplementation) | 0.5502 | 0.0613 | 0.0800 | 0.3044 | 68 | ❌ |
 | Raw PCA/LSI + Procrustes (no IB) | 0.2370 | 0.3270 | 0.5497 | 0.3771 | 2.2 | ❌ |
@@ -72,24 +72,24 @@ CITE-seq per-seed breakdown (seeds 0, 1, 2):
 
 Note: seeds 1 and 2 were run with `torch.backends.cudnn.deterministic = False` (non-deterministic mode). Seeds 0 used full deterministic mode. The torch.use_deterministic_algorithms(True) call causes a CUDA segfault at epoch 6 of ATAC (protein) training with 14 features for seeds > 0, traced to a CuBLAS kernel interaction. Disabling deterministic mode for the 14-feature protein VAE does not affect the RNA training (still deterministic, seed=N) or the post-training OT alignment; the seeds are still meaningfully distinct (different random data splits, batch orderings, and weight initializations).
 
-Sources: `experiments/exp001_citeseq/results.json` (MOSAIC full-dataset metrics), `experiments/baselines_citeseq_pbmc/baseline_results.json` (SCOT), `experiments/baselines_citeseq_pbmc/simple_baseline_results.json` (NN-on-IB, Raw), `experiments/baselines_citeseq_pbmc/uniport_venv_results.json` (uniPort). The NN-on-IB row is computed on the 3000-cell subsample, which is why its ARI is marginally higher than the full-dataset MOSAIC ARI 0.791 — KMeans on fewer cells with cleaner ground-truth clusters converges more reliably. Directionally, **MOSAIC beats every baseline on every metric on CITE-seq**: raw features (ARI 0.38) and uniPort (0.39) and SCOT (0.30) are all at least 2× worse than MOSAIC (0.77). SCOT FOSCTTM 0.55 is worse than random, a third dataset where SCOT's GW solver does not converge to a meaningful coupling. Aggregate source: `experiments/aggregate_citeseq_3seed.json`.
+Sources: `experiments/exp001_citeseq/results.json` (the method full-dataset metrics), `experiments/baselines_citeseq_pbmc/baseline_results.json` (SCOT), `experiments/baselines_citeseq_pbmc/simple_baseline_results.json` (NN-on-IB, Raw), `experiments/baselines_citeseq_pbmc/uniport_venv_results.json` (uniPort). The NN-on-IB row is computed on the 3000-cell subsample, which is why its ARI is marginally higher than the full-dataset the method ARI 0.791 — KMeans on fewer cells with cleaner ground-truth clusters converges more reliably. Directionally, **the method beats every baseline on every metric on CITE-seq**: raw features (ARI 0.38) and uniPort (0.39) and SCOT (0.30) are all at least 2× worse than the method (0.77). SCOT FOSCTTM 0.55 is worse than random, a third dataset where SCOT's GW solver does not converge to a meaningful coupling. Aggregate source: `experiments/aggregate_citeseq_3seed.json`.
 
-*NN on IB wall time is inference-only; reuses MOSAIC's already-trained IB-VAE. Fair total ≈ 95s (PBMC) or 38s (Brain) or 95s (CITE-seq) of IB-VAE training plus the listed inference time.
+*NN on IB wall time is inference-only; reuses the method's already-trained IB-VAE. Fair total ≈ 95s (PBMC) or 38s (Brain) or 95s (CITE-seq) of IB-VAE training plus the listed inference time.
 
 uniPort note: installed in a separate venv (`venv_uniport/`) with numpy<2 to work around uniPort 1.3's use of the deprecated `np.Inf`. Source: `experiments/baselines_pbmc10k_multiome/uniport_venv_results.json`. On PBMC, uniPort gives FOSCTTM 0.56 (**worse than random at 0.5**), LT 0.134/0.136 (at chance of 0.056 × 2.4), ARI 0.067 — strictly worse than SCOT on every metric. We attribute this to uniPort's reliance on common genes between modalities, which is tenuous in the ATAC case where the "features" are peaks.
 
 **Key comparisons (across both datasets)**:
-- **MOSAIC vs SCOT — PBMC**: FOSCTTM 0.194 vs 0.248 (MOSAIC 22% better), LT RNA→ATAC 0.664 vs 0.324 (105% better), ARI 0.651 vs 0.322 (102% better).
-- **MOSAIC vs SCOT — Brain**: FOSCTTM **0.052 vs 0.475** (MOSAIC 89% better), LT RNA→ATAC **0.960 vs 0.134** (7.2× better), ARI **0.870 vs 0.025** (35× better). SCOT essentially fails on Brain.
-- **MOSAIC vs raw features (no IB ablation)** on both datasets: removing the IB-VAE collapses every metric. On PBMC LT 0.664 → 0.132, ARI 0.651 → 0.093. On Brain LT 0.960 → 0.095, ARI 0.870 → 0.063 — a 14× ARI drop. **The IB-VAE is the single most important component**.
-- **MOSAIC vs NN-on-IB**: numerically identical on FOSCTTM/LT/ARI on both datasets (expected — these don't use the OT plan). MOSAIC's OT step provides the per-cell *cluster-resolved entropy* signal, which NN-on-IB cannot.
+- **the method vs SCOT — PBMC**: FOSCTTM 0.194 vs 0.248 (the method 22% better), LT RNA→ATAC 0.664 vs 0.324 (105% better), ARI 0.651 vs 0.322 (102% better).
+- **the method vs SCOT — Brain**: FOSCTTM **0.052 vs 0.475** (the method 89% better), LT RNA→ATAC **0.960 vs 0.134** (7.2× better), ARI **0.870 vs 0.025** (35× better). SCOT essentially fails on Brain.
+- **the method vs raw features (no IB ablation)** on both datasets: removing the IB-VAE collapses every metric. On PBMC LT 0.664 → 0.132, ARI 0.651 → 0.093. On Brain LT 0.960 → 0.095, ARI 0.870 → 0.063 — a 14× ARI drop. **The IB-VAE is the single most important component**.
+- **the method vs NN-on-IB**: numerically identical on FOSCTTM/LT/ARI on both datasets (expected — these don't use the OT plan). the method's OT step provides the per-cell *cluster-resolved entropy* signal, which NN-on-IB cannot.
 - **uniPort**: resolved the numpy 2.0 incompatibility by creating a separate `venv_uniport` with numpy<2 + anndata 0.11.4 + torch 2.0.1 CPU. uniPort runs but produces **worse-than-random** alignment on every dataset — FOSCTTM 0.56 / 0.51 / 0.46 on PBMC / Brain / CITE-seq (all > 0.5 baseline), LT at chance, ARI ≤ 0.07. We attribute this to uniPort's diagonal-integration assumption requiring feature-space commonality between modalities that doesn't apply to RNA+ATAC (different feature types).
 
 ### Exp 6 — Cross-tissue negative control (UQ calibration under no shared structure)
 
 What happens when we align two modalities from **tissues with no shared cell types**? A calibrated UQ signal should say "nothing matches" — report uniformly high uncertainty.
 
-**Setup**: take the trained RNA IB-VAE embedding from PBMC 10k and the trained ATAC IB-VAE embedding from Brain 5k. PBMC cells are T/B/NK/monocytes/DC/platelets — none of which exist in brain. Brain cells are neurons/glia/oligodendrocytes — none of which exist in PBMC. The expected result: MOSAIC's cluster-resolved entropy should be uniformly HIGH, since nothing actually matches.
+**Setup**: take the trained RNA IB-VAE embedding from PBMC 10k and the trained ATAC IB-VAE embedding from Brain 5k. PBMC cells are T/B/NK/monocytes/DC/platelets — none of which exist in brain. Brain cells are neurons/glia/oligodendrocytes — none of which exist in PBMC. The expected result: the method's cluster-resolved entropy should be uniformly HIGH, since nothing actually matches.
 
 **Result** (3000 cells per modality, seed 0, source `experiments/exp006_cross_tissue/results.json`):
 
@@ -101,7 +101,7 @@ What happens when we align two modalities from **tissues with no shared cell typ
 
 The cross-tissue mean cluster entropy is **4.2× higher** than either within-dataset mean. See `figures/fig6_cross_tissue_negative_control.png` for the histogram — the cross-tissue distribution is bimodal around H ≈ 0.55 and 0.75 (corresponding to different PBMC cell types all equally "distant" from their nearest brain cluster), while the within-dataset means (vertical lines) sit at the extreme left tail.
 
-**Interpretation**: this is a clean calibration result. MOSAIC's cluster-resolved entropy correctly flags **every** cell as highly uncertain when the two modalities have no meaningful alignment. A miscalibrated UQ signal (or one that's not actually measuring alignment confidence) would give the same low entropies here as it does on real paired data. MOSAIC doesn't.
+**Interpretation**: this is a clean calibration result. the method's cluster-resolved entropy correctly flags **every** cell as highly uncertain when the two modalities have no meaningful alignment. A miscalibrated UQ signal (or one that's not actually measuring alignment confidence) would give the same low entropies here as it does on real paired data. the method doesn't.
 
 ### Exp 3 — Missing cell type detection (leave-one-cluster-out)
 
@@ -139,7 +139,7 @@ Per-seed breakdown:
 | Brain | 1 | 0.9520 | 0.2579 | 0.7835 | 192 / 4000 |
 | Brain | 2 | 0.9607 | 0.2340 | 0.7812 | 157 / 4000 |
 
-**Key finding**: The *cell-level* row entropy on the OT plan anti-correlates with alignment distance (ρ ≈ −0.5 to −0.65 on both datasets) because dense clusters inflate row entropy AND place the true partner nearby. When we instead marginalize the plan over the partner's cluster labels and compute **cluster-level entropy**, MOSAIC's argmax correctly identifies the partner's cluster on 96–99% of cells, and cluster entropy gives AUROC 0.86–0.89 for detecting the rare wrong-cluster cases. **This is the calibrated UQ signal the paper claims.**
+**Key finding**: The *cell-level* row entropy on the OT plan anti-correlates with alignment distance (ρ ≈ −0.5 to −0.65 on both datasets) because dense clusters inflate row entropy AND place the true partner nearby. When we instead marginalize the plan over the partner's cluster labels and compute **cluster-level entropy**, the method's argmax correctly identifies the partner's cluster on 96–99% of cells, and cluster entropy gives AUROC 0.86–0.89 for detecting the rare wrong-cluster cases. **This is the calibrated UQ signal the paper claims.**
 
 ### Full-scale β comparison (follow-up from Exp 4)
 
@@ -203,7 +203,7 @@ The full per-seed table (10 rows × 5 metrics) is in the aggregate JSON.
 
 ### Exp 4 — Ablation study on PBMC 10k
 
-Six variants of the MOSAIC pipeline, all trained for 150 epochs with 3000-cell OT subsample (same seed 0). Source: `experiments/ablation_pbmc10k_multiome_summary.json`.
+Six variants of the the method pipeline, all trained for 150 epochs with 3000-cell OT subsample (same seed 0). Source: `experiments/ablation_pbmc10k_multiome_summary.json`.
 
 | Variant | β | λ_pred | FOSCTTM ↓ | LT A→B ↑ | LT B→A ↑ | ARI ↑ | H_rho |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -227,7 +227,7 @@ Wall times: 77–232 sec per variant on RTX 3080.
 ### Experiment 1: Alignment accuracy on paired data
 
 **Reference**: RESEARCH_PLAN.md §4.1, Experiment 1
-**Method**: MOSAIC (IB-VAE + rotation-only Procrustes + entropic Sinkhorn)
+**Method**: the method (IB-VAE + rotation-only Procrustes + entropic Sinkhorn)
 **Primary dataset**: 10x Multiome PBMC 10k (11,303 paired cells after QC, 18 leiden clusters)
 **Run directory**: `experiments/exp001_pbmc_final/`
 **Configuration** (final, after 4 prior exploratory runs — see TRAINING_LOG.md):
@@ -254,7 +254,7 @@ Wall times: 77–232 sec per variant on RTX 3080.
 | Wall time | 117.6 sec | — | 52 s RNA train, 42 s ATAC train, rest OT+metrics |
 
 **Interpretation**:
-- MOSAIC achieves strong alignment across all standard metrics. FOSCTTM of 0.19 means the average cell has its true partner closer than ~81% of other cells in the other modality — a clear signal, well below the 0.5 random baseline.
+- the method achieves strong alignment across all standard metrics. FOSCTTM of 0.19 means the average cell has its true partner closer than ~81% of other cells in the other modality — a clear signal, well below the 0.5 random baseline.
 - Label transfer at ~68-74% far exceeds the 1/18 ≈ 5.6% chance rate, indicating that the learned latent space preserves cell-type identity across modalities.
 - ARI of 0.68 for joint KMeans clustering vs. ground-truth leiden labels (which are themselves the clustering the model was trained against) is consistent with the label-transfer result.
 - **The OT row-entropy anti-correlates with alignment distance** (ρ = -0.65). This is the most interesting finding of Exp 1: raw per-cell entropy is not the uncertainty measure we wanted. It captures cluster density — cells in dense clusters have more within-cluster candidates (high entropy) but also a closer true partner (low distance). We'll address this in Exp 2 by computing cluster-resolved entropy that marginalizes over within-cluster candidates.
@@ -288,7 +288,7 @@ Sources: `experiments/exp001_pbmc_final/calibration_analysis.json`, `exp001_pbmc
 
 ### Exp 12 — Cross-seed entropy stability
 
-If MOSAIC's cluster-resolved entropy depends on the random seed (IB-VAE training + OT subsample), the UQ signal is not reproducible. We measured pairwise Spearman ρ between per-cell H_cluster arrays across all 45 pairs of the 10-seed PBMC β=0.001 runs, restricted to cells that appear in both subsamples (mean 2215 common cells per pair).
+If the method's cluster-resolved entropy depends on the random seed (IB-VAE training + OT subsample), the UQ signal is not reproducible. We measured pairwise Spearman ρ between per-cell H_cluster arrays across all 45 pairs of the 10-seed PBMC β=0.001 runs, restricted to cells that appear in both subsamples (mean 2215 common cells per pair).
 
 | Metric | Value |
 |---|---:|
@@ -318,10 +318,10 @@ Analyzing the `no_cross_head` ablation variant (λ_pred=0, alignment is destroye
 
 | Variant | Argmax acc | Mean H_cluster | AUROC(H→wrong) | n_wrong |
 |---|---:|---:|---:|---:|
-| Full MOSAIC (β=0.01) | **98.8%** | 0.153 | 0.894 | 62 / 5000 |
+| Full the method (β=0.01) | **98.8%** | 0.153 | 0.894 | 62 / 5000 |
 | No cross-head (λ=0) | 24.5% | 0.800 | **0.962** | 2264 / 3000 |
 
-The `no_cross_head` variant has a HIGHER AUROC (0.962 vs 0.894) despite alignment being nearly random. This is because when 75% of cells are wrong-assigned, any per-cell feature that even weakly correlates with correctness achieves high AUROC by sheer base-rate advantage. **AUROC must always be reported alongside argmax accuracy**. The true test of a UQ signal is: "given that most cells are correctly assigned, can the signal still identify the rare failures?" Full MOSAIC passes this harder test (AUROC 0.894 with only 1.2% failures). The no_cross_head variant's high AUROC is vacuous.
+The `no_cross_head` variant has a HIGHER AUROC (0.962 vs 0.894) despite alignment being nearly random. This is because when 75% of cells are wrong-assigned, any per-cell feature that even weakly correlates with correctness achieves high AUROC by sheer base-rate advantage. **AUROC must always be reported alongside argmax accuracy**. The true test of a UQ signal is: "given that most cells are correctly assigned, can the signal still identify the rare failures?" Full the method passes this harder test (AUROC 0.894 with only 1.2% failures). The no_cross_head variant's high AUROC is vacuous.
 
 ## Running Commentary
 
@@ -339,7 +339,7 @@ The `no_cross_head` variant has a HIGHER AUROC (0.962 vs 0.894) despite alignmen
 
 ### Exp 13 — Clinical immunodeficiency simulation
 
-To demonstrate MOSAIC's clinical utility, we simulated five immune disease states by removing specific cell populations from the ATAC modality and testing whether cluster-resolved entropy flags RNA cells whose immune population is absent from the reference. This directly models the clinical scenario of using a healthy reference atlas to identify disease-specific cell type perturbations.
+To demonstrate the method's clinical utility, we simulated five immune disease states by removing specific cell populations from the ATAC modality and testing whether cluster-resolved entropy flags RNA cells whose immune population is absent from the reference. This directly models the clinical scenario of using a healthy reference atlas to identify disease-specific cell type perturbations.
 
 **Clinical scenarios and cluster mapping** (PBMC 10k, β=0.001):
 
@@ -353,7 +353,7 @@ To demonstrate MOSAIC's clinical utility, we simulated five immune disease state
 
 **Mean AUROC: 0.952** (range: 0.877–0.978). Across all five disease scenarios, entropy is 3.2–4.8× higher for RNA cells whose immune population is absent from the ATAC reference. The weakest scenario — Treg deficiency (AUROC 0.877) — corresponds to the smallest population (n=141) in a cluster that is transcriptionally close to CD4 T cells, making some RNA cells ambiguous even in the absence of Tregs.
 
-**Clinical interpretation**: MOSAIC can serve as a computational triage tool for single-cell multi-omics alignment on patient samples: when a cell population in the patient's transcriptome has no matching surface phenotype in the reference protein atlas, the cluster-resolved entropy automatically flags those cells as uncertain. This requires no prior knowledge of which cell types are depleted and no disease-specific training.
+**Clinical interpretation**: the method can serve as a computational triage tool for single-cell multi-omics alignment on patient samples: when a cell population in the patient's transcriptome has no matching surface phenotype in the reference protein atlas, the cluster-resolved entropy automatically flags those cells as uncertain. This requires no prior knowledge of which cell types are depleted and no disease-specific training.
 
 Source: `experiments/clinical_disease_sim/results.json`
 
@@ -373,7 +373,7 @@ For CITE-seq data, cluster-resolved entropy identifies RNA cells whose transcrip
 | CD45RO | Memory T | **Higher in uncertain** (Δ=+1.83) | 1.3×10⁻⁵² |
 | CD8a | Cytotoxic T | **Higher in uncertain** (Δ=+1.31) | 3.4×10⁻¹⁴ |
 
-**Interpretation**: High-uncertainty cells are enriched for CD3+, CD4+, CD45RO+, CD8a+ (T cell markers, especially memory phenotypes). Low-uncertainty cells are enriched for CD45RA+ (naive/terminally differentiated), CD56+ (NK cells), and CD16+ (NK/monocytes). This is biologically coherent: NK cells and naive T cells have clear, single-marker-defined surface phenotypes that map cleanly to transcriptomes. Memory T cells and activated T cells express overlapping combinations of CD45RO, CD3, CD4/CD8, and checkpoint markers (PD-1, TIGIT), creating transcriptome-proteome ambiguity. MOSAIC's entropy correctly identifies these phenotypically ambiguous cells without any supervision about which cell types are "hard."
+**Interpretation**: High-uncertainty cells are enriched for CD3+, CD4+, CD45RO+, CD8a+ (T cell markers, especially memory phenotypes). Low-uncertainty cells are enriched for CD45RA+ (naive/terminally differentiated), CD56+ (NK cells), and CD16+ (NK/monocytes). This is biologically coherent: NK cells and naive T cells have clear, single-marker-defined surface phenotypes that map cleanly to transcriptomes. Memory T cells and activated T cells express overlapping combinations of CD45RO, CD3, CD4/CD8, and checkpoint markers (PD-1, TIGIT), creating transcriptome-proteome ambiguity. the method's entropy correctly identifies these phenotypically ambiguous cells without any supervision about which cell types are "hard."
 
 **Highest-entropy clusters** (mean H_cluster):
 - Cluster 12: mean H=0.692, 98% of cells in top-10% (smallest cluster, n=53, likely a rare transitional state)
@@ -400,7 +400,7 @@ Source: `experiments/neuro_disease_sim/results.json`
 
 ### Exp 16 — Checkpoint immunotherapy biomarker analysis (CITE-seq)
 
-Analyzed whether MOSAIC's cluster-resolved entropy identifies cells with discordant transcriptome-to-surface-protein alignment for immune checkpoint markers (PD-1, TIGIT) — the primary targets of checkpoint inhibitor immunotherapy (anti-PD-1: nivolumab/pembrolizumab; anti-TIGIT: tiragolumab).
+Analyzed whether the method's cluster-resolved entropy identifies cells with discordant transcriptome-to-surface-protein alignment for immune checkpoint markers (PD-1, TIGIT) — the primary targets of checkpoint inhibitor immunotherapy (anti-PD-1: nivolumab/pembrolizumab; anti-TIGIT: tiragolumab).
 
 | Analysis | n cells | Mean H | Comparison | p-value |
 |---|---:|---:|---|---|
@@ -425,7 +425,7 @@ Tested whether cluster-resolved entropy is systematically higher for rare cell t
 | Brain 5k | +0.40 | 0.058 | 0.086 | p=0.91 (n.s.) |
 | CITE-seq | −0.32 | 0.287 | 0.193 | p=0.14 (n.s.) |
 
-**Finding**: Cluster size does not consistently predict cluster entropy across datasets (mixed Spearman signs, no significant Mann-Whitney in any dataset). The negative correlation on PBMC and CITE-seq (smaller clusters → slightly higher entropy) is weak and non-significant. On Brain the correlation is positive (smaller clusters → lower entropy), opposite to the artifact hypothesis. This rules out systematic rare-cell entropy inflation as a confound in MOSAIC's UQ signal.
+**Finding**: Cluster size does not consistently predict cluster entropy across datasets (mixed Spearman signs, no significant Mann-Whitney in any dataset). The negative correlation on PBMC and CITE-seq (smaller clusters → slightly higher entropy) is weak and non-significant. On Brain the correlation is positive (smaller clusters → lower entropy), opposite to the artifact hypothesis. This rules out systematic rare-cell entropy inflation as a confound in the method's UQ signal.
 
 Note: in the missing-type detection experiments (Exp 3), small clusters like PBMC cluster 9 (n=71) do show lower AUROC — but this is because their transcriptional similarity to other clusters (not their rarity per se) limits discriminability. The rare cell entropy analysis confirms this is a biological effect, not an artifact of cluster size.
 

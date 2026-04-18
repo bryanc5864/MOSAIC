@@ -1,6 +1,6 @@
-# Training Log — MOSAIC
+# Training Log
 
-**Project**: MOSAIC
+**Project**: Calibrated Per-Cell Uncertainty for Unpaired Multi-Omics Integration
 **Field**: single-cell multi-omics integration
 **Started**: 2026-04-10 21:13
 

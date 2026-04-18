@@ -1,9 +1,9 @@
-# Pre-Training Review Report — MOSAIC
+# Pre-Training Review Report
 
 **Review Mode**: Pre-Training
 **Date**: 2026-04-10
 **Reviewer**: Autonomous Review Skill
-**Project root**: `C:\Users\Maozer\projects\MOSAIC`
+**Project root**: `C:\Users\Maozer\projects\the method`
 **Plan**: `RESEARCH_PLAN.md` (formalized from Bryan's authored proposal; adapted for single RTX 3080)
 
 ---
@@ -37,7 +37,7 @@ The code is ready for training runs. All smoke tests pass. The pairing-leakage d
 - `tfidf` (line 129 in same file) computes IDF as `log(1 + n_cells / peak_sums)` on all cells.
 - `lsi` / `TruncatedSVD` fits SVD directions on all cells.
 
-**Severity**: 🟡 Warning (not blocking). Every widely-cited single-cell integration benchmark (scGLUE, scib, SCOT, uniPort) does this the same way, because per-cell normalization cannot be run in a streaming manner for these pipelines. The val split in MOSAIC is used *only* for IB-VAE early stopping, not for reporting FOSCTTM / ARI / AUROC — those final metrics are computed on the full dataset, where "held-out" doesn't mean what it means in standard ML. So the preprocessing leakage affects early-stop choice but not reported numbers.
+**Severity**: 🟡 Warning (not blocking). Every widely-cited single-cell integration benchmark (scGLUE, scib, SCOT, uniPort) does this the same way, because per-cell normalization cannot be run in a streaming manner for these pipelines. The val split in the method is used *only* for IB-VAE early stopping, not for reporting FOSCTTM / ARI / AUROC — those final metrics are computed on the full dataset, where "held-out" doesn't mean what it means in standard ML. So the preprocessing leakage affects early-stop choice but not reported numbers.
 
 **Recommended fix**: (a) In paper methods, explicitly acknowledge that preprocessing statistics were computed on the full dataset, matching standard single-cell practice. (b) For the ablation studies where we need a true held-out set (Exp 3 missing-type detection), fit normalization on the *kept* cells only and apply to the artificially-removed cells.
 
@@ -52,7 +52,7 @@ The code is ready for training runs. All smoke tests pass. The pairing-leakage d
 - `kl = kl.sum(dim=1).mean()` → mean over batch of per-sample summed-over-dims KL → magnitude ~40 at initialization with 64 latent dims.
 - `pred = F.mse_loss(...)` → per-element MSE, magnitude ~1.
 
-The total loss mixes three different reductions: per-element for recon and pred, per-sample for KL. This is a common VAE practice (it effectively down-weights the KL by the number of genes, helping avoid posterior collapse), but it means `β = 0.01` in MOSAIC is *not* directly comparable to `β = 0.01` in a paper that uses consistent per-element reductions. The β-warmup from 0 to 0.01 is effectively warming from 0 to ~0.0005 per-element-equivalent.
+The total loss mixes three different reductions: per-element for recon and pred, per-sample for KL. This is a common VAE practice (it effectively down-weights the KL by the number of genes, helping avoid posterior collapse), but it means `β = 0.01` in the method is *not* directly comparable to `β = 0.01` in a paper that uses consistent per-element reductions. The β-warmup from 0 to 0.01 is effectively warming from 0 to ~0.0005 per-element-equivalent.
 
 **Severity**: 🟡 Warning (not blocking). Empirically correct and stable, but paper's methods section should state the loss formulation precisely: "the reported β is applied to per-sample summed-over-latent KL divergence, with per-element reconstruction and cross-modal prediction losses."
 
@@ -64,7 +64,7 @@ The total loss mixes three different reductions: per-element for recon and pred,
 
 **Where**: `src/data/preprocess.py::add_cross_modal_targets` and `src/evaluation/metrics.py::label_transfer_accuracy`.
 
-**What**: Because 10x Multiome doesn't ship with curated cell-type annotations, MOSAIC defines `cell_type = leiden cluster on the RNA modality`, then copies those labels to the ATAC modality via the known pairing. This means:
+**What**: Because 10x Multiome doesn't ship with curated cell-type annotations, the method defines `cell_type = leiden cluster on the RNA modality`, then copies those labels to the ATAC modality via the known pairing. This means:
 1. `label_transfer_accuracy(Z_rna, labels_rna, Z_atac, labels_atac)` is testing whether alignment preserves RNA-derived clusters across the modality boundary — i.e. "can I find my partner?" indirectly, not "can I transfer biologist-curated labels?".
 2. `joint_clustering_ari` similarly uses labels that were derived from a one-modality clustering.
 
@@ -90,7 +90,7 @@ or
 torch.use_deterministic_algorithms(True, warn_only=True)
 ```
 
-Without these, cuDNN may pick different kernels on different runs, leading to small numerical variations even with identical seeds. For MOSAIC (MLPs only, no convolutions), the impact is small, but not zero.
+Without these, cuDNN may pick different kernels on different runs, leading to small numerical variations even with identical seeds. For the method (MLPs only, no convolutions), the impact is small, but not zero.
 
 **Severity**: 🟡 Warning (not blocking).
 
@@ -102,7 +102,7 @@ Without these, cuDNN may pick different kernels on different runs, leading to sm
 
 **Where**: Project roadmap, §4.2 of RESEARCH_PLAN.md.
 
-**What**: The baselines listed in the plan are not yet installed or implemented. This is not a bug in the code that *is* present, but a reminder: before the Post-Results review gate, at minimum two baselines must be run under the fair-comparison protocol (same preprocessed AnnData, same metrics, same seed). The current code is only self-evaluating MOSAIC.
+**What**: The baselines listed in the plan are not yet installed or implemented. This is not a bug in the code that *is* present, but a reminder: before the Post-Results review gate, at minimum two baselines must be run under the fair-comparison protocol (same preprocessed AnnData, same metrics, same seed). The current code is only self-evaluating the method.
 
 **Severity**: 🟡 Warning (not blocking for Exp 1 *execution*, but blocking for the Post-Results review and paper submission).
 
@@ -163,7 +163,7 @@ May be too many or too few for different datasets. Consider making it dataset-sp
 
 ## Detailed Trace: The Pair-Leakage Invariant
 
-This is the most important MOSAIC-specific concern, so the trace is spelled out here.
+This is the most important the method-specific concern, so the trace is spelled out here.
 
 **Goal**: Verify that at training time, a single-modality IB-VAE cannot implicitly or explicitly observe which RNA cell is paired with which ATAC cell.
 
