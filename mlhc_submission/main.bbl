@@ -13,10 +13,10 @@ Tal Ashuach, Mariano~I Gabitto, Rohan~V Koodli, Giuseppe-Antonio Saldi,
   data.
 \newblock \emph{Nature Methods}, 20\penalty0 (8):\penalty0 1222--1231, 2023.
 
-\bibitem[Cao et~al.(2022)Cao, Gong, Hong, and Wan]{wu2023uniport}
+\bibitem[Cao et~al.(2022)Cao, Gong, Hong, and Wan]{cao2022uniport}
 Kai Cao, Qiyu Gong, Yiguang Hong, and Lin Wan.
-\newblock {uniPort}: a unified computational framework for single-cell data
-  integration with optimal transport.
+\newblock A unified computational framework for single-cell data integration
+  with optimal transport.
 \newblock \emph{Nature Communications}, 13\penalty0 (1):\penalty0 7419, 2022.
 
 \bibitem[Cao and Gao(2022)]{cao2022multi}
@@ -34,16 +34,16 @@ Pinar Demetci, Rebecca Santorella, Bj{\"o}rn Sandstede, William~Stafford Noble,
 \newblock \emph{Journal of Computational Biology}, 29\penalty0 (1):\penalty0
   3--18, 2022.
 
-\bibitem[Engelmann et~al.(2023)Engelmann, Theis, and
-  Lotfollahi]{engelmann2023conformal}
-Jorge Engelmann, Fabian~J Theis, and Mohammad Lotfollahi.
-\newblock Conformal prediction for single-cell classification.
-\newblock \emph{bioRxiv}, 2023.
+\bibitem[Engelmann et~al.(2022)Engelmann, Hetzel, Palla, Sikkema, Luecken, and
+  Theis]{engelmann2022uncertainty}
+Jan Engelmann, Leon Hetzel, Giovanni Palla, Lisa Sikkema, Malte Luecken, and
+  Fabian~J Theis.
+\newblock Uncertainty quantification for atlas-level cell type transfer, 2022.
 
 \bibitem[Flamary et~al.(2021)Flamary, Courty, Gramfort, Alaya, Boisbunon,
   Chambon, Chapel, Corenflos, Fatras, Fournier, et~al.]{flamary2021pot}
 R{\'e}mi Flamary, Nicolas Courty, Alexandre Gramfort, Mokhtar~Z Alaya,
-  Aur{\'e}lie Boisbunon, Stanislas Chambon, Laetitia Chapel, Adrian Corenflos,
+  Aur{\'e}lie Boisbunon, Stanislas Chambon, Laetitia Chapel, Adrien Corenflos,
   Kilian Fatras, Nemo Fournier, et~al.
 \newblock {POT}: {Python} optimal transport.
 \newblock \emph{Journal of Machine Learning Research}, 22\penalty0
@@ -64,13 +64,13 @@ Yuhan Hao, Tim Stuart, Madeline~H Kowalski, Saket Choudhary, Paul Hoffman,
   atlas program.
 \newblock \emph{Nature}, 574\penalty0 (7777):\penalty0 187--192, 2019.
 
-\bibitem[Klein et~al.(2023)Klein, Palla, Lange, Klein, Piran, Gander,
-  Meng-Papaxanthos, Sterr, Saber, Jing, et~al.]{klein2023moscot}
+\bibitem[Klein et~al.(2025)Klein, Palla, Lange, Klein, Piran, Gander,
+  Meng-Papaxanthos, Sterr, Saber, Jing, et~al.]{klein2025moscot}
 Dominik Klein, Giovanni Palla, Marius Lange, Michal Klein, Zoe Piran, Manuel
   Gander, Laetitia Meng-Papaxanthos, Michael Sterr, Lama Saber, Changying Jing,
   et~al.
 \newblock Mapping cells through time and space with moscot.
-\newblock \emph{bioRxiv}, 2023.
+\newblock \emph{Nature}, 638\penalty0 (8052):\penalty0 1065--1075, 2025.
 
 \bibitem[Korsunsky et~al.(2019)Korsunsky, Millard, Fan, Slowikowski, Zhang,
   Wei, Baglaenko, Brenner, Loh, and Raychaudhuri]{korsunsky2019harmony}
@@ -146,17 +146,18 @@ Ron Zeira, Max Land, Alexander Strzalkowski, and Benjamin~J Raphael.
 \newblock Alignment and integration of spatial transcriptomics data.
 \newblock \emph{Nature Methods}, 19\penalty0 (5):\penalty0 567--575, 2022.
 
-\bibitem[Zhang et~al.(2023)Zhang, Mears, Shakib, Beynor, Shanaj, Korsunsky,
-  Nathan, Donlin, and Raychaudhuri]{zhang2023ibd}
+\bibitem[Zhang et~al.(2021)Zhang, Mears, Shakib, Beynor, Shanaj, Korsunsky,
+  Nathan, Donlin, and Raychaudhuri]{zhang2021macrophage}
 Fan Zhang, Joseph~R Mears, Lorien Shakib, Jessica~I Beynor, Sara Shanaj, Ilya
   Korsunsky, Aparna Nathan, Laura~T Donlin, and Soumya Raychaudhuri.
-\newblock Multi-omic single-cell atlas reveals broad ex vivo effects of
-  interferon-$\gamma$ on human macrophage differentiation.
-\newblock \emph{Genome Biology}, 24\penalty0 (1):\penalty0 87, 2023.
+\newblock {IFN-$\gamma$} and {TNF-$\alpha$} drive a {CXCL10+CCL2+} macrophage
+  phenotype expanded in severe {COVID-19} and other diseases with tissue
+  inflammation.
+\newblock \emph{Genome Medicine}, 13\penalty0 (1):\penalty0 64, 2021.
 
 \bibitem[Zheng et~al.(2021)Zheng, Qin, Si, Wang, Xing, Gao, Ren, Wang, Wu,
   Zhang, et~al.]{zheng2021pancancer}
-Liangtao Zheng, Shishang Qin, Wen Si, Aoxing Wang, Baocai Xing, Ranran Gao,
+Liangtao Zheng, Shishang Qin, Wen Si, Anqiang Wang, Baocai Xing, Ranran Gao,
   Xianwen Ren, Li~Wang, Xiaojuan Wu, Ji~Zhang, et~al.
 \newblock Pan-cancer single-cell landscape of tumor-infiltrating t cells.
 \newblock \emph{Science}, 374\penalty0 (6574):\penalty0 abe6474, 2021.
