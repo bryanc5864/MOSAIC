@@ -13,6 +13,14 @@
 \usepackage{siunitx}
 \usepackage{url}
 
+% Unnumbered footnote (no marker) for the title-page code link.
+\newcommand\blfootnote[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}
+
 \graphicspath{{figures/}}
 
 \usepackage{caption}
@@ -51,6 +59,8 @@ Calibrated Per-Cell Uncertainty for\\ Unpaired Single-Cell Multi-Omics Integrati
 \begin{document}
 
 \maketitle
+
+\blfootnote{Code (anonymized for review): \url{https://anonymous.4open.science/r/MOSAIC-private-B0DD/}}
 
 \begin{abstract}
 Single-cell disease atlases are increasingly used to drive biomarker discovery, patient stratification, and therapeutic hypothesis generation. In practice, however, these atlases are usually unpaired across modalities: transcriptomic, chromatin-accessibility, and proteomic measurements are collected on overlapping but non-identical cells, and existing integration methods return point-estimate alignments with no indication of whether a given match is trustworthy. Incorrect alignments can silently distort every downstream analysis that matters clinically --- regulatory inference, cluster discovery, and spatial deconvolution --- creating a critical reliability gap for translational multi-omics. We introduce a method for unpaired single-cell multi-omics integration that treats alignment as a probabilistic problem and reports a calibrated per-cell uncertainty signal. The method combines per-modality information-bottleneck variational autoencoders, a cluster-centroid cross-modal prediction objective, orthogonal Procrustes post-alignment, and entropic Sinkhorn optimal transport. Its key technical contribution is \emph{cluster-resolved alignment entropy} --- an interpretable uncertainty measure obtained by marginalizing the transport plan over partner cluster labels --- which addresses a central failure mode of prior optimal-transport confidence scores: raw row entropy is directionally miscalibrated, anti-correlating with alignment error because of dense-cluster geometry. Across three paired benchmarks covering peripheral blood immune cells, embryonic mouse brain development, and paired RNA plus protein measurements, the method outperforms SCOT and uniPort on every primary alignment metric and identifies wrong-cluster assignments with area under the receiver-operating-characteristic curve of 0.88--0.95. In simulated deployment settings it detects clinically meaningful missing populations with no disease-specific training, achieving mean detection accuracy of 0.952 across five immunodeficiency scenarios and 0.993 across five neurological disease scenarios. In the protein-measurement benchmark, PD-1$^+$TIGIT$^+$ exhausted T cells --- the primary target of checkpoint inhibitor therapy --- show significantly higher transcriptome--proteome alignment uncertainty than fresh T cells ($p = 9.2 \times 10^{-5}$), linking the uncertainty signal directly to a clinically relevant immune state. Together, these results position calibrated per-cell uncertainty as a necessary substrate for trustworthy multi-omics integration in translational and clinical atlas workflows.
@@ -337,6 +347,6 @@ Brain 5k & \textbf{0.001} & $\mathbf{0.049 \pm 0.002}$ & $\mathbf{0.962 \pm 0.00
 
 \subsection*{D. Compute and reproducibility}
 
-End-to-end wall time on a single NVIDIA RTX 3080 (16~GB): $\sim$120~s per immune run, $\sim$50~s per neural run, $\sim$95~s per proteomic run. Memory peak $\sim$8~GB at $5000\times5000$ cost matrix in float64. All random seeds are set deterministically (NumPy, PyTorch, cuDNN); multi-seed results are aggregated over seeds 0--9 (immune $\beta=0.001$) and seeds 0--2 (all other configurations). An anonymized release of the full codebase, configurations, experiment JSON files, and a \texttt{README} mapping each numeric claim in the paper to its source artifact is available at \url{https://anonymous.4open.science/r/MOSAIC-private-B0DD/} for the duration of review.
+End-to-end wall time on a single NVIDIA RTX 3080 (16~GB): $\sim$120~s per immune run, $\sim$50~s per neural run, $\sim$95~s per proteomic run. Memory peak $\sim$8~GB at $5000\times5000$ cost matrix in float64. All random seeds are set deterministically (NumPy, PyTorch, cuDNN); multi-seed results are aggregated over seeds 0--9 (immune $\beta=0.001$) and seeds 0--2 (all other configurations). An anonymized release of the full codebase, configurations, and experiment JSON files is available at the repository linked from the title page.
 
 \end{document}
