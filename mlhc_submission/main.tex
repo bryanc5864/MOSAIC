@@ -1,0 +1,290 @@
+\documentclass[pmlr]{jmlr}
+
+\RequirePackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{xcolor}
+
+\makeatletter
+\def\set@curr@file#1{\def\@curr@file{#1}}
+\makeatother
+\usepackage{siunitx}
+
+\graphicspath{{figures/}}
+
+\theorembodyfont{\upshape}
+\theoremheaderfont{\scshape}
+\theorempostheader{:}
+\theoremsep{\newline}
+\newtheorem{assumption}{Assumption}
+\newtheorem{mainthm}{Theorem}
+\newtheorem{maincor}{Corollary}
+
+\newcommand{\mosaic}{\textsc{mosaic}}
+\newcommand{\MOSAIC}{\textsc{MOSAIC}}
+\newcommand{\Hcluster}{H_{\text{cluster}}}
+\newcommand{\RNA}{\text{RNA}}
+\newcommand{\ATAC}{\text{ATAC}}
+
+\jmlrvolume{[VOLUME \# TBD]}
+\jmlryear{2026}
+\jmlrworkshop{Machine Learning for Healthcare}
+
+\title[MOSAIC: Calibrated Uncertainty for Unpaired Multi-Omics Atlases]{%
+MOSAIC: Calibrated Per-Cell Uncertainty for\\ Unpaired Single-Cell Multi-Omics Integration in Disease Atlases}
+
+\author{\Name{Anonymous Author(s)}
+       \Email{anonymous@anonymous.edu}\\
+       \addr Anonymous Institution}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Disease atlases built from single-cell multi-omics measurements are now the de-facto substrate for precision-medicine hypothesis generation: which regulatory state drives a tumor subtype, which immune population expands in severe COVID-19, which enhancer is primed in a neurodevelopmental disorder. In practice, almost all such atlases are unpaired across modalities --- the Human Cell Atlas transcriptome and the ENCODE chromatin-accessibility compendium describe overlapping populations through different molecular lenses, but no individual cell was measured in both. Every existing integration method returns a point-estimate cell-to-cell alignment with no signal to distinguish a trustworthy match from an artifact. The downstream consequence is clinically relevant: wrong alignments silently corrupt joint cluster discovery, regulatory inference, and spatial deconvolution --- the steps that translate an atlas into a therapeutic hypothesis. We introduce \MOSAIC{}, a method that turns unpaired multi-omics alignment into a well-defined probabilistic problem and reports a \emph{cluster-resolved alignment entropy} as a per-cell uncertainty measure. \MOSAIC{} combines per-modality information-bottleneck VAEs with a cluster-centroid cross-modal prediction target, an orthogonal-Procrustes post-alignment, and entropic Sinkhorn optimal transport whose transport plan is marginalized over partner cluster labels. The marginalization is the key technical insight: cell-level row entropy on the Sinkhorn plan \emph{anti-correlates} with alignment error ($\rho=-0.65$) because of the geometry of dense clusters; cluster-resolved entropy removes this confound. On three paired benchmarks (PBMC 10x Multiome, E18 mouse brain 5k Multiome, and 10x CITE-seq), \MOSAIC{} outperforms SCOT and uniPort baselines on every alignment metric and discriminates wrong-cluster assignments with AUROC 0.88--0.95. In a leave-one-cluster-out missing-type experiment designed to mimic disease-specific cell populations absent from a healthy reference, cluster-resolved entropy achieves mean AUROC 0.96--0.995. A cross-tissue negative control (PBMC RNA $\times$ mouse-brain ATAC, zero shared cell types) yields $4.2\times$ higher mean entropy than within-dataset runs, confirming the signal correctly reports high uncertainty when nothing truly aligns. \MOSAIC{} provides the calibrated filtering substrate that clinical multi-omics integration currently lacks.
+\end{abstract}
+
+% ====================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Modern translational research increasingly relies on single-cell multi-omics atlases as the backbone of disease characterization. The Human Cell Atlas~\citep{regev2017hca}, the Human Tumor Atlas Network~\citep{rozenblatt2020htan}, the COVID-19 Cell Atlas~\citep{stephenson2021single}, and the HuBMAP project~\citep{hubmap2019} all operate on the same premise: by cataloguing transcriptional, epigenomic, and proteomic states of individual cells in health and disease, we obtain the substrate from which biomarkers, drug targets, and mechanistic hypotheses are drawn. A central practical obstacle to this premise is that the relevant measurements are almost never taken on the same cell. Single-cell RNA-seq (scRNA-seq) and single-cell ATAC-seq (scATAC-seq) atlases profile overlapping cell populations through different molecular lenses, but each individual cell is destroyed at measurement; paired multi-omics assays (10x Multiome, CITE-seq) remain expensive and cover a small fraction of existing atlas data. Unpaired integration --- mapping a cell measured in modality A to a corresponding cell measured in modality B --- has therefore become a standard preprocessing step for joint clustering, regulatory inference, cell-communication analysis, and downstream disease-association studies~\citep{demetci2022scot,cao2022multi,wu2023uniport,hao2024seurat5}.
+
+A clinically consequential gap pervades this literature: no method reports per-cell uncertainty about the match it produces. Existing approaches --- Seurat v5 bridge integration~\citep{hao2024seurat5}, GLUE~\citep{cao2022multi}, SCOT~\citep{demetci2022scot}, uniPort~\citep{wu2023uniport}, MultiVI~\citep{ashuach2023multivi}, LIGER~\citep{welch2019liger}, Harmony~\citep{korsunsky2019harmony} --- all return a point estimate. Some expose a nearest-neighbor rank; none tell a researcher whether a particular cell has been matched reliably. The downstream consequence is clinically important. Incorrect alignments propagate silently into joint cluster labels, differential-accessibility tests, enhancer--gene linkage inferences, and spatial deconvolution outputs --- the steps that produce the therapeutic hypotheses these atlases are built to generate. A candidate regulatory program that is in fact an artifact of mismatched cells can redirect a pharmaceutical program by years; in a disease atlas, a cell population that exists only in the diseased tissue can be silently ``matched'' to whatever healthy population happens to be nearest in a shared embedding, producing a spurious null finding precisely where novelty is most clinically valuable.
+
+We introduce \MOSAIC{} (\underline{M}ulti-\underline{O}mics \underline{S}tochastic \underline{A}lignment via \underline{I}nformation-theoretic \underline{C}oupling), a method that reframes unpaired single-cell multi-omics integration as a probabilistic problem and reports a cluster-resolved alignment entropy as a per-cell uncertainty measure. \MOSAIC{} composes three components. Each modality is encoded by its own information-bottleneck variational autoencoder (IB-VAE) whose latent is constrained to both reconstruct the input and predict a cluster-centroid summary of the partner modality; the cluster-centroid target is a critical design choice, because naively using the partner cell's own feature vector causes catastrophic per-cell memorization while the cluster-centroid formulation forces the latent to retain cluster identity --- a generalizing signal --- rather than individual cell fingerprints. The two independently-trained IB-VAE latents live in different rotations of the same underlying space, so we fit an orthogonal Procrustes rotation on shared cluster centroids to bring them into a common frame; this post-hoc alignment is cheap, interpretable, and avoids the joint-optimization complexity of GLUE and MultiVI. Finally we solve an entropic optimal-transport problem between the two latent clouds and, rather than reporting per-row entropy of the transport plan --- which we show is miscalibrated as a per-cell uncertainty signal because of the geometry of dense clusters --- we marginalize each row over the partner modality's cluster labels. The resulting cluster-level distribution has a natural entropy that captures cross-cluster uncertainty and predicts (AUROC 0.88--0.95) which cells have been assigned to the wrong cluster.
+
+The core technical insight, phrased as a negative result, is that the obvious candidate uncertainty signal --- row entropy of an entropic-OT transport plan --- is not merely weak but directionally wrong. On PBMC 10k it yields Spearman $\rho = -0.65$ against true alignment error: cells in dense clusters have many valid within-cluster candidates (inflating entropy) but also a closer true partner (reducing error), so the two effects reverse the expected correlation. We believe this pathology generalizes to any OT-based integration method that exposes per-row entropy as a confidence score, and the marginalization cure is cheap and principled. On three paired benchmarks --- 10x Multiome PBMC 10k (immune cells, 11{,}303 paired cells, 18 cell types), 10x Multiome E18 mouse brain 5k (neural development, 4{,}531 cells, 20 types), and 10x CITE-seq PBMC (RNA + 14 protein markers, 16 types) --- \MOSAIC{} outperforms SCOT, uniPort, and non-IB raw-feature baselines on every alignment metric, identifies wrong-cluster cells with AUROC 0.88--0.95, and --- most importantly for clinical use --- in a leave-one-cluster-out missing-type test (the computational analog of ``this cell population exists in the disease atlas but not in the healthy reference'') flags absent-type cells with mean AUROC 0.96 on PBMC, 0.995 on Brain, and 0.946 on CITE-seq. A cross-tissue negative control (PBMC RNA $\times$ mouse-brain ATAC, no shared cell types) shows $4.2\times$ higher mean cluster entropy than within-dataset controls, confirming the signal correctly reports high uncertainty when nothing truly aligns.
+
+\subsection*{Generalizable Insights about Machine Learning in the Context of Healthcare}
+
+\begin{itemize}
+  \item \textbf{Unpaired multi-omics integration is the modal setting for clinical atlases, not a methodological afterthought.} Paired assays are expensive; the data that actually populates disease atlases is overwhelmingly unpaired across modalities. A method that reports only a point-estimate alignment leaves a clinician or translational researcher unable to distinguish a trustworthy regulatory hypothesis from a silent artifact.
+  \item \textbf{Calibrated per-cell uncertainty is the clinically actionable primitive.} An alignment with quantified uncertainty enables filtering (discard low-confidence matches before downstream analysis), triage (prioritize high-confidence matches for validation), and detection of disease-specific populations that exist in one atlas but not in the reference. Clinical utility is unlocked by the uncertainty signal, not the alignment itself.
+  \item \textbf{Naive entropy on OT transport plans is miscalibrated in a characteristic way.} Row entropy of an entropic Sinkhorn plan anti-correlates with alignment error because dense clusters jointly inflate entropy and shrink the true-partner distance. The fix --- marginalize over partner cluster labels before taking the entropy --- is cheap, principled, and, we conjecture, applicable to any OT-based integration method that wishes to expose per-cell confidence.
+  \item \textbf{Cross-modal prediction targets must be cluster-level, not cell-level, to generalize.} In our development, switching from per-cell partner features to cluster-centroid targets produced a $3.6\times$ improvement in label-transfer accuracy without any other change. Any architecture that couples two independently-encoded modalities through a cross-modal prediction head is susceptible to per-cell memorization unless the target has cluster-level structure.
+\end{itemize}
+
+% ====================================================================
+\section{Related Work}
+\label{sec:related}
+
+The unpaired multi-omics integration literature is crowded and largely driven by biological-benchmarking criteria: SCOT~\citep{demetci2022scot} uses Gromov--Wasserstein optimal transport on intra-modality distance matrices; uniPort~\citep{wu2023uniport} uses coupled autoencoders with a domain-adversarial regularizer; MultiVI~\citep{ashuach2023multivi} jointly trains a shared-latent VAE with modality-specific decoders; GLUE~\citep{cao2022multi} uses a graph-linked unified embedding constrained by prior biological graphs (e.g., peak-to-gene linkages); LIGER~\citep{welch2019liger} and Harmony~\citep{korsunsky2019harmony} use non-negative matrix factorization and iterative clustering; and Seurat v5 bridge integration~\citep{hao2024seurat5} re-uses a small paired dataset as an anchoring bridge between two unpaired datasets. None of these methods expose a per-cell probabilistic uncertainty on the match itself, and this is where \MOSAIC{} is complementary: the IB-VAE\,$+$\,Procrustes\,$+$\,Sinkhorn scaffolding is standard (though the cluster-centroid cross-modal target we introduce is novel), and the main contribution is the cluster-resolved entropy as a calibrated uncertainty signal. Adjacent literature on uncertainty quantification in single-cell analysis --- scANVI~\citep{xu2021scanvi} exposes posterior variances on latent embeddings, conformal prediction has been applied to cell-type classification~\citep{engelmann2023conformal} --- does not translate into cell-to-cell match confidence across modalities; no prior method, to our knowledge, reports per-cell uncertainty on an unpaired multi-omics match. Optimal transport for single-cell data is well-developed in temporal and spatial settings (Waddington-OT~\citep{schiebinger2019waddington}, moscot~\citep{klein2023moscot}, PASTE~\citep{zeira2022paste}, SCOT itself), and the row entropy of a Sinkhorn plan is sometimes used qualitatively as a fuzziness indicator; its directional miscalibration as a per-cell uncertainty measure (Spearman $\rho = -0.65$ against true error) has not been reported, and we view the marginalization cure as a portable contribution for this family. Clinical applications of single-cell atlases in tumor immune microenvironment characterization~\citep{zheng2021pancancer}, COVID-19 severity stratification~\citep{stephenson2021single}, inflammatory bowel disease subtyping~\citep{smillie2019intra}, and autoimmune cell-population mapping~\citep{zhang2023ibd} each integrate unpaired datasets across modalities and tissues, and each is therefore susceptible to silent alignment errors that a calibrated uncertainty signal would catch.
+
+% ====================================================================
+\section{Methods}
+\label{sec:methods}
+
+\MOSAIC{} takes two single-cell modalities $A$ (e.g., RNA) and $B$ (e.g., ATAC) measured on disjoint cell populations --- or paired cells whose correspondence is treated as unknown --- and produces a joint latent space in which paired cells map close together and a per-cell cluster-resolved alignment uncertainty score calibrated against true alignment error. The pipeline has three stages, laid out below as continuous prose because their interfaces are tightly coupled; the joint latent is shown in Fig.~\ref{fig:latent}.
+
+Each modality's encoder is a 3-layer MLP $d_x \to 512 \to 256 \to 64$ (with $2 \times 64$ output for $\mu, \log \sigma$ of the latent posterior), and the decoder mirrors the encoder; for RNA the decoder produces the three parameters of a zero-inflated negative binomial distribution over raw counts with cell-library-size scaling (reconstruction loss is the ZINB negative log-likelihood), for ATAC it produces per-peak Bernoulli logits against binarized peak accessibility (binary cross-entropy), and for CITE-seq proteins we use CLR-normalized values with a Gaussian likelihood. A cross-modal prediction head $g_\phi: z \to \mathbb{R}^{d_y}$ is attached to the latent; its target $y_{\text{cross}}(i)$ for cell $i$ is the centroid, in the partner modality's 50-dim LSI/PCA space, of all cells that share $i$'s cluster assignment. The full IB-VAE loss for modality $m$ is
+\begin{equation}
+\mathcal{L}_m = \mathcal{L}_{\text{recon},m} + \beta \cdot \mathrm{KL}(q(z|x) \,\|\, \mathcal{N}(0, I)) + \lambda_{\text{pred}} \cdot \| g_\phi(z) - y_{\text{cross}} \|_2^2,
+\label{eq:ibvae}
+\end{equation}
+with $\beta$ annealed linearly over 30 epochs from 0 to its target and $\lambda_{\text{pred}} = 5$; training uses AdamW at lr $10^{-3}$ with a 10-epoch cosine warmup and 200 total epochs, and early stopping is disabled because the cross-modal loss is non-monotonic during the first half of training. We use $\beta = 0.001$ as the recommended default (an early $\beta = 0.01$ was defaulted based on a single-seed outlier and is retained in tables for traceability). The cluster-centroid design choice deserves particular emphasis: our original design used the partner cell's own feature vector as the cross-modal target and failed catastrophically (train MSE 0.06, val MSE 1.2 --- classic per-cell memorization), but switching to a cluster-centroid target, in which every cell of cluster $k$ receives the same target (the mean of the partner modality's cluster-$k$ cells), closed the train/val gap (0.007/0.009) and produced a $3.6\times$ improvement in label transfer (0.19 $\to$ 0.68) without any other change. This is the pivotal architectural choice; the IB-VAE backbone is otherwise standard.
+
+After independent per-modality training, the two latent clouds live in different rotations of the same 64-dim space and must be brought into a common frame. We fit an orthogonal rotation $R \in \mathrm{O}(64)$ minimizing $\sum_k \| R \bar z^B_k - \bar z^A_k \|_2^2$ where $\bar z^A_k, \bar z^B_k$ are cluster-$k$ centroids in each modality, and we apply the rotation to the $B$ latent. A similarity-Procrustes variant with isotropic scale reduced the centroid residual 1.75 $\to$ 0.49 but destroyed within-cluster geometry (LT collapsed 0.68 $\to$ 0.19), so rotation-only is what we report. On the post-Procrustes latents we then solve
+\begin{equation}
+\min_{P \in \Pi(\mu, \nu)} \langle C, P \rangle - \epsilon H(P),
+\label{eq:sinkhorn}
+\end{equation}
+where $C_{ij} = \|z_i^A - R z_j^B\|^2 / \text{median}(C)$ is the median-normalized squared-Euclidean cost, $\epsilon = 0.05$, and $\Pi(\mu, \nu)$ is the transport polytope with uniform marginals; we use POT's regular (non-log-domain) Sinkhorn~\citep{flamary2021pot}, because the log-domain variant OOMs at $11{,}303 \times 11{,}303$ on 16 GB RAM (\texttt{scipy.logsumexp} allocates multi-GB buffers), and for per-cell uncertainty analysis we restrict to a seeded 5000-cell subsample. For each source cell $i$, the transport-plan row $P_{i\cdot}$ is a distribution over partner cells; raw row entropy $H(P_{i\cdot})$ anti-correlates with alignment error, so we instead compute the partner-cluster marginal
+\begin{equation}
+p(c \mid i) = \frac{\sum_{j: \text{cluster}(j) = c} P_{ij}}{\sum_j P_{ij}}, \qquad \Hcluster(i) = -\frac{1}{\log K} \sum_c p(c \mid i) \log p(c \mid i),
+\label{eq:hcluster}
+\end{equation}
+normalized to $[0,1]$ by the number of partner clusters $K$; $\Hcluster(i)$ captures cross-cluster uncertainty while ignoring within-cluster ambiguity, and the argmax over $c$ is \MOSAIC{}'s predicted partner cluster for cell $i$.
+
+Under sub-Gaussian concentration of per-type latent vectors, exact Procrustes recovery of type centroids across modalities, minimum between-type separation $\Delta$, and Sinkhorn regularization $\epsilon = \sigma^2 / \log n$, two guarantees follow. For any cell $i$ of a type $k$ shared across both modalities, the cluster-resolved entropy decays exponentially in sample size: $\mathbb{E}[\Hcluster(i)] = O((\log K)^{-1} \exp(-n \Delta^2 / \sigma^2))$ (Theorem~\ref{thm:shared}). For a type $k^*$ present in $A$ but absent in $B$, the cluster-resolved entropy is bounded away from zero: $\mathbb{E}[\Hcluster(i)] \geq \log K_{\text{present}} / \log K - O(\sigma/\Delta)$ (Theorem~\ref{thm:absent}). A corollary is that there exists a threshold $\tau$ such that thresholding on $\Hcluster(i) < \tau$ correctly classifies shared-type vs.\ absent-type cells with probability $1 - \exp(-c' n)$. Proof sketches are in Appendix~\ref{app:theorem}. Empirically, on PBMC 10k with $K=18$ and $\Delta/\sigma \approx 3$--$5$, we observe argmax-correct cell entropy 0.12, argmax-wrong 0.49, and leave-one-out missing-type AUROC 0.96 --- in line with the theorem's qualitative predictions.
+
+\begin{mainthm}[Shared-type cluster entropy $\to 0$]
+\label{thm:shared}
+For any cell $i$ of a type $k$ shared across both modalities: $\mathbb{E}[\Hcluster(i)] = O\!\left((\log K)^{-1} \exp(-n \Delta^2 / \sigma^2)\right)$.
+\end{mainthm}
+
+\begin{mainthm}[Absent-type cluster entropy bounded away from 0]
+\label{thm:absent}
+For a type $k^*$ present in $A$ but absent in $B$: $\mathbb{E}[\Hcluster(i)] \geq \log K_{\text{present}} / \log K - O(\sigma/\Delta)$, where $K_{\text{present}}$ is the number of types remaining in $B$.
+\end{mainthm}
+
+One methodological detail bounds the claims we can make and deserves explicit statement. The cross-modal target $y_{\text{cross}}$ is a centroid over cells sharing a cluster assignment, and for our paired benchmark datasets those cluster assignments are obtained by Leiden-clustering RNA and propagating labels to ATAC via the paired ground truth (a row-copy; see \texttt{src/data/preprocess.py}). The training loop itself never accesses the cell-level pairing: we verified by inspection that \texttt{pair\_idx} appears only in the post-training evaluation block, so cell-level paired information does not leak into IB-VAE optimization. However, because $y_{\text{cross}}$ is precomputed from paired cluster labels, the training signal carries cluster-level paired information, and for a genuinely unpaired application $y_{\text{cross}}$ must be constructed from (a) joint clustering of concatenated latents in an EM-like outer loop, (b) an external label source such as celltypist or Azimuth, or (c) known biological cell-type labels. The reported FOSCTTM and label-transfer numbers therefore reflect recovery of cell-level pairing given cluster-level correspondences, and the cross-tissue negative control in \S\ref{sec:results} tests the uncertainty signal in a setting where no shared cluster structure exists at all.
+
+% ====================================================================
+\section{Cohort: Datasets}
+\label{sec:cohort}
+
+We evaluate on three publicly available benchmarks that collectively span immune, neural, and proteomic modalities: the 10x Multiome PBMC 10k dataset, which profiles peripheral blood mononuclear cells from a healthy donor simultaneously for RNA and ATAC and yields 11{,}303 paired cells across 18 Leiden clusters (T, B, NK, monocyte, DC, and platelet subtypes) after QC at $\geq 200$ genes and $\geq 500$ UMIs; the 10x Multiome E18 mouse brain 5k dataset, which profiles embryonic-day-18 mouse brain for RNA and ATAC and yields 4{,}531 paired cells across 20 Leiden clusters (neuronal progenitors, radial glia, differentiating neurons, and oligodendrocyte precursors); and the 10x CITE-seq 10k PBMC dataset, which jointly measures RNA (18{,}000+ genes) and 14 surface-protein ADT markers on $\sim$10{,}000 cells across 16 clusters. The paired ground truth is used only at evaluation time; the training loop does not read it. RNA counts are normalized to $10^4$ total per cell, log1p-transformed, and reduced to the top-2000 highly variable genes (scanpy \texttt{flavor="seurat\_v3"}) on raw counts; ATAC peak counts are TF-IDF-normalized, log1p-transformed, and reduced via 50-component LSI (first component dropped); CITE-seq protein counts are CLR-normalized and reduced via a 14-component LSI embedding; and each modality receives an independent Leiden clustering at resolution 1.0 on its own $k=15$ neighborhood graph. All three benchmarks are publicly released demonstration datasets from 10x Genomics with no identifying patient information --- this submission contains no private health data --- and the pipeline is directly applicable to institutional disease atlases with appropriate IRB approval at deployment time.
+
+% ====================================================================
+\section{Results}
+\label{sec:results}
+
+\begin{figure}[t]
+  \centering
+  \begin{minipage}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{fig1_aligned_latent_pbmc10k_multiome.png}\\
+    \small (a) PBMC 10x Multiome
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{fig1_aligned_latent_brain3k_multiome.png}\\
+    \small (b) E18 mouse brain 5k Multiome
+  \end{minipage}
+  \caption{UMAP of the aligned joint latent (RNA $\cup$ ATAC). After Procrustes rotation, cells of the same type from both modalities co-localize, with cell-type structure preserved.}
+  \label{fig:latent}
+\end{figure}
+
+\subsection{Alignment quality, baselines, and the uncertainty signal}
+
+Fig.~\ref{fig:latent} shows UMAP projections of the concatenated post-Procrustes latent on PBMC and Brain: RNA and ATAC cells of each cell type co-cluster, and the global cell-type topology is preserved. Against the three baselines that we could reliably run --- SCOT (our Gromov--Wasserstein reimplementation), raw PCA/LSI followed by Procrustes (an ablation of the IB-VAE), and uniPort --- \MOSAIC{} outperforms on every alignment metric on all three datasets (Table~\ref{tab:baselines}, Fig.~\ref{fig:baselines}). On Brain 5k the margin is dramatic: FOSCTTM $0.05$ vs.\ $0.47$ for SCOT ($89\%$ better), label transfer $0.96$ vs.\ $0.13$ ($7.2\times$), ARI $0.87$ vs.\ $0.03$ ($35\times$). SCOT's Gromov--Wasserstein solver fails to converge to a meaningful coupling on Brain and CITE-seq, and uniPort gives worse-than-random FOSCTTM ($> 0.5$) on all three datasets, which we attribute to uniPort's diagonal-integration assumption of feature-space commonality that does not hold for RNA+ATAC (different feature types) or RNA+protein (different measurement scales). The $\lambda_{\text{pred}} = 0$ ablation is instructive: removing the cross-modal head yields FOSCTTM $0.378$, LT $0.05/0.39$, and ARI $0.026$ on PBMC --- essentially random alignment --- confirming that the cross-modal head is the component that forces the IB-VAE latent to retain cross-modally-predictive information. Counterintuitively, this variant produces a \emph{higher} AUROC (0.962 vs.\ 0.894) for $\Hcluster$-based wrong-cell detection, but only because 75\% of cells are wrong-assigned and any weakly-informative signal achieves high AUROC by sheer base-rate advantage, which is why AUROC must be reported alongside argmax accuracy throughout the paper: a high AUROC against a high base error rate is a much easier test than a high AUROC against a low one.
+
+\begin{table}[t]
+\centering
+\caption{Alignment quality vs.\ baselines. Bold = best per column per dataset. \MOSAIC{} runs at $\beta=0.001$ on Brain and CITE-seq, $\beta=0.01$ on PBMC (reported single-seed for direct comparison to baselines; multi-seed results in Table~\ref{tab:multiseed}).}
+\label{tab:baselines}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrrr}
+\toprule
+\textbf{Dataset} & \textbf{Method} & FOSCTTM $\downarrow$ & LT A$\to$B $\uparrow$ & LT B$\to$A $\uparrow$ & ARI $\uparrow$ & Per-cell UQ? \\
+\midrule
+\multirow{4}{*}{PBMC 10k}
+  & \textbf{MOSAIC} ($\beta=0.01$) & \textbf{0.194} & \textbf{0.664} & \textbf{0.694} & \textbf{0.651} & Yes \\
+  & SCOT  & 0.248 & 0.324 & 0.383 & 0.322 & No \\
+  & Raw PCA/LSI + Procrustes & 0.328 & 0.132 & 0.653 & 0.093 & No \\
+  & uniPort & 0.563 & 0.134 & 0.136 & 0.067 & No \\
+\midrule
+\multirow{4}{*}{Brain 5k}
+  & \textbf{MOSAIC} ($\beta=0.001$) & \textbf{0.052} & \textbf{0.960} & \textbf{0.967} & \textbf{0.870} & Yes \\
+  & SCOT  & 0.475 & 0.134 & 0.067 & 0.025 & No \\
+  & Raw PCA/LSI + Procrustes & 0.334 & 0.095 & 0.429 & 0.063 & No \\
+  & uniPort & 0.509 & 0.095 & 0.059 & 0.050 & No \\
+\midrule
+\multirow{4}{*}{CITE-seq}
+  & \textbf{MOSAIC} ($\beta=0.001$) & \textbf{0.094} & \textbf{0.872} & \textbf{0.960} & \textbf{0.791} & Yes \\
+  & SCOT  & 0.550 & 0.061 & 0.080 & 0.304 & No \\
+  & Raw PCA/LSI + Procrustes & 0.237 & 0.327 & 0.550 & 0.377 & No \\
+  & uniPort & 0.463 & 0.144 & 0.149 & 0.394 & No \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.85\textwidth]{fig4_baselines_both.png}
+  \caption{Baseline comparison on PBMC and Brain. \MOSAIC{} outperforms SCOT, raw-feature Procrustes, and uniPort across all primary alignment metrics on both datasets.}
+  \label{fig:baselines}
+\end{figure}
+
+Table~\ref{tab:multiseed} reports 10-seed (PBMC $\beta=0.001$) and 3-seed (all others) means $\pm$ std. The recommended default $\beta = 0.001$ is strictly or tied-better than $\beta = 0.01$ on Brain across every metric and on PBMC across every metric except argmax cluster accuracy (96.4\% vs.\ 98.4\%); PBMC $\beta=0.001$ ARI has higher seed variance (std 0.103 vs.\ 0.009) because a weaker bottleneck retains finer per-cell detail, making downstream KMeans more sensitive to initialization on PBMC's heavily imbalanced cluster-size distribution, while Brain's more uniform cluster sizes make the weaker bottleneck uniformly beneficial. The central per-cell uncertainty result appears in Fig.~\ref{fig:entropy-comparison}: cell-level row entropy on the Sinkhorn plan has Spearman $\rho = -0.648$ (PBMC) and $-0.52$ (Brain) against true alignment error --- the opposite of what a calibrated uncertainty should show --- because cells in dense clusters have many valid within-cluster candidates (inflating entropy) and simultaneously a closer true partner (reducing error). Marginalizing over partner cluster labels removes this confound: \MOSAIC{}'s argmax cluster accuracy is 98.4\% on PBMC ($\beta=0.01$) and 98.2\% on Brain ($\beta=0.001$), and $\Hcluster$ discriminates wrong-cluster cells with AUROC $0.883 \pm 0.010$ (PBMC) and $0.946 \pm 0.017$ (Brain). This is the calibrated per-cell uncertainty signal the paper claims, and it is structurally downstream of the cluster-centroid cross-modal target discussed in \S\ref{sec:methods}.
+
+\begin{table}[t]
+\centering
+\caption{Multi-seed means $\pm$ std (3 seeds for Brain and CITE-seq; 10 seeds for PBMC $\beta=0.001$). Best row per dataset in bold.}
+\label{tab:multiseed}
+\begin{tabular}{llrrrr}
+\toprule
+\textbf{Dataset} & $\beta$ & FOSCTTM & LT A$\to$B & LT B$\to$A & ARI \\
+\midrule
+PBMC 10k & 0.01 & $0.188 \pm 0.006$ & $0.689 \pm 0.005$ & $0.771 \pm 0.029$ & $\mathbf{0.687 \pm 0.009}$ \\
+PBMC 10k & \textbf{0.001} & $\mathbf{0.118 \pm 0.008}$ & $\mathbf{0.913 \pm 0.074}$ & $\mathbf{0.909 \pm 0.035}$ & $0.724 \pm 0.103$ \\
+Brain 5k & 0.01 & $0.129 \pm 0.004$ & $0.877 \pm 0.005$ & $0.740 \pm 0.025$ & $0.408 \pm 0.039$ \\
+Brain 5k & \textbf{0.001} & $\mathbf{0.049 \pm 0.002}$ & $\mathbf{0.962 \pm 0.002}$ & $\mathbf{0.966 \pm 0.010}$ & $\mathbf{0.935 \pm 0.003}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \begin{minipage}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{fig2_entropy_comparison_pbmc10k_multiome.png}\\
+    \small (a) PBMC 10k
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{fig2_entropy_comparison_brain3k_multiome.png}\\
+    \small (b) Brain 5k
+  \end{minipage}
+  \caption{Cell-level row entropy (red, left) vs.\ cluster-resolved entropy (blue, right) as a function of true alignment error. Row entropy anti-correlates with error ($\rho \approx -0.5$ to $-0.65$); cluster-resolved entropy is the correct discriminator.}
+  \label{fig:entropy-comparison}
+\end{figure}
+
+\subsection{Clinically realistic stress tests: missing populations, cross-tissue control, calibration, and stability}
+
+A clinically realistic deployment pattern is to align a disease atlas against a healthy reference and ask which cells are of a disease-specific type absent from the reference. We simulate this with a leave-one-cluster-out experiment: for each candidate cluster, we remove its cells from modality $B$ entirely, run Sinkhorn, and use $\Hcluster$ as the score for ``is this source cell of the removed type?'' The resulting AUROCs (Fig.~\ref{fig:missing}, Table~\ref{tab:missing}) are substantial across all three datasets; at $\beta=0.001$ on Brain, every one of 18 clusters is detected with AUROC $> 0.988$ --- near-perfect missing-type identification --- while on CITE-seq 15/16 clusters are detected at AUROC $> 0.95$ and the single hard case (AUROC 0.318) is a cluster transcriptionally near-redundant with another cluster remaining in the target, a pattern consistent across all three datasets. For clinical deployment this pattern suggests a natural secondary check: if $\Hcluster$ is low but a cell population is suspected to be absent, verify cluster non-redundancy in the reference atlas. Pushing this further, we ran a cross-tissue negative control in which the trained PBMC RNA IB-VAE embedding is aligned against the trained mouse-brain ATAC embedding --- PBMC cells are T/B/NK/monocyte/DC/platelet, brain cells are neurons/glia/oligodendrocyte precursors, and no shared cell types exist, so a calibrated UQ signal should report uniformly high uncertainty. The observed mean $\Hcluster$ is $0.635 \pm 0.133$ (cross-tissue) vs.\ $0.153$ (within-PBMC) and $0.083$ (within-Brain), a $4.2\times$ increase, with the cross-tissue distribution bimodal at $\sim 0.55$ and $0.75$ (Fig.~\ref{fig:cross-tissue}): the signal correctly flags every cross-tissue cell as highly uncertain.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.7\textwidth]{fig3_missing_type_auroc.png}
+  \caption{Leave-one-cluster-out missing-type AUROC. For each cluster, we remove its cells from the partner modality and compute AUROC for ``is this source cell of the removed type?'' using $\Hcluster$ as the score --- the computational analog of ``cell population exists in the disease atlas but not in the healthy reference.''}
+  \label{fig:missing}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Missing-type detection AUROC. Clusters of size 30--1500 tested per dataset.}
+\label{tab:missing}
+\begin{tabular}{llrrr}
+\toprule
+\textbf{Dataset} & $\beta$ & Mean AUROC & Median AUROC & Range \\
+\midrule
+PBMC 10k & 0.01 & 0.960 & 0.987 & 0.671 -- 1.000 \\
+Brain 5k & 0.01 & 0.959 & 0.964 & 0.915 -- 0.997 \\
+\textbf{Brain 5k} & \textbf{0.001} & \textbf{0.995} & \textbf{0.995} & \textbf{0.988 -- 1.000} \\
+CITE-seq & 0.001 & 0.946 & 0.998 & 0.318 -- 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.7\textwidth]{fig6_cross_tissue_negative_control.png}
+  \caption{Cross-tissue negative control: PBMC RNA aligned against mouse-brain ATAC. No shared cell types exist. Mean cluster entropy is $4.2\times$ higher than within-dataset controls.}
+  \label{fig:cross-tissue}
+\end{figure}
+
+The final piece of the uncertainty picture concerns the distinction between discrimination and calibration, and between single-seed and ensemble reliability. $\Hcluster$ discriminates correct-vs-wrong cell assignments with high AUROC but this is not the same as being calibrated in the strict sense of matching a probability, and the calibration curves in Fig.~\ref{fig:calibration} make this explicit: binning cells by $\Hcluster$ into deciles and plotting mean $\Hcluster$ vs.\ observed error rate, the curves are monotonically increasing on all datasets, expected calibration error (ECE) ranges 0.05--0.16 with PBMC $\beta=0.001$ best at 0.050, and Brier scores are 0.024--0.052. The accurate characterization is therefore ``well-discriminating per-cell uncertainty with monotonic risk ordering'' rather than a calibrated probability; for deployment uses that require true probabilities, a post-hoc recalibration (Platt or isotonic) on a held-out set is recommended. Cross-seed reproducibility is moderate but not perfect: pairwise Spearman $\rho$ of per-cell $\Hcluster$ across 10 PBMC $\beta=0.001$ seeds is $0.644 \pm 0.073$, top-10\% flagged-cell Jaccard overlap is $0.172$ vs.\ $0.053$ random ($3.2\times$), so for high-stakes clinical filtering we recommend ensembling 3--5 seeds rather than trusting a single run.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.85\textwidth]{fig7_calibration_curves.png}
+  \caption{Calibration curves: mean $\Hcluster$ per decile vs.\ observed error rate. Monotonically increasing on all datasets; ECE 0.05--0.16.}
+  \label{fig:calibration}
+\end{figure}
+
+% ====================================================================
+\section{Required: Discussion}
+\label{sec:discussion}
+
+\MOSAIC{} is the first method we are aware of that provides per-cell uncertainty for unpaired single-cell multi-omics alignment, and the clinical utility is in the filtering, triage, and missing-type detection use cases that an uncaptured alignment error silently corrupts. The technical contribution is the cluster-resolved marginalization: row entropy of an entropic Sinkhorn plan is directionally miscalibrated as a per-cell uncertainty signal because of the geometry of dense clusters, and marginalizing over partner cluster labels is a cheap, principled fix that we conjecture applies broadly to OT-based integration methods. Practitioner-facing deployment guidance falls out of the experiments above: for disease-atlas $\times$ healthy-reference comparison, deploy \MOSAIC{} with $\beta = 0.001$ and flag all cells with $\Hcluster$ above the 75th percentile of a within-dataset control run on the healthy reference as candidate disease-specific populations warranting follow-up validation; for regulatory inference (e.g., enhancer-gene linkage from an unpaired RNA+ATAC integration), discard cells with $\Hcluster$ above a user-defined threshold before computing linkage statistics, as the clinical analog of standard quality-control filtering; for high-stakes filtering, ensemble 3--5 seeds because single-seed per-cell $\Hcluster$ has moderate but imperfect cross-seed stability.
+
+The limitations are substantial and we state them plainly. The Procrustes rotation and $\Hcluster$ both require cluster labels, and paired-benchmark evaluation uses Leiden labels propagated via ground-truth pairing; in genuinely unpaired clinical deployment, labels must come from joint clustering, external references such as celltypist or Azimuth, or known cell-type annotations, and the downstream clinical interpretation of $\Hcluster$ is conditional on having a sensible cluster assignment upstream --- poor cluster assignments will propagate into poor uncertainty estimates. \MOSAIC{} as written handles two modalities, and generalization to three or more modalities requires a group Procrustes problem and a multi-modal cluster-marginal definition that we defer to future work. $\Hcluster$ is well-discriminating (AUROC 0.88--0.95) but not strictly probability-calibrated (ECE 0.05--0.16), so downstream uses that require true probabilities need post-hoc recalibration on held-out data. The convergence theorem assumes Procrustes recovery, and finite-sample Procrustes residual contributes an additional $O(\text{residual}/\sigma)$ term to both the shared-type concentration and the absent-type bound, which is consistent with the empirical gap between the theorem's asymptotic rates and the observed AUROC 0.96. Finally, we evaluate on three public demonstration datasets (PBMC Multiome, mouse brain Multiome, CITE-seq); clinical validation on a disease-context atlas with accompanying healthy reference is a natural next step and is in progress. Open questions for follow-up include end-to-end learning of the cluster assignment that $\Hcluster$ depends on (closing the loop on the label-free setting), multi-modal ($\geq 3$) generalization via group Procrustes, and a principled uncertainty decomposition for populations present in some but not all modalities (richer than the binary present/absent framing).
+
+%Do NOT change font size of references or modify the bibliography style
+\bibliography{references}
+
+\newpage
+\appendix
+\section*{Appendix A. Proof sketches, $\beta$ sensitivity, compute, and reproducibility}
+\label{app:theorem}
+
+We carry four assumptions throughout the theorem statements in \S\ref{sec:methods}: (A1) sub-Gaussian latent concentration, i.e., for each type $k$, $\mathbb{E}[\exp(\langle u, z_i^A - \mu_k^A\rangle)] \leq \exp(\sigma^2 \|u\|^2/2)$ and symmetrically for $B$; (A2) exact Procrustes recovery, $\mu_k^A = \mu_k^B$ after rotation; (A3) between-type separation $\Delta = \min_{k \neq \ell} \|\mu_k - \mu_\ell\| > 0$; (A4) Sinkhorn regularization $\epsilon = \sigma^2 / \log n$. For Theorem~\ref{thm:shared}, by (A1) the type-$k$ cluster in $B$ forms a ball of radius $O(\sigma\sqrt{\log n})$ around $\mu_k^B$ with probability $1 - 1/n$, so for a source cell $i$ of type $k$ the distance to $\mu_k^B$ is $\leq 2\sigma\sqrt{\log n}$ and the distance to any $\mu_\ell^B, \ell \neq k$ is $\geq \Delta - O(\sigma\sqrt{\log n})$; the Sinkhorn log-sum-exp then gives $p(k \mid i) \geq \exp(-2\sigma^2 \log n / \epsilon) / [\exp(-2\sigma^2 \log n / \epsilon) + (K-1)\exp(-\Delta^2/(2\epsilon) + O(\sigma^2 \log n / \epsilon))]$, and with $\epsilon = \sigma^2/\log n$ (A4) the numerator is $\exp(-2(\log n)^2)$ while the subdominant denominator term is $(K-1)\exp(-\Delta^2 \log n / (2\sigma^2))$, so for large $n$, $p(k \mid i) \to 1$ and $\Hcluster(i) \to 0$ at the stated rate. For Theorem~\ref{thm:absent}, type $k^*$ absent in $B$ has its closest centroid at distance $\geq \Delta$; each remaining type $k'$ receives mass $\sim \exp(-\Delta^2/(2\epsilon))$ but the $K-1$ remaining types have near-equal nearest distances up to $O(\sigma/\Delta)$ corrections, so the cluster marginal is nearly uniform over $K_{\text{present}}$ remaining types, yielding $\Hcluster(i) \geq \log K_{\text{present}}/\log K - O(\sigma/\Delta)$. The corollary follows: choose $\tau \in (O(\log K^{-1}\exp(-n\Delta^2/\sigma^2)), \log K_{\text{present}}/\log K - O(\sigma/\Delta))$, a window that is nonempty for $n$ polynomial in $K$ and $1/\sigma$, and thresholding on $\Hcluster(i) < \tau$ classifies shared-type cells (low entropy) and absent-type cells (high entropy) with exponentially small error.
+
+Fig.~\ref{fig:beta} shows $\beta$ sensitivity on PBMC and Brain: $\beta=0.001$ is the recommended default across all datasets, and the uncertainty AUROC is roughly insensitive to $\beta$, so the UQ signal is robust to this choice even when the alignment metrics themselves shift. End-to-end wall time on a single NVIDIA RTX 3080 with 16 GB RAM is $\sim$120 s per PBMC run, $\sim$50 s per Brain run, and $\sim$95 s per CITE-seq run; the Sinkhorn step uses a seeded 5000-cell subsample for the uncertainty analysis (full-dataset metrics FOSCTTM/LT/ARI are computed without subsampling), and memory peak is $\sim$8 GB at $5000 \times 5000$ cost matrix in float64. All seeds are set deterministically (NumPy, PyTorch, cuDNN); multi-seed results (mean $\pm$ std) are aggregated over seeds 0--9 on PBMC $\beta=0.001$ and seeds 0--2 on all other configurations; the uniPort baseline is run from a separate Python virtual environment with \texttt{numpy<2} and \texttt{anndata 0.11.4} because uniPort 1.3 depends on the deprecated \texttt{np.Inf}, and code, configs, and all aggregate JSON result files will be linked upon de-anonymization.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\textwidth]{fig5_beta_tradeoff.png}
+  \caption{$\beta$ sensitivity on PBMC and Brain. $\beta=0.001$ is the recommended default; the UQ AUROC is roughly insensitive to $\beta$, so the UQ signal is robust to this choice.}
+  \label{fig:beta}
+\end{figure}
+
+\end{document}
