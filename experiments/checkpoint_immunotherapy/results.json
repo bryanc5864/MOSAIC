@@ -1,0 +1,64 @@
+{
+  "experiment": "checkpoint_immunotherapy",
+  "dataset": "citeseq_pbmc",
+  "source_exp": "exp001_citeseq",
+  "n_cells": 3000,
+  "analyses": [
+    {
+      "analysis": "PD-1_TotalSeqB_entropy",
+      "label": "PD-1+ exhausted T",
+      "n_high": 750,
+      "n_low": 750,
+      "mean_H_high": 0.21246837079524994,
+      "mean_H_low": 0.20289166271686554,
+      "H_ratio": 1.0472010374069214,
+      "mannwhitney_p_greater": 0.3006717404194704,
+      "auroc_H_predicts_checkpoint_high": 0.5681487407407407,
+      "clinical_interpretation": "Higher entropy in checkpoint-high cells suggests transcriptome-proteome discordance for PD-1+ exhausted T identification"
+    },
+    {
+      "analysis": "TIGIT_TotalSeqB_entropy",
+      "label": "TIGIT+ exhausted T",
+      "n_high": 750,
+      "n_low": 750,
+      "mean_H_high": 0.19101521372795105,
+      "mean_H_low": 0.2020522803068161,
+      "H_ratio": 0.9453752040863037,
+      "mannwhitney_p_greater": 0.9999999904630684,
+      "auroc_H_predicts_checkpoint_high": 0.4382625185185185,
+      "clinical_interpretation": "Higher entropy in checkpoint-high cells suggests transcriptome-proteome discordance for TIGIT+ exhausted T identification"
+    },
+    {
+      "analysis": "PD1_TIGIT_double_positive_exhausted",
+      "label": "Exhausted T (PD-1+TIGIT+ double-positive vs PD-1-TIGIT- fresh)",
+      "n_exhausted": 254,
+      "n_fresh": 290,
+      "mean_H_exhausted": 0.23806507885456085,
+      "mean_H_fresh": 0.20058652758598328,
+      "H_ratio": 1.186844825744629,
+      "mannwhitney_p_greater": 9.163341278562229e-05,
+      "clinical_interpretation": "Exhausted T cells (checkpoint immunotherapy targets) have higher alignment uncertainty"
+    },
+    {
+      "analysis": "CD4_vs_CD8_PD1_entropy",
+      "label": "CD4+PD-1+ vs CD8a+PD-1+ (Treg-exhausted vs effector-exhausted)",
+      "n_cd4_pd1": 447,
+      "n_cd8_pd1": 468,
+      "mean_H_cd4_pd1": 0.24058347940444946,
+      "mean_H_cd8_pd1": 0.18780840933322906,
+      "mannwhitney_p_twosided": 3.5642616931318564e-18,
+      "clinical_interpretation": "Differential uncertainty between CD4 and CD8 exhausted T cell subsets"
+    },
+    {
+      "analysis": "CD127_memory_vs_effector_entropy",
+      "label": "CD3+CD127+ memory T vs CD3+CD127- effector/exhausted T",
+      "n_memory": 721,
+      "n_effector": 128,
+      "mean_H_memory": 0.2164841592311859,
+      "mean_H_effector": 0.2968881130218506,
+      "H_ratio": 0.7291775941848755,
+      "mannwhitney_p_greater": 1.0,
+      "clinical_interpretation": "Memory T (CD127+) may have higher proteome-transcriptome discordance than terminally differentiated effectors"
+    }
+  ]
+}

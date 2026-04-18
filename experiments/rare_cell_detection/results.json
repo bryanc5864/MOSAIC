@@ -1,0 +1,838 @@
+{
+  "experiment": "rare_cell_detection",
+  "datasets": [
+    {
+      "label": "PBMC 10k (beta=0.001)",
+      "dataset": "pbmc10k_multiome",
+      "exp": "exp001_pbmc_beta0001",
+      "n_clusters": 18,
+      "size_entropy_spearman_rho": 0.38080495356037153,
+      "size_entropy_spearman_p": 0.11898433684768545,
+      "rare_vs_abundant_H": {
+        "rare_mean_H": 0.05017866752394992,
+        "abundant_mean_H": 0.07705923294027646,
+        "mannwhitney_p_rare_greater": 0.8918134959711812
+      },
+      "per_cluster": [
+        {
+          "cluster": "12",
+          "n_in_subsample": 8,
+          "n_full": 19,
+          "mean_H": 0.011545863933861256,
+          "std_H": 0.026446113362908363
+        },
+        {
+          "cluster": "17",
+          "n_in_subsample": 10,
+          "n_full": 25,
+          "mean_H": 0.013556985184550285,
+          "std_H": 0.029509367421269417
+        },
+        {
+          "cluster": "9",
+          "n_in_subsample": 34,
+          "n_full": 71,
+          "mean_H": 0.09403853863477707,
+          "std_H": 0.10711950063705444
+        },
+        {
+          "cluster": "16",
+          "n_in_subsample": 43,
+          "n_full": 110,
+          "mean_H": 0.0008483174606226385,
+          "std_H": 0.0054976847022771835
+        },
+        {
+          "cluster": "13",
+          "n_in_subsample": 52,
+          "n_full": 118,
+          "mean_H": 0.1367340087890625,
+          "std_H": 0.12477236241102219
+        },
+        {
+          "cluster": "5",
+          "n_in_subsample": 64,
+          "n_full": 141,
+          "mean_H": 0.11037943512201309,
+          "std_H": 0.12087054550647736
+        },
+        {
+          "cluster": "7",
+          "n_in_subsample": 74,
+          "n_full": 186,
+          "mean_H": 0.04270685836672783,
+          "std_H": 0.06592614203691483
+        },
+        {
+          "cluster": "10",
+          "n_in_subsample": 96,
+          "n_full": 209,
+          "mean_H": 0.000972365029156208,
+          "std_H": 0.0038174819201231003
+        },
+        {
+          "cluster": "15",
+          "n_in_subsample": 137,
+          "n_full": 317,
+          "mean_H": 0.04082563519477844,
+          "std_H": 0.04730694741010666
+        },
+        {
+          "cluster": "8",
+          "n_in_subsample": 160,
+          "n_full": 361,
+          "mean_H": 0.04146423563361168,
+          "std_H": 0.059893857687711716
+        },
+        {
+          "cluster": "4",
+          "n_in_subsample": 184,
+          "n_full": 490,
+          "mean_H": 0.027902882546186447,
+          "std_H": 0.032753463834524155
+        },
+        {
+          "cluster": "3",
+          "n_in_subsample": 242,
+          "n_full": 519,
+          "mean_H": 0.021950243040919304,
+          "std_H": 0.04152148589491844
+        },
+        {
+          "cluster": "11",
+          "n_in_subsample": 252,
+          "n_full": 558,
+          "mean_H": 0.025924213230609894,
+          "std_H": 0.0484466515481472
+        },
+        {
+          "cluster": "14",
+          "n_in_subsample": 405,
+          "n_full": 876,
+          "mean_H": 0.10022519528865814,
+          "std_H": 0.11870964616537094
+        },
+        {
+          "cluster": "1",
+          "n_in_subsample": 657,
+          "n_full": 1519,
+          "mean_H": 0.16030153632164001,
+          "std_H": 0.10048695653676987
+        },
+        {
+          "cluster": "2",
+          "n_in_subsample": 683,
+          "n_full": 1524,
+          "mean_H": 0.15776625275611877,
+          "std_H": 0.07012896239757538
+        },
+        {
+          "cluster": "0",
+          "n_in_subsample": 674,
+          "n_full": 1535,
+          "mean_H": 0.13653510808944702,
+          "std_H": 0.07919660210609436
+        },
+        {
+          "cluster": "6",
+          "n_in_subsample": 1225,
+          "n_full": 2725,
+          "mean_H": 0.021463429555296898,
+          "std_H": 0.028680535033345222
+        }
+      ],
+      "rare_clusters": [
+        {
+          "cluster": "12",
+          "n_in_subsample": 8,
+          "n_full": 19,
+          "mean_H": 0.011545863933861256,
+          "std_H": 0.026446113362908363
+        },
+        {
+          "cluster": "17",
+          "n_in_subsample": 10,
+          "n_full": 25,
+          "mean_H": 0.013556985184550285,
+          "std_H": 0.029509367421269417
+        },
+        {
+          "cluster": "9",
+          "n_in_subsample": 34,
+          "n_full": 71,
+          "mean_H": 0.09403853863477707,
+          "std_H": 0.10711950063705444
+        },
+        {
+          "cluster": "16",
+          "n_in_subsample": 43,
+          "n_full": 110,
+          "mean_H": 0.0008483174606226385,
+          "std_H": 0.0054976847022771835
+        },
+        {
+          "cluster": "13",
+          "n_in_subsample": 52,
+          "n_full": 118,
+          "mean_H": 0.1367340087890625,
+          "std_H": 0.12477236241102219
+        },
+        {
+          "cluster": "5",
+          "n_in_subsample": 64,
+          "n_full": 141,
+          "mean_H": 0.11037943512201309,
+          "std_H": 0.12087054550647736
+        },
+        {
+          "cluster": "7",
+          "n_in_subsample": 74,
+          "n_full": 186,
+          "mean_H": 0.04270685836672783,
+          "std_H": 0.06592614203691483
+        },
+        {
+          "cluster": "10",
+          "n_in_subsample": 96,
+          "n_full": 209,
+          "mean_H": 0.000972365029156208,
+          "std_H": 0.0038174819201231003
+        },
+        {
+          "cluster": "15",
+          "n_in_subsample": 137,
+          "n_full": 317,
+          "mean_H": 0.04082563519477844,
+          "std_H": 0.04730694741010666
+        }
+      ],
+      "abundant_clusters": [
+        {
+          "cluster": "8",
+          "n_in_subsample": 160,
+          "n_full": 361,
+          "mean_H": 0.04146423563361168,
+          "std_H": 0.059893857687711716
+        },
+        {
+          "cluster": "4",
+          "n_in_subsample": 184,
+          "n_full": 490,
+          "mean_H": 0.027902882546186447,
+          "std_H": 0.032753463834524155
+        },
+        {
+          "cluster": "3",
+          "n_in_subsample": 242,
+          "n_full": 519,
+          "mean_H": 0.021950243040919304,
+          "std_H": 0.04152148589491844
+        },
+        {
+          "cluster": "11",
+          "n_in_subsample": 252,
+          "n_full": 558,
+          "mean_H": 0.025924213230609894,
+          "std_H": 0.0484466515481472
+        },
+        {
+          "cluster": "14",
+          "n_in_subsample": 405,
+          "n_full": 876,
+          "mean_H": 0.10022519528865814,
+          "std_H": 0.11870964616537094
+        },
+        {
+          "cluster": "1",
+          "n_in_subsample": 657,
+          "n_full": 1519,
+          "mean_H": 0.16030153632164001,
+          "std_H": 0.10048695653676987
+        },
+        {
+          "cluster": "2",
+          "n_in_subsample": 683,
+          "n_full": 1524,
+          "mean_H": 0.15776625275611877,
+          "std_H": 0.07012896239757538
+        },
+        {
+          "cluster": "0",
+          "n_in_subsample": 674,
+          "n_full": 1535,
+          "mean_H": 0.13653510808944702,
+          "std_H": 0.07919660210609436
+        },
+        {
+          "cluster": "6",
+          "n_in_subsample": 1225,
+          "n_full": 2725,
+          "mean_H": 0.021463429555296898,
+          "std_H": 0.028680535033345222
+        }
+      ]
+    },
+    {
+      "label": "Brain 5k (beta=0.001)",
+      "dataset": "brain3k_multiome",
+      "exp": "exp001_brain_beta0001",
+      "n_clusters": 20,
+      "size_entropy_spearman_rho": 0.4024069483523329,
+      "size_entropy_spearman_p": 0.07858026137561823,
+      "rare_vs_abundant_H": {
+        "rare_mean_H": 0.05816118840216431,
+        "abundant_mean_H": 0.08631551414728164,
+        "mannwhitney_p_rare_greater": 0.9070616338170621
+      },
+      "per_cluster": [
+        {
+          "cluster": "15",
+          "n_in_subsample": 13,
+          "n_full": 15,
+          "mean_H": 0.03396260365843773,
+          "std_H": 0.07482405751943588
+        },
+        {
+          "cluster": "19",
+          "n_in_subsample": 20,
+          "n_full": 21,
+          "mean_H": 0.004747601691633463,
+          "std_H": 0.016706639900803566
+        },
+        {
+          "cluster": "6",
+          "n_in_subsample": 39,
+          "n_full": 43,
+          "mean_H": -1.2018945838576656e-09,
+          "std_H": 4.4460954029545974e-08
+        },
+        {
+          "cluster": "17",
+          "n_in_subsample": 63,
+          "n_full": 69,
+          "mean_H": 0.11887077987194061,
+          "std_H": 0.19142715632915497
+        },
+        {
+          "cluster": "18",
+          "n_in_subsample": 93,
+          "n_full": 105,
+          "mean_H": 0.03172196447849274,
+          "std_H": 0.09428740292787552
+        },
+        {
+          "cluster": "12",
+          "n_in_subsample": 130,
+          "n_full": 146,
+          "mean_H": 0.04051120579242706,
+          "std_H": 0.06608110666275024
+        },
+        {
+          "cluster": "9",
+          "n_in_subsample": 139,
+          "n_full": 154,
+          "mean_H": 0.05352197587490082,
+          "std_H": 0.0448148287832737
+        },
+        {
+          "cluster": "7",
+          "n_in_subsample": 137,
+          "n_full": 159,
+          "mean_H": 0.11385122686624527,
+          "std_H": 0.167709082365036
+        },
+        {
+          "cluster": "13",
+          "n_in_subsample": 173,
+          "n_full": 181,
+          "mean_H": 0.07900646328926086,
+          "std_H": 0.12832580506801605
+        },
+        {
+          "cluster": "14",
+          "n_in_subsample": 204,
+          "n_full": 231,
+          "mean_H": 0.10541806370019913,
+          "std_H": 0.11027481406927109
+        },
+        {
+          "cluster": "10",
+          "n_in_subsample": 201,
+          "n_full": 239,
+          "mean_H": 0.13368183374404907,
+          "std_H": 0.1733631044626236
+        },
+        {
+          "cluster": "8",
+          "n_in_subsample": 257,
+          "n_full": 274,
+          "mean_H": 0.0480765625834465,
+          "std_H": 0.049228597432374954
+        },
+        {
+          "cluster": "16",
+          "n_in_subsample": 241,
+          "n_full": 275,
+          "mean_H": 0.10228229314088821,
+          "std_H": 0.1352909654378891
+        },
+        {
+          "cluster": "4",
+          "n_in_subsample": 266,
+          "n_full": 307,
+          "mean_H": 0.09516578167676926,
+          "std_H": 0.11835215240716934
+        },
+        {
+          "cluster": "1",
+          "n_in_subsample": 296,
+          "n_full": 340,
+          "mean_H": 0.08714410662651062,
+          "std_H": 0.10380701720714569
+        },
+        {
+          "cluster": "3",
+          "n_in_subsample": 296,
+          "n_full": 340,
+          "mean_H": 0.03353078290820122,
+          "std_H": 0.04783641919493675
+        },
+        {
+          "cluster": "11",
+          "n_in_subsample": 331,
+          "n_full": 380,
+          "mean_H": 0.05124371126294136,
+          "std_H": 0.07260408252477646
+        },
+        {
+          "cluster": "0",
+          "n_in_subsample": 340,
+          "n_full": 387,
+          "mean_H": 0.11132579296827316,
+          "std_H": 0.09487288445234299
+        },
+        {
+          "cluster": "2",
+          "n_in_subsample": 355,
+          "n_full": 411,
+          "mean_H": 0.1083650216460228,
+          "std_H": 0.078155517578125
+        },
+        {
+          "cluster": "5",
+          "n_in_subsample": 406,
+          "n_full": 454,
+          "mean_H": 0.09233925491571426,
+          "std_H": 0.1109233945608139
+        }
+      ],
+      "rare_clusters": [
+        {
+          "cluster": "15",
+          "n_in_subsample": 13,
+          "n_full": 15,
+          "mean_H": 0.03396260365843773,
+          "std_H": 0.07482405751943588
+        },
+        {
+          "cluster": "19",
+          "n_in_subsample": 20,
+          "n_full": 21,
+          "mean_H": 0.004747601691633463,
+          "std_H": 0.016706639900803566
+        },
+        {
+          "cluster": "6",
+          "n_in_subsample": 39,
+          "n_full": 43,
+          "mean_H": -1.2018945838576656e-09,
+          "std_H": 4.4460954029545974e-08
+        },
+        {
+          "cluster": "17",
+          "n_in_subsample": 63,
+          "n_full": 69,
+          "mean_H": 0.11887077987194061,
+          "std_H": 0.19142715632915497
+        },
+        {
+          "cluster": "18",
+          "n_in_subsample": 93,
+          "n_full": 105,
+          "mean_H": 0.03172196447849274,
+          "std_H": 0.09428740292787552
+        },
+        {
+          "cluster": "12",
+          "n_in_subsample": 130,
+          "n_full": 146,
+          "mean_H": 0.04051120579242706,
+          "std_H": 0.06608110666275024
+        },
+        {
+          "cluster": "9",
+          "n_in_subsample": 139,
+          "n_full": 154,
+          "mean_H": 0.05352197587490082,
+          "std_H": 0.0448148287832737
+        },
+        {
+          "cluster": "7",
+          "n_in_subsample": 137,
+          "n_full": 159,
+          "mean_H": 0.11385122686624527,
+          "std_H": 0.167709082365036
+        },
+        {
+          "cluster": "13",
+          "n_in_subsample": 173,
+          "n_full": 181,
+          "mean_H": 0.07900646328926086,
+          "std_H": 0.12832580506801605
+        },
+        {
+          "cluster": "14",
+          "n_in_subsample": 204,
+          "n_full": 231,
+          "mean_H": 0.10541806370019913,
+          "std_H": 0.11027481406927109
+        }
+      ],
+      "abundant_clusters": [
+        {
+          "cluster": "10",
+          "n_in_subsample": 201,
+          "n_full": 239,
+          "mean_H": 0.13368183374404907,
+          "std_H": 0.1733631044626236
+        },
+        {
+          "cluster": "8",
+          "n_in_subsample": 257,
+          "n_full": 274,
+          "mean_H": 0.0480765625834465,
+          "std_H": 0.049228597432374954
+        },
+        {
+          "cluster": "16",
+          "n_in_subsample": 241,
+          "n_full": 275,
+          "mean_H": 0.10228229314088821,
+          "std_H": 0.1352909654378891
+        },
+        {
+          "cluster": "4",
+          "n_in_subsample": 266,
+          "n_full": 307,
+          "mean_H": 0.09516578167676926,
+          "std_H": 0.11835215240716934
+        },
+        {
+          "cluster": "1",
+          "n_in_subsample": 296,
+          "n_full": 340,
+          "mean_H": 0.08714410662651062,
+          "std_H": 0.10380701720714569
+        },
+        {
+          "cluster": "3",
+          "n_in_subsample": 296,
+          "n_full": 340,
+          "mean_H": 0.03353078290820122,
+          "std_H": 0.04783641919493675
+        },
+        {
+          "cluster": "11",
+          "n_in_subsample": 331,
+          "n_full": 380,
+          "mean_H": 0.05124371126294136,
+          "std_H": 0.07260408252477646
+        },
+        {
+          "cluster": "0",
+          "n_in_subsample": 340,
+          "n_full": 387,
+          "mean_H": 0.11132579296827316,
+          "std_H": 0.09487288445234299
+        },
+        {
+          "cluster": "2",
+          "n_in_subsample": 355,
+          "n_full": 411,
+          "mean_H": 0.1083650216460228,
+          "std_H": 0.078155517578125
+        },
+        {
+          "cluster": "5",
+          "n_in_subsample": 406,
+          "n_full": 454,
+          "mean_H": 0.09233925491571426,
+          "std_H": 0.1109233945608139
+        }
+      ]
+    },
+    {
+      "label": "CITE-seq PBMC (beta=0.001)",
+      "dataset": "citeseq_pbmc",
+      "exp": "exp001_citeseq",
+      "n_clusters": 17,
+      "size_entropy_spearman_rho": -0.32352941176470595,
+      "size_entropy_spearman_p": 0.2052466628278676,
+      "rare_vs_abundant_H": {
+        "rare_mean_H": 0.287118224252481,
+        "abundant_mean_H": 0.193032535413901,
+        "mannwhitney_p_rare_greater": 0.13829699712052654
+      },
+      "per_cluster": [
+        {
+          "cluster": "16",
+          "n_in_subsample": 11,
+          "n_full": 30,
+          "mean_H": 0.0002188221551477909,
+          "std_H": 0.0003084347699768841
+        },
+        {
+          "cluster": "1",
+          "n_in_subsample": 15,
+          "n_full": 36,
+          "mean_H": 0.29390525817871094,
+          "std_H": 0.06435605138540268
+        },
+        {
+          "cluster": "15",
+          "n_in_subsample": 27,
+          "n_full": 56,
+          "mean_H": 0.29071924090385437,
+          "std_H": 0.12976610660552979
+        },
+        {
+          "cluster": "10",
+          "n_in_subsample": 28,
+          "n_full": 72,
+          "mean_H": 0.18764261901378632,
+          "std_H": 0.08334343135356903
+        },
+        {
+          "cluster": "14",
+          "n_in_subsample": 38,
+          "n_full": 97,
+          "mean_H": 0.4012518525123596,
+          "std_H": 0.07488592714071274
+        },
+        {
+          "cluster": "11",
+          "n_in_subsample": 27,
+          "n_full": 104,
+          "mean_H": 0.1674889773130417,
+          "std_H": 0.0788043662905693
+        },
+        {
+          "cluster": "12",
+          "n_in_subsample": 53,
+          "n_full": 122,
+          "mean_H": 0.6916579604148865,
+          "std_H": 0.08200357854366302
+        },
+        {
+          "cluster": "2",
+          "n_in_subsample": 61,
+          "n_full": 144,
+          "mean_H": 0.2640610635280609,
+          "std_H": 0.04518866166472435
+        },
+        {
+          "cluster": "13",
+          "n_in_subsample": 109,
+          "n_full": 283,
+          "mean_H": 0.3122516870498657,
+          "std_H": 0.04591349884867668
+        },
+        {
+          "cluster": "9",
+          "n_in_subsample": 150,
+          "n_full": 388,
+          "mean_H": 0.2802540063858032,
+          "std_H": 0.050552017986774445
+        },
+        {
+          "cluster": "7",
+          "n_in_subsample": 180,
+          "n_full": 507,
+          "mean_H": 0.18247880041599274,
+          "std_H": 0.06766442954540253
+        },
+        {
+          "cluster": "8",
+          "n_in_subsample": 214,
+          "n_full": 570,
+          "mean_H": 0.19866615533828735,
+          "std_H": 0.05801481008529663
+        },
+        {
+          "cluster": "6",
+          "n_in_subsample": 222,
+          "n_full": 598,
+          "mean_H": 0.08659934997558594,
+          "std_H": 0.015971964225172997
+        },
+        {
+          "cluster": "3",
+          "n_in_subsample": 331,
+          "n_full": 888,
+          "mean_H": 0.07581182569265366,
+          "std_H": 0.015403122641146183
+        },
+        {
+          "cluster": "5",
+          "n_in_subsample": 372,
+          "n_full": 1009,
+          "mean_H": 0.27893635630607605,
+          "std_H": 0.025741873309016228
+        },
+        {
+          "cluster": "4",
+          "n_in_subsample": 532,
+          "n_full": 1317,
+          "mean_H": 0.17334802448749542,
+          "std_H": 0.054600685834884644
+        },
+        {
+          "cluster": "0",
+          "n_in_subsample": 630,
+          "n_full": 1635,
+          "mean_H": 0.148946613073349,
+          "std_H": 0.019562270492315292
+        }
+      ],
+      "rare_clusters": [
+        {
+          "cluster": "16",
+          "n_in_subsample": 11,
+          "n_full": 30,
+          "mean_H": 0.0002188221551477909,
+          "std_H": 0.0003084347699768841
+        },
+        {
+          "cluster": "1",
+          "n_in_subsample": 15,
+          "n_full": 36,
+          "mean_H": 0.29390525817871094,
+          "std_H": 0.06435605138540268
+        },
+        {
+          "cluster": "15",
+          "n_in_subsample": 27,
+          "n_full": 56,
+          "mean_H": 0.29071924090385437,
+          "std_H": 0.12976610660552979
+        },
+        {
+          "cluster": "10",
+          "n_in_subsample": 28,
+          "n_full": 72,
+          "mean_H": 0.18764261901378632,
+          "std_H": 0.08334343135356903
+        },
+        {
+          "cluster": "14",
+          "n_in_subsample": 38,
+          "n_full": 97,
+          "mean_H": 0.4012518525123596,
+          "std_H": 0.07488592714071274
+        },
+        {
+          "cluster": "11",
+          "n_in_subsample": 27,
+          "n_full": 104,
+          "mean_H": 0.1674889773130417,
+          "std_H": 0.0788043662905693
+        },
+        {
+          "cluster": "12",
+          "n_in_subsample": 53,
+          "n_full": 122,
+          "mean_H": 0.6916579604148865,
+          "std_H": 0.08200357854366302
+        },
+        {
+          "cluster": "2",
+          "n_in_subsample": 61,
+          "n_full": 144,
+          "mean_H": 0.2640610635280609,
+          "std_H": 0.04518866166472435
+        }
+      ],
+      "abundant_clusters": [
+        {
+          "cluster": "13",
+          "n_in_subsample": 109,
+          "n_full": 283,
+          "mean_H": 0.3122516870498657,
+          "std_H": 0.04591349884867668
+        },
+        {
+          "cluster": "9",
+          "n_in_subsample": 150,
+          "n_full": 388,
+          "mean_H": 0.2802540063858032,
+          "std_H": 0.050552017986774445
+        },
+        {
+          "cluster": "7",
+          "n_in_subsample": 180,
+          "n_full": 507,
+          "mean_H": 0.18247880041599274,
+          "std_H": 0.06766442954540253
+        },
+        {
+          "cluster": "8",
+          "n_in_subsample": 214,
+          "n_full": 570,
+          "mean_H": 0.19866615533828735,
+          "std_H": 0.05801481008529663
+        },
+        {
+          "cluster": "6",
+          "n_in_subsample": 222,
+          "n_full": 598,
+          "mean_H": 0.08659934997558594,
+          "std_H": 0.015971964225172997
+        },
+        {
+          "cluster": "3",
+          "n_in_subsample": 331,
+          "n_full": 888,
+          "mean_H": 0.07581182569265366,
+          "std_H": 0.015403122641146183
+        },
+        {
+          "cluster": "5",
+          "n_in_subsample": 372,
+          "n_full": 1009,
+          "mean_H": 0.27893635630607605,
+          "std_H": 0.025741873309016228
+        },
+        {
+          "cluster": "4",
+          "n_in_subsample": 532,
+          "n_full": 1317,
+          "mean_H": 0.17334802448749542,
+          "std_H": 0.054600685834884644
+        },
+        {
+          "cluster": "0",
+          "n_in_subsample": 630,
+          "n_full": 1635,
+          "mean_H": 0.148946613073349,
+          "std_H": 0.019562270492315292
+        }
+      ]
+    }
+  ],
+  "summary": "Spearman correlation between cluster size and mean H_cluster (negative = smaller clusters have higher entropy)",
+  "correlations": {
+    "PBMC 10k (beta=0.001)": 0.38080495356037153,
+    "Brain 5k (beta=0.001)": 0.4024069483523329,
+    "CITE-seq PBMC (beta=0.001)": -0.32352941176470595
+  }
+}
