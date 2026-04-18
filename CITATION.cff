@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this code or ideas from this paper, please cite:"
+title: "Calibrated Per-Cell Uncertainty for Unpaired Single-Cell Multi-Omics Integration in Disease Atlases"
+authors:
+  - family-names: Cheng
+    given-names: Bryan
+  - family-names: Jin
+    given-names: Austin
+  - family-names: Chang
+    given-names: Joshua
+  - family-names: Lo
+    given-names: Brendan
+year: 2026
+license: MIT
+repository-code: "https://github.com/bryanc5864/MOSAIC"
+preferred-citation:
+  type: conference-paper
+  title: "Calibrated Per-Cell Uncertainty for Unpaired Single-Cell Multi-Omics Integration in Disease Atlases"
+  authors:
+    - family-names: Cheng
+      given-names: Bryan
+    - family-names: Jin
+      given-names: Austin
+    - family-names: Chang
+      given-names: Joshua
+    - family-names: Lo
+      given-names: Brendan
+  conference:
+    name: "Machine Learning for Healthcare (MLHC)"
+  year: 2026
