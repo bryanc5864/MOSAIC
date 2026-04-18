@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# MIT License - Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC
 """Run CITE-seq experiment at multiple seeds for 3-seed statistical reporting."""
 

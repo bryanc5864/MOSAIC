@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# MIT License - Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC - Exp 3: missing cell type detection
 """Exp 3 - can MOSAIC's cluster-resolved entropy detect cells whose true
 cluster is absent from the target modality?

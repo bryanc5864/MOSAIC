@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# MIT License - Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC - Exp 4: ablation sweeps
 """Run a set of MOSAIC variants to quantify each design choice's contribution.
 

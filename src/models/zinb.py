@@ -1,4 +1,4 @@
-# MIT License — Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC
 """Zero-Inflated Negative Binomial (ZINB) log-likelihood.
 

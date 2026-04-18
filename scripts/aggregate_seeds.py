@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# MIT License - Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC - multi-seed aggregation for W5 fix
 """Aggregate multi-seed results into mean +/- std summaries.
 

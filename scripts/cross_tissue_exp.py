@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# MIT License - Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC - Exp 6 cross-tissue negative-control experiment
 """Cross-tissue alignment as a negative control for the UQ signal.
 

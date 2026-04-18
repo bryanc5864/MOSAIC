@@ -1,4 +1,4 @@
-# MIT License - Bryan Cheng, 2026
+# MIT License
 # Part of MOSAIC
 """Fair-comparison baseline runner for MOSAIC benchmarks.
 
