@@ -35,18 +35,26 @@ from src.utils.paths import EXPERIMENTS_DIR, FIGURES_DIR, PROCESSED_DIR
 
 # Publication-quality rcParams
 plt.rcParams.update({
-    "font.size": 12,
-    "axes.labelsize": 13,
-    "axes.titlesize": 13,
-    "xtick.labelsize": 11,
-    "ytick.labelsize": 11,
-    "legend.fontsize": 10,
+    "font.size": 20,
+    "axes.labelsize": 22,
+    "axes.titlesize": 22,
+    "xtick.labelsize": 18,
+    "ytick.labelsize": 18,
+    "legend.fontsize": 18,
     "figure.dpi": 120,
     "savefig.dpi": 300,
     "savefig.bbox": "tight",
     "axes.spines.top": False,
     "axes.spines.right": False,
+    "axes.linewidth": 1.2,
+    "lines.linewidth": 2.0,
 })
+
+# Unified blue/green palette
+BLUE = "#2c7fb8"
+GREEN = "#41ae76"
+BLUE_DARK = "#08519c"
+GREEN_DARK = "#006d2c"
 
 
 def _save(fig, name: str):
@@ -156,7 +164,7 @@ def figure_2_entropy_comparison(exp_name: str, dataset_id: str):
     fig, axes = plt.subplots(1, 3, figsize=(14, 4.5))
 
     ax = axes[0]
-    ax.scatter(H_cell, errs, s=3, alpha=0.2, c="#3770B0", edgecolors="none")
+    ax.scatter(H_cell, errs, s=3, alpha=0.2, c="#2c7fb8", edgecolors="none")
     ax.set_xlabel("cell-level row entropy $H_{\\mathrm{cell}}$")
     ax.set_ylabel("distance to true partner")
     ax.set_title(f"Cell-level entropy (wrong sign)\n"
@@ -164,7 +172,7 @@ def figure_2_entropy_comparison(exp_name: str, dataset_id: str):
     ax.grid(alpha=0.3)
 
     ax = axes[1]
-    ax.scatter(H_cluster, errs, s=3, alpha=0.2, c="#C03030", edgecolors="none")
+    ax.scatter(H_cluster, errs, s=3, alpha=0.2, c="#e31a1c", edgecolors="none")
     ax.set_xlabel("cluster-resolved entropy $H_{\\mathrm{cluster}}$")
     ax.set_ylabel("distance to true partner")
     ax.set_title(f"Cluster-resolved entropy\n"
@@ -174,9 +182,9 @@ def figure_2_entropy_comparison(exp_name: str, dataset_id: str):
     ax = axes[2]
     # Histogram of H_cluster for correct vs wrong cluster assignments
     bins = np.linspace(0, 1, 40)
-    ax.hist(H_cluster[correct_mask], bins=bins, color="#5AA06A",
+    ax.hist(H_cluster[correct_mask], bins=bins, color="#41ae76",
             alpha=0.7, label=f"argmax correct ({correct_mask.sum()})")
-    ax.hist(H_cluster[~correct_mask], bins=bins, color="#C03030",
+    ax.hist(H_cluster[~correct_mask], bins=bins, color="#e31a1c",
             alpha=0.7, label=f"argmax wrong ({(~correct_mask).sum()})")
     ax.set_xlabel("$H_{\\mathrm{cluster}}$")
     ax.set_ylabel("count (log scale)")
@@ -215,7 +223,7 @@ def figure_3_missing_type():
         order = np.argsort(aurocs)[::-1]
         clusters_s = [clusters[i] for i in order]
         aurocs_s = [aurocs[i] for i in order]
-        bars = ax.bar(range(len(aurocs_s)), aurocs_s, color="#3770B0", edgecolor="black", linewidth=0.5)
+        bars = ax.bar(range(len(aurocs_s)), aurocs_s, color="#2c7fb8", edgecolor="black", linewidth=0.5)
         ax.axhline(0.5, color="gray", linestyle="--", label="random")
         ax.set_xticks(range(len(clusters_s)))
         ax.set_xticklabels([f"c{c}" for c in clusters_s], rotation=60, ha="right", fontsize=9)
@@ -268,11 +276,11 @@ def figure_5_beta_tradeoff():
         ax.bar(x - width/2, [pb01_mu, pb0001_mu], width,
                yerr=[pb01_err, pb0001_err], capsize=4,
                label="PBMC 10k (3 seeds)",
-               color="#3770B0", edgecolor="black", linewidth=0.5)
+               color="#2c7fb8", edgecolor="black", linewidth=0.5)
         ax.bar(x + width/2, [br01_mu, br0001_mu], width,
                yerr=[br01_err, br0001_err], capsize=4,
                label="Brain 5k (3 seeds)",
-               color="#5AA06A", edgecolor="black", linewidth=0.5)
+               color="#41ae76", edgecolor="black", linewidth=0.5)
 
         ax.set_xticks(x)
         ax.set_xticklabels(["β = 0.01", "β = 0.001"])
@@ -377,16 +385,16 @@ def figure_4_baselines():
     for ax, data, title in zip(axes, [pbmc, brain], titles):
         ax.bar(x - 1.5*width, data["foscttm_h"], width,
                yerr=data["foscttm_err"], label="1 − FOSCTTM",
-               color="#3770B0", error_kw=err_kw)
+               color="#2c7fb8", error_kw=err_kw)
         ax.bar(x - 0.5*width, data["lt_a_b_h"], width,
                yerr=data["lt_a_b_err"], label="LT RNA→ATAC",
-               color="#5AA06A", error_kw=err_kw)
+               color="#41ae76", error_kw=err_kw)
         ax.bar(x + 0.5*width, data["lt_b_a_h"], width,
                yerr=data["lt_b_a_err"], label="LT ATAC→RNA",
-               color="#C07030", error_kw=err_kw)
+               color="#fe9929", error_kw=err_kw)
         ax.bar(x + 1.5*width, data["ari_h"], width,
                yerr=data["ari_err"], label="joint ARI",
-               color="#8860B0", error_kw=err_kw)
+               color="#756bb1", error_kw=err_kw)
         ax.set_xticks(x)
         ax.set_xticklabels(methods)
         ax.set_title(title)

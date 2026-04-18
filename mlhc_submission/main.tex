@@ -136,24 +136,21 @@ We evaluate on three publicly available benchmarks that collectively span immune
 
 \begin{figure}[tbp]
   \centering
-  \begin{minipage}[b]{0.495\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{fig1_aligned_latent_pbmc10k_multiome.png}\\[2pt]
-    {\normalsize (a) PBMC 10x Multiome}
-  \end{minipage}%
-  \hfill
-  \begin{minipage}[b]{0.495\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{fig1_aligned_latent_brain3k_multiome.png}\\[2pt]
-    {\normalsize (b) E18 mouse brain 5k Multiome}
-  \end{minipage}
-  \caption{UMAP of the aligned joint latent (RNA $\cup$ ATAC). After Procrustes rotation, cells of the same type from both modalities co-localize, with cell-type structure preserved.}
-  \label{fig:latent}
+  \includegraphics[width=\textwidth]{fig1_aligned_latent_pbmc10k_multiome.png}
+  \caption{UMAP of the aligned joint latent on 10x Multiome PBMC 10k (RNA $\cup$ ATAC). After Procrustes rotation, cells of the same immune type from both modalities co-localize.}
+  \label{fig:latent-pbmc}
+\end{figure}
+
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\textwidth]{fig1_aligned_latent_brain3k_multiome.png}
+  \caption{UMAP of the aligned joint latent on 10x Multiome E18 mouse brain 5k (RNA $\cup$ ATAC). Neural cell-type structure is preserved across modalities.}
+  \label{fig:latent-brain}
 \end{figure}
 
 \subsection{Alignment quality, baselines, and the uncertainty signal}
 
-Fig.~\ref{fig:latent} shows UMAP projections of the concatenated post-Procrustes latent on PBMC and Brain: RNA and ATAC cells of each cell type co-cluster, and the global cell-type topology is preserved. Against the three baselines that we could reliably run --- SCOT (our Gromov--Wasserstein reimplementation), raw PCA/LSI followed by Procrustes (an ablation of the IB-VAE), and uniPort --- \MOSAIC{} outperforms on every alignment metric on all three datasets (Table~\ref{tab:baselines}, Fig.~\ref{fig:baselines}). On Brain 5k the margin is dramatic: FOSCTTM $0.05$ vs.\ $0.47$ for SCOT ($89\%$ better), label transfer $0.96$ vs.\ $0.13$ ($7.2\times$), ARI $0.87$ vs.\ $0.03$ ($35\times$). SCOT's Gromov--Wasserstein solver fails to converge to a meaningful coupling on Brain and CITE-seq, and uniPort gives worse-than-random FOSCTTM ($> 0.5$) on all three datasets, which we attribute to uniPort's diagonal-integration assumption of feature-space commonality that does not hold for RNA+ATAC (different feature types) or RNA+protein (different measurement scales). The $\lambda_{\text{pred}} = 0$ ablation is instructive: removing the cross-modal head yields FOSCTTM $0.378$, LT $0.05/0.39$, and ARI $0.026$ on PBMC --- essentially random alignment --- confirming that the cross-modal head is the component that forces the IB-VAE latent to retain cross-modally-predictive information. Counterintuitively, this variant produces a \emph{higher} AUROC (0.962 vs.\ 0.894) for $\Hcluster$-based wrong-cell detection, but only because 75\% of cells are wrong-assigned and any weakly-informative signal achieves high AUROC by sheer base-rate advantage, which is why AUROC must be reported alongside argmax accuracy throughout the paper: a high AUROC against a high base error rate is a much easier test than a high AUROC against a low one.
+Figs.~\ref{fig:latent-pbmc} and~\ref{fig:latent-brain} show UMAP projections of the concatenated post-Procrustes latent on PBMC and Brain: RNA and ATAC cells of each cell type co-cluster, and the global cell-type topology is preserved. Against the three baselines that we could reliably run --- SCOT (our Gromov--Wasserstein reimplementation), raw PCA/LSI followed by Procrustes (an ablation of the IB-VAE), and uniPort --- \MOSAIC{} outperforms on every alignment metric on all three datasets (Table~\ref{tab:baselines}, Fig.~\ref{fig:baselines}). On Brain 5k the margin is dramatic: FOSCTTM $0.05$ vs.\ $0.47$ for SCOT ($89\%$ better), label transfer $0.96$ vs.\ $0.13$ ($7.2\times$), ARI $0.87$ vs.\ $0.03$ ($35\times$). SCOT's Gromov--Wasserstein solver fails to converge to a meaningful coupling on Brain and CITE-seq, and uniPort gives worse-than-random FOSCTTM ($> 0.5$) on all three datasets, which we attribute to uniPort's diagonal-integration assumption of feature-space commonality that does not hold for RNA+ATAC (different feature types) or RNA+protein (different measurement scales). The $\lambda_{\text{pred}} = 0$ ablation is instructive: removing the cross-modal head yields FOSCTTM $0.378$, LT $0.05/0.39$, and ARI $0.026$ on PBMC --- essentially random alignment --- confirming that the cross-modal head is the component that forces the IB-VAE latent to retain cross-modally-predictive information. Counterintuitively, this variant produces a \emph{higher} AUROC (0.962 vs.\ 0.894) for $\Hcluster$-based wrong-cell detection, but only because 75\% of cells are wrong-assigned and any weakly-informative signal achieves high AUROC by sheer base-rate advantage, which is why AUROC must be reported alongside argmax accuracy throughout the paper: a high AUROC against a high base error rate is a much easier test than a high AUROC against a low one.
 
 \begin{table}[t]
 \centering
@@ -193,7 +190,7 @@ Fig.~\ref{fig:latent} shows UMAP projections of the concatenated post-Procrustes
   \label{fig:baselines}
 \end{figure}
 
-Table~\ref{tab:multiseed} reports 10-seed (PBMC $\beta=0.001$) and 3-seed (all others) means $\pm$ std. The recommended default $\beta = 0.001$ is strictly or tied-better than $\beta = 0.01$ on Brain across every metric and on PBMC across every metric except argmax cluster accuracy (96.4\% vs.\ 98.4\%); PBMC $\beta=0.001$ ARI has higher seed variance (std 0.103 vs.\ 0.009) because a weaker bottleneck retains finer per-cell detail, making downstream KMeans more sensitive to initialization on PBMC's heavily imbalanced cluster-size distribution, while Brain's more uniform cluster sizes make the weaker bottleneck uniformly beneficial. The central per-cell uncertainty result appears in Fig.~\ref{fig:entropy-comparison}: cell-level row entropy on the Sinkhorn plan has Spearman $\rho = -0.648$ (PBMC) and $-0.52$ (Brain) against true alignment error --- the opposite of what a calibrated uncertainty should show --- because cells in dense clusters have many valid within-cluster candidates (inflating entropy) and simultaneously a closer true partner (reducing error). Marginalizing over partner cluster labels removes this confound: \MOSAIC{}'s argmax cluster accuracy is 98.4\% on PBMC ($\beta=0.01$) and 98.2\% on Brain ($\beta=0.001$), and $\Hcluster$ discriminates wrong-cluster cells with AUROC $0.883 \pm 0.010$ (PBMC) and $0.946 \pm 0.017$ (Brain). This is the calibrated per-cell uncertainty signal the paper claims, and it is structurally downstream of the cluster-centroid cross-modal target discussed in \S\ref{sec:methods}.
+Table~\ref{tab:multiseed} reports 10-seed (PBMC $\beta=0.001$) and 3-seed (all others) means $\pm$ std. The recommended default $\beta = 0.001$ is strictly or tied-better than $\beta = 0.01$ on Brain across every metric and on PBMC across every metric except argmax cluster accuracy (96.4\% vs.\ 98.4\%); PBMC $\beta=0.001$ ARI has higher seed variance (std 0.103 vs.\ 0.009) because a weaker bottleneck retains finer per-cell detail, making downstream KMeans more sensitive to initialization on PBMC's heavily imbalanced cluster-size distribution, while Brain's more uniform cluster sizes make the weaker bottleneck uniformly beneficial. The central per-cell uncertainty result appears in Figs.~\ref{fig:entropy-pbmc} and~\ref{fig:entropy-brain}: cell-level row entropy on the Sinkhorn plan has Spearman $\rho = -0.648$ (PBMC) and $-0.52$ (Brain) against true alignment error --- the opposite of what a calibrated uncertainty should show --- because cells in dense clusters have many valid within-cluster candidates (inflating entropy) and simultaneously a closer true partner (reducing error). Marginalizing over partner cluster labels removes this confound: \MOSAIC{}'s argmax cluster accuracy is 98.4\% on PBMC ($\beta=0.01$) and 98.2\% on Brain ($\beta=0.001$), and $\Hcluster$ discriminates wrong-cluster cells with AUROC $0.883 \pm 0.010$ (PBMC) and $0.946 \pm 0.017$ (Brain). This is the calibrated per-cell uncertainty signal the paper claims, and it is structurally downstream of the cluster-centroid cross-modal target discussed in \S\ref{sec:methods}.
 
 \begin{table}[t]
 \centering
@@ -213,19 +210,16 @@ Brain 5k & \textbf{0.001} & $\mathbf{0.049 \pm 0.002}$ & $\mathbf{0.962 \pm 0.00
 
 \begin{figure}[tbp]
   \centering
-  \begin{minipage}[b]{0.495\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{fig2_entropy_comparison_pbmc10k_multiome.png}\\[2pt]
-    {\normalsize (a) PBMC 10k}
-  \end{minipage}%
-  \hfill
-  \begin{minipage}[b]{0.495\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{fig2_entropy_comparison_brain3k_multiome.png}\\[2pt]
-    {\normalsize (b) Brain 5k}
-  \end{minipage}
-  \caption{Cell-level row entropy (red, left) vs.\ cluster-resolved entropy (blue, right) as a function of true alignment error. Row entropy anti-correlates with error ($\rho \approx -0.5$ to $-0.65$); cluster-resolved entropy is the correct discriminator.}
-  \label{fig:entropy-comparison}
+  \includegraphics[width=\textwidth]{fig2_entropy_comparison_pbmc10k_multiome.png}
+  \caption{PBMC 10k: cell-level row entropy (left) vs.\ cluster-resolved entropy (right) as a function of true alignment error. Row entropy anti-correlates with error ($\rho = -0.65$); cluster-resolved entropy is the correct discriminator.}
+  \label{fig:entropy-pbmc}
+\end{figure}
+
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\textwidth]{fig2_entropy_comparison_brain3k_multiome.png}
+  \caption{Brain 5k: cell-level row entropy (left) vs.\ cluster-resolved entropy (right) as a function of true alignment error. Same pattern as PBMC --- raw row entropy has the wrong sign ($\rho \approx -0.5$); cluster-resolved entropy is well-behaved.}
+  \label{fig:entropy-brain}
 \end{figure}
 
 \subsection{Clinically realistic stress tests: missing populations, cross-tissue control, calibration, and stability}
