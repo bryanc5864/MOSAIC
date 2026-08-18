@@ -1,35 +1,18 @@
 # MIT License
 # Part of MOSAIC
-"""Minimal reimplementation of the SCOT v1 alignment algorithm.
+"""Minimal reimplementation of SCOT v1 (Demetci et al. 2022).
 
-SCOT (Single-Cell Optimal Transport, Demetci et al. 2022) aligns two
-unpaired single-cell modalities by solving a **Gromov-Wasserstein** OT
-problem between their intra-modality k-NN distance matrices. The key idea:
-we compare the internal geometry (who's near who within a modality) rather
-than absolute coordinates, which are not comparable across modalities.
+Builds a k-NN graph per modality, takes geodesic distances on each, then solves
+entropic Gromov-Wasserstein between the two distance matrices. The point of GW
+is that it compares internal geometry rather than coordinates, which don't mean
+the same thing across modalities.
 
-Algorithm (SCOT v1, faithful to Demetci 2022):
-    1. For each modality, compute the k-NN graph in the given feature space
-       (PCA for RNA, LSI for ATAC in our MOSAIC setup).
-    2. Compute the geodesic distance matrix on each k-NN graph
-       (shortest-path via Dijkstra).
-    3. Run entropic Gromov-Wasserstein OT between the two distance matrices
-       (POT ot.gromov.entropic_gromov_wasserstein).
-    4. Use the transport plan as the alignment; for a hard matching, take
-       argmax per row.
+Reimplemented rather than installed: it's a short algorithm, the published repo
+was flaky on Windows, and inlining it means the baseline provably reads the same
+preprocessed AnnDatas we do.
 
-We reimplement this here instead of pulling the github repo because
-(a) it's a small algorithm, (b) installing the published repo on Windows
-has been flaky historically, and (c) keeping it inline makes the
-fair-comparison protocol auditable: the baseline uses EXACTLY the same
-preprocessed AnnDatas that MOSAIC uses.
-
-This is a baseline implementation for the MOSAIC benchmark, not an
-endorsement of MOSAIC's method. It's a faithful reimplementation of
-SCOT v1; any performance differences between SCOT-reported numbers and
-what we see are attributable to: (a) different datasets, (b) different
-preprocessing, (c) different feature representations, (d) numerical
-instability of entropic GW with small epsilon.
+Numbers here won't match the SCOT paper's — different datasets, preprocessing,
+feature representations, and entropic GW is unstable at small epsilon.
 """
 
 from __future__ import annotations
@@ -53,19 +36,16 @@ class SCOTResult:
 
 
 def geodesic_distance_matrix(X: np.ndarray, k: int = 10) -> np.ndarray:
-    """Build a k-NN graph over X and compute the pairwise geodesic
-    (shortest-path) distance matrix via Dijkstra.
+    """k-NN graph then Dijkstra shortest paths.
 
-    Returns a (n, n) matrix. Infinite entries are replaced with the matrix
-    max (disconnected components are re-connected via an epsilon bridge).
+    Disconnected components come back as inf, which we bridge with 1.1x the max
+    finite distance.
     """
     nbrs = NearestNeighbors(n_neighbors=k + 1, algorithm="auto").fit(X)
     knn_graph = nbrs.kneighbors_graph(X, mode="distance")  # (n, n) sparse
-    # Symmetrize
     knn_graph = knn_graph.maximum(knn_graph.T)
     dist = csgraph.shortest_path(knn_graph, directed=False, method="D")
     if not np.all(np.isfinite(dist)):
-        # Replace inf with max finite distance * 1.1
         finite_max = np.max(dist[np.isfinite(dist)])
         dist = np.where(np.isfinite(dist), dist, finite_max * 1.1)
     return dist.astype(np.float64)
@@ -74,18 +54,10 @@ def geodesic_distance_matrix(X: np.ndarray, k: int = 10) -> np.ndarray:
 def run_scot(Z_a: np.ndarray, Z_b: np.ndarray, k: int = 10,
              epsilon: float = 5e-3, n_iter: int = 1000,
              verbose: bool = False) -> SCOTResult:
-    """Run SCOT v1 alignment between two modalities' feature representations.
+    """SCOT v1 between two feature matrices; d_a and d_b may differ.
 
-    Inputs:
-        Z_a, Z_b: (n_a, d_a) and (n_b, d_b) feature matrices (e.g. PCA of RNA,
-            LSI of ATAC). d_a and d_b can differ.
-        k: number of neighbors for the intra-modality k-NN graph.
-        epsilon: GW entropic regularization strength.
-        n_iter: max Sinkhorn-like iterations inside the GW solver.
-
-    Returns: SCOTResult with the transport plan and a barycentric-projection
-    embedding of Z_a into Z_b's coordinate system (useful for metric
-    computation like label transfer, FOSCTTM, ARI).
+    Returns the transport plan plus a barycentric projection of Z_a into Z_b's
+    coordinates, which is what the metrics need.
     """
     t0 = time.time()
     n_a = Z_a.shape[0]
@@ -94,7 +66,7 @@ def run_scot(Z_a: np.ndarray, Z_b: np.ndarray, k: int = 10,
         print(f"[scot] building kNN graphs (k={k})...")
     D_a = geodesic_distance_matrix(Z_a, k=k)
     D_b = geodesic_distance_matrix(Z_b, k=k)
-    # Normalize each to unit max for numerical stability
+    # unit max for numerical stability
     D_a = D_a / max(D_a.max(), 1e-12)
     D_b = D_b / max(D_b.max(), 1e-12)
 
@@ -108,10 +80,7 @@ def run_scot(Z_a: np.ndarray, Z_b: np.ndarray, k: int = 10,
         D_a, D_b, p, q, loss_fun="square_loss", epsilon=epsilon,
         max_iter=n_iter, tol=1e-7, verbose=False, log=True,
     )
-    # Barycentric projection: each source cell i mapped to a weighted
-    # average over the target cells, weighted by the transport plan row.
-    # This gives us a representation of Z_a in Z_b's space so metrics that
-    # need matching coordinates (FOSCTTM etc.) work.
+    # each source cell becomes a plan-weighted average of target cells
     row_sums = gw_result.sum(axis=1, keepdims=True)
     row_sums[row_sums == 0] = 1e-30
     barycentric = (gw_result / row_sums) @ Z_b
@@ -124,11 +93,6 @@ def run_scot(Z_a: np.ndarray, Z_b: np.ndarray, k: int = 10,
     )
 
 
-# ----------------------------------------------------------------------------
-# Self-test: recover identity alignment on two Gaussian blobs
-# ----------------------------------------------------------------------------
-
-
 def _test_scot_identity():
     rng = np.random.default_rng(0)
     K = 4
@@ -136,15 +100,12 @@ def _test_scot_identity():
     centers = rng.normal(0, 5, size=(K, 4))
     clusters = np.repeat(np.arange(K), n)
     Z_a = np.concatenate([rng.normal(centers[k], 0.1, size=(n, 4)) for k in range(K)])
-    # Z_b is Z_a up to a random orthogonal rotation (within-cluster variance preserved)
+    # Z_b is Z_a under a random rotation
     Q, _ = np.linalg.qr(rng.normal(0, 1, size=(4, 4)))
     Z_b = Z_a @ Q + rng.normal(0, 0.05, size=Z_a.shape)
 
     res = run_scot(Z_a, Z_b, k=5, epsilon=0.01, n_iter=200)
-    # The barycentric projection should put each source cluster near the
-    # corresponding target cluster (by cluster identity, not row index).
-    # Simple sanity check: per-cluster mean of barycentric embedding should
-    # be close to per-cluster mean of Z_b.
+    # per-cluster means should land near each other
     err_per_cluster = []
     for k in range(K):
         mask = clusters == k

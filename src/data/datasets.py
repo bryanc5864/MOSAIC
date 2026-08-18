@@ -1,13 +1,10 @@
 # MIT License
 # Part of MOSAIC
-"""Dataset registry: URLs, sizes, and download helpers for the four paired
-multi-omics datasets used in MOSAIC benchmarking, plus the stretch Tabula
-Sapiens / ENCODE pair.
+"""Dataset registry: urls, sizes, and download helpers.
 
-Every dataset record is a dataclass so that experiment configs can reference
-them by ID and the download/preprocess code can look up URLs centrally.
-
-References to each dataset's public source are in RESEARCH_PLAN.md §5.1.
+Covers the paired multi-omics benchmarks plus the Tabula Sapiens / ENCODE pair
+we only used for the cross-atlas stretch. Configs reference datasets by id so
+the urls live in exactly one place.
 """
 
 from __future__ import annotations
@@ -17,9 +14,7 @@ import os
 import urllib.request
 from dataclasses import dataclass, field
 
-# 10x Genomics' CDN rejects requests without a User-Agent. Use a browser-like
-# header for all downloads. This is a download convenience, not a scraping trick —
-# the datasets are publicly hosted.
+# 10x's CDN 403s requests with no User-Agent
 _USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -33,7 +28,7 @@ from src.utils.paths import RAW_DIR
 
 @dataclass
 class DatasetSpec:
-    """Metadata for a single dataset to be downloaded and preprocessed."""
+    """one downloadable dataset"""
 
     dataset_id: str                 # short id, used in filenames
     description: str                # human-readable one-liner
@@ -54,16 +49,12 @@ class DatasetSpec:
         return self.raw_dir / self.filename
 
 
-# --- Dataset registry --------------------------------------------------------
-#
-# Note on URLs: these are the canonical public sources as of 2026-04. The 10x
-# multiome datasets use the "filtered_feature_bc_matrix.h5" file, which is a
-# single HDF5 containing BOTH modalities (Gene Expression + Peaks). scanpy's
-# sc.read_10x_h5(..., gex_only=False) splits them by feature_type.
-# -----------------------------------------------------------------------------
+# Urls are the canonical public sources as of 2026-04. The 10x multiome h5
+# holds both modalities; sc.read_10x_h5(..., gex_only=False) splits them by
+# feature_type.
 
 DATASETS: dict[str, DatasetSpec] = {
-    # Primary debugging target: small, well-annotated, both modalities in one file.
+    # main debugging target: small, well annotated, one file
     "pbmc10k_multiome": DatasetSpec(
         dataset_id="pbmc10k_multiome",
         description="10x Multiome PBMC granulocyte-sorted 10k (scRNA + scATAC, paired)",
@@ -74,7 +65,6 @@ DATASETS: dict[str, DatasetSpec] = {
         approx_size_mb=150.0,
         notes="10x public demo dataset. Contains Gene Expression + Peaks feature types.",
     ),
-    # Second paired dataset: brain tissue, similar size.
     "brain3k_multiome": DatasetSpec(
         dataset_id="brain3k_multiome",
         description="10x Multiome E18 mouse brain 5k (scRNA + scATAC, paired)",
@@ -85,11 +75,7 @@ DATASETS: dict[str, DatasetSpec] = {
         approx_size_mb=130.0,
         notes="10x public demo; used as second paired benchmark.",
     ),
-    # Third paired dataset: SHARE-seq skin. The original paper's processed
-    # count matrices are on GEO (GSE140203); the 'SHARE-seq hair follicle'
-    # mouse skin dataset is commonly used for multi-omics benchmarking.
-    # We will use a preprocessed version from the scGLUE benchmark if the GEO
-    # download is too large for the 10 GB budget; see download_all().
+    # share-seq skin, counts live on GEO under GSE140203
     "shareseq_skin": DatasetSpec(
         dataset_id="shareseq_skin",
         description="SHARE-seq mouse skin (scRNA + scATAC, paired) — Ma et al. 2020",
@@ -100,9 +86,7 @@ DATASETS: dict[str, DatasetSpec] = {
         approx_size_mb=3_500.0,
         notes="Large. Subsample to ~15K cells during preprocessing.",
     ),
-    # Fourth paired dataset: CITE-seq PBMC (RNA + surface protein).
-    # 10x Genomics "10k PBMC TotalSeq-B" is a public CITE-seq demo dataset
-    # with RNA + Antibody Capture (ADT) in a single h5.
+    # cite-seq pbmc: rna + adt in one h5
     "citeseq_pbmc": DatasetSpec(
         dataset_id="citeseq_pbmc",
         description="10x CITE-seq PBMC 10k Protein v3 (scRNA + ADT, paired)",
@@ -113,7 +97,6 @@ DATASETS: dict[str, DatasetSpec] = {
         approx_size_mb=70.0,
         notes="10x v3 public demo. 'Gene Expression' + 'Antibody Capture' feature types in one h5.",
     ),
-    # Tabula Sapiens lung subset (for cross-atlas application Exp 6).
     "tabula_sapiens_lung": DatasetSpec(
         dataset_id="tabula_sapiens_lung",
         description="Tabula Sapiens lung subset (scRNA, unpaired)",
@@ -124,8 +107,7 @@ DATASETS: dict[str, DatasetSpec] = {
         approx_size_mb=400.0,
         notes="Lung tissue subset from Tabula Sapiens (cellxgene). For cross-atlas Exp 6.",
     ),
-    # 10x multiome lung (as an ATAC source for the cross-atlas experiment).
-    # We use the 10x 2k lung multiome demo dataset.
+    # atac partner for the cross-atlas experiment
     "lung_multiome": DatasetSpec(
         dataset_id="lung_multiome",
         description="10x Multiome Human Lung 2k (scRNA + scATAC, paired — use ATAC side as ENCODE proxy)",
@@ -137,11 +119,6 @@ DATASETS: dict[str, DatasetSpec] = {
         notes="10x human brain 3k as ATAC partner for cross-atlas experiment with Tabula Sapiens.",
     ),
 }
-
-
-# ----------------------------------------------------------------------------
-# Download helpers
-# ----------------------------------------------------------------------------
 
 
 def _md5_of(path: Path, chunk: int = 1 << 20) -> str:
@@ -156,7 +133,7 @@ def _md5_of(path: Path, chunk: int = 1 << 20) -> str:
 
 
 def download_one(spec: DatasetSpec, force: bool = False) -> Path:
-    """Download a single dataset to its raw_path. Idempotent."""
+    """download one dataset to raw_path; idempotent"""
     spec.raw_dir.mkdir(parents=True, exist_ok=True)
     path = spec.raw_path
     if path.exists() and not force:
@@ -199,7 +176,7 @@ def download_one(spec: DatasetSpec, force: bool = False) -> Path:
 
 
 def download_all(which: Optional[list[str]] = None, force: bool = False) -> None:
-    """Download one or more datasets. If `which` is None, downloads everything."""
+    """download some or all datasets"""
     if which is None:
         which = list(DATASETS.keys())
     for name in which:
@@ -214,7 +191,7 @@ def download_all(which: Optional[list[str]] = None, force: bool = False) -> None
 if __name__ == "__main__":
     import argparse
 
-    p = argparse.ArgumentParser(description="Download MOSAIC datasets")
+    p = argparse.ArgumentParser(description="download benchmark datasets")
     p.add_argument("--which", nargs="*", default=None,
                    help="Subset of dataset IDs to download. Default: all.")
     p.add_argument("--force", action="store_true", help="Re-download even if file exists.")

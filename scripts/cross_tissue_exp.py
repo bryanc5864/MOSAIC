@@ -1,37 +1,13 @@
 #!/usr/bin/env python3
 # MIT License
-# Part of MOSAIC - Exp 6 cross-tissue negative-control experiment
-"""Cross-tissue alignment as a negative control for the UQ signal.
+"""Cross-tissue alignment as a negative control.
 
-Question: if we align MOSAIC embeddings from two totally disjoint tissues
-(PBMC and brain — no shared cell types), does the cluster-resolved
-entropy correctly flag every cell as high-uncertainty?
+Align PBMC RNA against brain ATAC. There are no shared cell types, so a
+calibrated uncertainty should be high everywhere; the miscalibrated row entropy
+would either look confident or show no pattern at all.
 
-A well-calibrated UQ signal should say "I'm not confident" on every cell
-when there's no real underlying structure to align. A miscalibrated
-signal (like the naive per-row entropy we showed is wrong-sign) would
-either pretend to be confident or have no informative pattern.
-
-Protocol:
-  1. Take PBMC 10k Multiome's trained IB-VAE RNA embedding (from
-     exp001_pbmc_final).
-  2. Take Brain 5k Multiome's trained IB-VAE ATAC embedding (from
-     exp001_brain_beta0001).
-  3. Fit a Procrustes rotation on the UNION cluster centroids, treating
-     PBMC leiden clusters and Brain leiden clusters as the label space.
-     (The cluster labels between datasets don't overlap; we use cluster
-     IDs as opaque tokens.)
-  4. Run Sinkhorn alignment.
-  5. Compute cluster-resolved entropy.
-  6. Compare the distribution of cluster entropies to the within-dataset
-     PBMC and Brain distributions (which have low mean ~0.08-0.15).
-     Prediction: the cross-tissue mean entropy should be substantially
-     higher (cells are uncertain about cluster assignment because there's
-     nothing meaningful to match to).
-
-This is a negative control, not a positive result. The demonstration is
-that the UQ signal correctly reports high uncertainty in a setting where
-there's no ground truth to match.
+Compares the resulting cluster-entropy distribution against the within-dataset
+means (~0.08-0.15). A negative control, not a result.
 """
 
 from __future__ import annotations
@@ -80,14 +56,12 @@ def main() -> int:
     p.add_argument("--seed", type=int, default=0)
     args = p.parse_args()
 
-    # Load RNA embeddings and labels
     z_rna_full = np.load(EXPERIMENTS_DIR / args.rna_exp / "z_rna.npy")
     rna_ad = ad.read_h5ad(PROCESSED_DIR / f"{args.rna_dataset}_rna.h5ad")
     labels_rna = rna_ad.obs["cell_type"].astype(str).values
-    # Prepend "rna_" so PBMC labels are distinct from brain labels
+    # tag so pbmc and brain cluster ids can't collide
     labels_rna_tagged = np.array([f"rna_{c}" for c in labels_rna])
 
-    # Load ATAC embeddings and labels
     atac_z_path = EXPERIMENTS_DIR / args.atac_exp / "z_atac_aligned.npy"
     if not atac_z_path.exists():
         atac_z_path = EXPERIMENTS_DIR / args.atac_exp / "z_atac.npy"
@@ -101,7 +75,6 @@ def main() -> int:
     print(f"ATAC from {args.atac_dataset}: {z_atac_full.shape}, "
           f"{len(np.unique(labels_atac))} clusters")
 
-    # Subsample each side
     rng = np.random.default_rng(args.seed)
     n_rna = min(args.subsample, z_rna_full.shape[0])
     n_atac = min(args.subsample, z_atac_full.shape[0])
@@ -112,26 +85,19 @@ def main() -> int:
     lbl_rna = labels_rna_tagged[idx_rna]
     lbl_atac = labels_atac_tagged[idx_atac]
 
-    # NOTE: we don't try to fit Procrustes here because there are NO shared
-    # cluster labels between PBMC and brain (they're tagged with different
-    # prefixes and represent completely different cell types). The whole
-    # point of this experiment is to see what happens when the two modalities
-    # have NO meaningful alignment target. Procrustes is skipped; Sinkhorn
-    # runs directly on the two latents.
+    # no procrustes: the two label spaces don't overlap at all, which is the
+    # whole point. sinkhorn runs straight on the two latents.
 
     print(f"\nRunning Sinkhorn on {n_rna} RNA x {n_atac} ATAC cells...")
     align = sinkhorn_align(z_rna, z_atac, epsilon=0.05)
     print(f"  raw cell-level entropy: mean={align.entropy.mean():.4f}, "
           f"std={align.entropy.std():.4f}")
 
-    # Cluster-resolved entropy — clusters come from the ATAC side since
-    # that's what the plan marginalizes over.
+    # clusters come from the atac side, that's what the plan marginalizes over
     H_cluster, P_cluster, unique = cluster_marginal(align.plan, lbl_atac)
     print(f"  cluster-resolved entropy (over ATAC clusters): "
           f"mean={H_cluster.mean():.4f}, std={H_cluster.std():.4f}")
 
-    # Compare to within-dataset baselines (loaded from the per-seed
-    # cluster_entropy_analysis.json files).
     pbmc_cea_path = EXPERIMENTS_DIR / args.rna_exp / "cluster_entropy_analysis.json"
     atac_cea_path = EXPERIMENTS_DIR / args.atac_exp / "cluster_entropy_analysis.json"
     pbmc_within = None
@@ -164,8 +130,6 @@ def main() -> int:
     with (out_dir / "results.json").open("w") as f:
         json.dump(summary, f, indent=2)
 
-    # Figure: histogram comparing within-PBMC, within-Brain, and
-    # cross-tissue cluster entropy distributions.
     plt.rcParams.update({
         "font.size": 12, "axes.labelsize": 13, "axes.titlesize": 13,
         "savefig.dpi": 300, "savefig.bbox": "tight",
@@ -173,8 +137,7 @@ def main() -> int:
     fig, ax = plt.subplots(figsize=(9, 5))
     bins = np.linspace(0, 1, 40)
     if pbmc_within is not None:
-        # We don't have full distribution for within-PBMC, just mean. Draw a
-        # vertical line for the within means instead.
+        # only the mean was saved, so a vline is all we can draw
         ax.axvline(pbmc_within, color="#3770B0", linestyle="--", linewidth=2,
                    label=f"within PBMC mean H = {pbmc_within:.3f}")
     if atac_within is not None:
@@ -196,12 +159,12 @@ def main() -> int:
     plt.close(fig)
     print(f"\n[fig] saved {fig_path}")
 
-    print("\n=== Cross-tissue negative control summary ===")
+    print("\n[summary] cross-tissue negative control")
     print(f"Cross-tissue H_cluster  : {H_cluster.mean():.4f} ± {H_cluster.std():.4f}")
     print(f"Within-PBMC H_cluster   : {pbmc_within:.4f}")
     print(f"Within-Brain H_cluster  : {atac_within:.4f}")
     print(f"Cross / within ratio    : {H_cluster.mean() / max(pbmc_within, atac_within, 1e-9):.2f}×")
-    print(f"\nExpected: cross-tissue >> within (MOSAIC correctly signals no shared structure)")
+    print("\nexpect cross-tissue >> within if the signal is calibrated")
     return 0
 
 

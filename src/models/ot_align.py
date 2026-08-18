@@ -1,24 +1,13 @@
 # MIT License
 # Part of MOSAIC
-"""Entropic optimal transport alignment and per-cell alignment entropy.
+"""Entropic OT alignment and the per-cell alignment entropy.
 
-Implements the MOSAIC OT stage described in RESEARCH_PLAN.md sections 3.2 and 3.3.
+Given latents Z_A (N x d) and Z_B (M x d): squared-euclidean cost, rescale it,
+solve P* = argmin <C, P> + epsilon * KL(P || a b^T) with uniform marginals, then
+per source cell take H_i = -sum_j p_ij log p_ij normalized by log M so it sits
+in [0, 1].
 
-Given two modalities' latent embeddings Z_A (N x d) and Z_B (M x d):
-  1. Build cost matrix C_ij = ||z_A_i - z_B_j||^2.
-  2. Normalize C to unit max for numerical stability with the chosen epsilon.
-  3. Solve entropic OT:
-       P* = argmin <C, P> + epsilon * KL(P || a x b^T)
-     subject to P 1 = a, P^T 1 = b (uniform marginals by default).
-  4. Per source cell i, compute alignment entropy:
-       H_i = -sum_j p_ij log p_ij        (p_ij = P_ij / sum_j P_ij)
-       H_tilde_i = H_i / log M in [0, 1]
-
-Two backends:
-  - Dense via POT's ot.sinkhorn() (CPU, good up to ~50K x 50K at fp32).
-  - Chunked row-wise Sinkhorn using log-domain updates when the dense cost
-    matrix would exceed a memory budget. (Planned for the cross-atlas stretch
-    experiment; the first experiments all fit dense.)
+Dense POT sinkhorn only. Everything here fits in memory at the sizes we run.
 """
 
 from __future__ import annotations
@@ -30,43 +19,30 @@ import ot                     # POT
 import torch
 
 
-# ----------------------------------------------------------------------------
-# Cost matrices
-# ----------------------------------------------------------------------------
-
-
 def pairwise_sqeuclidean(Z_a: np.ndarray, Z_b: np.ndarray) -> np.ndarray:
     """Pairwise squared-Euclidean distance, N x M."""
     Z_a = np.asarray(Z_a, dtype=np.float64)
     Z_b = np.asarray(Z_b, dtype=np.float64)
-    # (a - b)^2 = a^2 + b^2 - 2 a b
     a_sq = (Z_a ** 2).sum(axis=1, keepdims=True)         # (N, 1)
     b_sq = (Z_b ** 2).sum(axis=1, keepdims=True).T       # (1, M)
     C = a_sq + b_sq - 2.0 * Z_a @ Z_b.T
-    np.maximum(C, 0.0, out=C)                             # numerical floor
+    np.maximum(C, 0.0, out=C)                             # kill negative roundoff
     return C
 
 
 def normalize_cost(C: np.ndarray, method: str = "median") -> np.ndarray:
-    """Rescale cost matrix to a consistent scale across datasets, so the
-    entropic epsilon is interpretable.
+    """Rescale the cost matrix so epsilon means the same thing across datasets.
 
-    method: 'max' divides by the maximum entry (sensitive to outliers — original
-    behavior, kept for backwards compatibility). 'mean' divides by the mean
-    entry. 'median' divides by the median (robust to a few extreme rows;
-    recommended default after the run-004 diagnosis where max-normalization
-    made effective epsilon ~30x larger than expected because of a few outlier
-    cell pairs).
+    'max' is the original behaviour and is outlier-sensitive; run-004 showed it
+    inflating the effective epsilon ~30x off a handful of extreme cell pairs.
+    'median' is the default now, 'mean' sits in between.
     """
     if method == "max":
         scale = float(C.max())
     elif method == "mean":
         scale = float(C.mean())
     elif method == "median":
-        # Median of nonzero entries (full median is dominated by zeros only
-        # if the cost has many tied values; for squared-Euclidean it doesn't,
-        # so the plain median is fine and faster than np.median on a flattened
-        # 11k**2 array isn't fast enough, so we sample.
+        # np.median on a flattened 11k^2 array is too slow, so sample
         flat = C.ravel()
         if flat.size > 1_000_000:
             rng = np.random.default_rng(0)
@@ -79,11 +55,6 @@ def normalize_cost(C: np.ndarray, method: str = "median") -> np.ndarray:
     if scale <= 0:
         return C
     return C / scale
-
-
-# ----------------------------------------------------------------------------
-# Sinkhorn alignment
-# ----------------------------------------------------------------------------
 
 
 @dataclass
@@ -107,24 +78,15 @@ def sinkhorn_align(Z_a: np.ndarray, Z_b: np.ndarray,
                    sinkhorn_method: str = "sinkhorn",
                    a: np.ndarray | None = None,
                    b: np.ndarray | None = None) -> AlignmentResult:
-    """Run entropic OT between two sets of embeddings and return the plan
-    plus per-row normalized entropy.
+    """Entropic OT between two embeddings; returns the plan and per-row entropy.
 
-    `normalize` controls how the cost matrix is rescaled before Sinkhorn:
-        'median' (default, robust): divide by the median of pairwise costs.
-        'mean'  : divide by the mean.
-        'max'   : divide by the max (sensitive to outliers; legacy).
-        'none'  : pass cost matrix unscaled — `epsilon` is then in raw units.
+    normalize: how to rescale the cost before Sinkhorn — 'median' (default),
+    'mean', 'max' (legacy, outlier-sensitive), or 'none' (epsilon in raw units).
 
-    `sinkhorn_method` picks the POT solver:
-        'sinkhorn' (default): the classic Sinkhorn iteration. Faster and
-            more memory-efficient than the log-domain variant; safe for
-            moderate epsilons. **Required for the 11K x 11K scale on a 16 GB
-            workstation** because sinkhorn_log's internal scipy.logsumexp
-            allocates too much RAM and is OOM-killed silently.
-        'sinkhorn_log': log-domain (stable for very small epsilon, but
-            memory-hungry). Use only for small problems.
-        'sinkhorn_stabilized': middle ground.
+    sinkhorn_method: plain 'sinkhorn' is the default and the only one that
+    survives 11K x 11K on a 16 GB box — sinkhorn_log's scipy.logsumexp blows up
+    the RAM and gets OOM-killed with no traceback. 'sinkhorn_log' is stable at
+    tiny epsilon but small-problems-only; 'sinkhorn_stabilized' is the middle.
     """
     N, d = Z_a.shape
     M, d2 = Z_b.shape
@@ -141,23 +103,21 @@ def sinkhorn_align(Z_a: np.ndarray, Z_b: np.ndarray,
         scale = 1.0
     else:
         C_norm = normalize_cost(C, method=normalize)
-        # Implied scale for logging: ratio of raw to normalized median.
+        # only used for logging
         raw_median = float(np.median(C))
         norm_median = float(np.median(C_norm))
         scale = raw_median / max(norm_median, 1e-30)
 
-    # Use regular sinkhorn by default (see docstring note on memory).
     P = ot.sinkhorn(a, b, C_norm, reg=epsilon, numItermax=n_iter,
                     stopThr=stop_threshold, method=sinkhorn_method,
                     verbose=False, log=False)
     P = np.asarray(P, dtype=np.float64)
 
-    # Per-row probability: normalize so each row sums to 1 (for uniform marginals
-    # P_row already sums to 1/N, so we multiply by N).
+    # rows to probabilities
     row_sums = P.sum(axis=1, keepdims=True)
     row_sums[row_sums == 0] = 1e-30
     P_row = P / row_sums
-    # Per-cell entropy, normalized by log M so H_tilde in [0, 1].
+    # log M normalization puts H in [0, 1]
     log_M = float(np.log(max(M, 2)))
     with np.errstate(divide="ignore", invalid="ignore"):
         logp = np.where(P_row > 0, np.log(P_row), 0.0)
@@ -179,24 +139,18 @@ def sinkhorn_align(Z_a: np.ndarray, Z_b: np.ndarray,
     )
 
 
-# ----------------------------------------------------------------------------
-# Smoke tests
-# ----------------------------------------------------------------------------
-
-
 def _test_identity_alignment():
-    """Two near-identical Gaussian blobs in the same locations -> near-identity plan."""
+    """same blobs in the same places -> near-identity plan"""
     rng = np.random.default_rng(0)
     K = 4
     n_per = 10
     centers = np.array([[0, 0], [5, 0], [0, 5], [5, 5]], dtype=np.float64)
     Za = np.concatenate([rng.normal(c, 0.1, size=(n_per, 2)) for c in centers])
     Zb = np.concatenate([rng.normal(c, 0.1, size=(n_per, 2)) for c in centers])
-    # Shuffle Zb so the matching is not the trivial identity permutation.
+    # shuffle so the answer isn't the identity permutation
     perm = rng.permutation(Za.shape[0])
     Zb = Zb[perm]
     res = sinkhorn_align(Za, Zb, epsilon=0.01)
-    # For each row, the argmax should point to a cell in the same cluster.
     cluster_ids_a = np.repeat(np.arange(K), n_per)
     cluster_ids_b = cluster_ids_a[perm]
     predicted_cluster = cluster_ids_b[res.top_match]
@@ -208,27 +162,25 @@ def _test_identity_alignment():
 
 
 def _test_high_entropy_on_collapsed_blob():
-    """When all target cells are identical, entropy should be close to 1 (uniform)."""
+    """identical targets -> uniform rows -> entropy near 1"""
     rng = np.random.default_rng(1)
     Za = rng.normal(0, 1, size=(40, 2))
-    Zb = np.zeros((40, 2))   # all identical
+    Zb = np.zeros((40, 2))
     res = sinkhorn_align(Za, Zb, epsilon=0.1)
-    # Plan rows should be near-uniform -> normalized entropy near 1.
     print(f"[collapsed] mean entropy = {res.entropy.mean():.3f} (expect near 1)")
     assert res.entropy.mean() > 0.9, f"collapsed target should yield high entropy, got {res.entropy.mean():.3f}"
 
 
 def _test_low_entropy_on_well_separated():
-    """Well-separated blobs with unique partners -> low entropy per row."""
+    """well-separated blobs with unique partners -> low entropy"""
     rng = np.random.default_rng(2)
     K = 20
     centers = rng.normal(0, 10, size=(K, 8))
     Za = centers + rng.normal(0, 0.01, size=(K, 8))
     Zb = centers + rng.normal(0, 0.01, size=(K, 8))
-    Zb = Zb[rng.permutation(K)]   # permute so it's not the identity
+    Zb = Zb[rng.permutation(K)]
     res = sinkhorn_align(Za, Zb, epsilon=0.005)
     print(f"[well-sep] mean entropy = {res.entropy.mean():.3f} (expect near 0)")
-    # Very small epsilon + large separation -> very low entropy.
     assert res.entropy.mean() < 0.3, f"well-separated should yield low entropy, got {res.entropy.mean():.3f}"
 
 
@@ -236,4 +188,4 @@ if __name__ == "__main__":
     _test_identity_alignment()
     _test_high_entropy_on_collapsed_blob()
     _test_low_entropy_on_well_separated()
-    print("[ok] OT alignment smoke tests passed")
+    print("[ok] ot alignment smoke tests passed")

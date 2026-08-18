@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 # MIT License
 # Part of MOSAIC
-"""Neurological disease simulation on Brain 5k.
+"""Neurological disease simulation on the E18 brain benchmark.
 
-Maps E18 mouse brain leiden clusters to clinically-relevant cell types
-and simulates neurodegenerative/neurological disease states.
-
-Uses the best Brain configuration (beta=0.001, seed=0).
+Same leave-out machinery as the immunodeficiency sim, with brain leiden
+clusters mapped onto neurodegeneration scenarios. Runs on the best brain
+config (beta=0.001, seed 0).
 """
 from __future__ import annotations
 import json, sys
-sys.path.insert(0, 'C:/Users/Maozer/projects/MOSAIC')
 
 import numpy as np
 import anndata as ad
@@ -24,15 +22,6 @@ DATASET = "brain3k_multiome"
 SUBSAMPLE_N = 2500
 EPSILON = 0.05
 SEED = 0
-
-# First identify which brain clusters correspond to which cell types
-# by marker genes. We'll annotate from the data then simulate:
-# Neurodegeneration scenarios:
-# - Alzheimer's disease: loss of excitatory neurons (largest cluster)
-# - ALS: loss of motor neurons / large neurons
-# - Multiple sclerosis: loss of oligodendrocytes
-# - Astrogliosis model: remove astrocytes (in disease, they become reactive and fewer)
-# - Microglia depletion (after PLX5622 treatment in mouse): remove microglia
 
 def cluster_marginal(plan, cluster_ids_target):
     rs = plan.sum(axis=1, keepdims=True)
@@ -49,7 +38,7 @@ def cluster_marginal(plan, cluster_ids_target):
 
 
 def identify_cell_types(rna, Z_rna):
-    """Return cluster sizes sorted by abundance."""
+    """cluster sizes, biggest first"""
     labels = rna.obs["leiden"].astype(str).values
     sizes = {c: int((labels==c).sum()) for c in np.unique(labels)}
     return labels, sizes
@@ -110,22 +99,17 @@ def main():
     sizes = {c: int((labels==c).sum()) for c in np.unique(labels)}
     print("Brain clusters:", sorted(sizes.items(), key=lambda x: -x[1])[:10])
 
-    # Brain 5k has 20 clusters. Map to cell types by cluster size/index.
-    # E18 mouse brain: excitatory neurons, inhibitory neurons, oligodendrocytes,
-    # astrocytes, microglia, endothelial, radial glia (progenitors)
-    # We'll simulate removing the largest clusters (neurons) and smaller clusters
-    # (glia) to model different disease states.
+    # 20 clusters here; cell types are assigned by rank in cluster size, which
+    # is crude but matches the expected E18 composition (neurons dominate,
+    # glia are the small tail)
     sorted_clusters = sorted(sizes.items(), key=lambda x: -x[1])
     cluster_ids = [c for c, _ in sorted_clusters]
 
-    # Define scenarios based on cluster size patterns in E18 brain:
-    # Largest clusters → excitatory neurons; medium → inhibitory/other neurons;
-    # small → glia (astrocytes, oligodendrocytes, microglia)
     scenarios = [
         {
             "name": "Excitatory_neuron_loss",
             "description": "Excitatory neuron loss (Alzheimer's disease / neurodegeneration)",
-            "target_clusters": [cluster_ids[0], cluster_ids[1]],  # 2 largest = excitatory neurons
+            "target_clusters": [cluster_ids[0], cluster_ids[1]],  # two largest, excitatory
         },
         {
             "name": "Inhibitory_neuron_loss",
@@ -145,13 +129,13 @@ def main():
         {
             "name": "Microglia_depletion",
             "description": "Microglia depletion (PLX5622 CSF1R inhibition, preclinical model)",
-            "target_clusters": [cluster_ids[-2], cluster_ids[-1]],  # smallest = microglia/endothelial
+            "target_clusters": [cluster_ids[-2], cluster_ids[-1]],  # smallest, microglia/endothelial
         },
     ]
 
     results = []
     for s in scenarios:
-        print(f"\n=== {s['name']} ===")
+        print(f"\n[scenario] {s['name']}")
         r = run_scenario(Z_rna, Z_atac, labels,
                          s["target_clusters"], s["name"], s["description"], rng)
         print(f"  AUROC={r.get('auroc','nan'):.4f}  "
@@ -173,7 +157,7 @@ def main():
     with open("experiments/neuro_disease_sim/results.json", "w") as f:
         json.dump(output, f, indent=2)
 
-    print(f"\n=== Neuro Disease Simulation ===")
+    print("\n[summary] neuro disease scenarios")
     print(f"Mean AUROC: {output['mean_auroc']:.4f}")
     for r in results:
         print(f"  {r['name']}: AUROC={r.get('auroc','nan'):.4f}  "

@@ -1,26 +1,21 @@
 #!/usr/bin/env python3
 # MIT License
 # Part of MOSAIC
-"""Research-grade figure generation for the MOSAIC paper.
+"""Every paper figure, at 300 dpi in both PNG and PDF.
 
-Generates all figures with:
-- UMAP-based spatial continuity (umap-learn)
-- Continuous entropy heatmap overlays
-- Consistent publication palette
-- 300 DPI PNG + PDF
+  fig1   joint aligned UMAP, cell type + entropy overlay (run once per dataset)
+  fig2   entropy miscalibration: cell-level vs cluster-level
+  fig3   missing cell type detection AUROC, three datasets
+  fig4   baseline comparison
+  fig5   beta tradeoff
+  fig6   cross-tissue negative control
+  fig7   calibration curves
+  fig8   clinical and neurological disease simulations
+  fig9   protein marker uq
+  fig10  checkpoint immunotherapy entropy
 
-Figures produced:
-  fig1  - Joint aligned UMAP with cell-type + entropy overlay (PBMC)
-  fig1b - Same for Brain 5k
-  fig2  - Entropy miscalibration: cell-level vs cluster-level scatter + UMAP heatmap
-  fig3  - Missing cell type detection AUROC (PBMC + Brain + CITE-seq, 3 panels)
-  fig4  - Baseline comparison grouped bar chart
-  fig5  - Beta hyperparameter tradeoff
-  fig6  - Cross-tissue negative control entropy distributions
-  fig7  - Calibration curves (ECE) across 4 configurations
-  fig8  - Clinical & neurological disease simulation AUROC
-  fig9  - Protein marker UQ: which markers predict alignment uncertainty
-  fig10 - Checkpoint immunotherapy entropy analysis
+Each figure reads its numbers from experiments/**.json; anything missing makes
+that figure skip rather than fail the run.
 """
 
 from __future__ import annotations
@@ -28,7 +23,6 @@ from __future__ import annotations
 import json
 import sys
 import os
-sys.path.insert(0, "C:/Users/Maozer/projects/MOSAIC")
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -47,9 +41,6 @@ import scipy.sparse as sp
 
 from src.utils.paths import EXPERIMENTS_DIR, FIGURES_DIR, PROCESSED_DIR
 
-# ---------------------------------------------------------------------------
-# Global style
-# ---------------------------------------------------------------------------
 
 FS  = 17   # base font
 FST = 19   # titles
@@ -83,7 +74,7 @@ STYLE = {
 }
 plt.rcParams.update(STYLE)
 
-# ColorBrewer Set1 — maximally distinct for publications
+# colorbrewer set1, most distinct at print size
 BLUE   = "#377eb8"
 RED    = "#e41a1c"
 GREEN  = "#4daf4a"
@@ -96,10 +87,10 @@ TEAL   = "#17becf"
 MOSAIC_BLUE = BLUE
 MOSAIC_RED  = RED
 
-# Cell-type categorical palette — tab20 for many clusters
+# tab20 handles up to 20 clusters
 CELL_CMAP = plt.get_cmap("tab20")
 
-# Entropy colormap: deep purple → yellow (plasma: low=purple, high=yellow)
+# plasma: purple is low entropy, yellow is high
 ENT_CMAP = matplotlib.colormaps["plasma"]
 
 
@@ -113,7 +104,7 @@ def _save(fig: plt.Figure, name: str) -> None:
 
 def _umap_embed(Z: np.ndarray, n_neighbors: int = 30,
                 min_dist: float = 0.3, seed: int = 42) -> np.ndarray:
-    """Use scanpy's UMAP pipeline to avoid umap-learn/sklearn version conflicts."""
+    """scanpy's umap, not umap-learn directly, which fights with our sklearn"""
     import scanpy as sc
     import anndata as _ad
     adata = _ad.AnnData(X=Z.astype(np.float32))
@@ -124,7 +115,7 @@ def _umap_embed(Z: np.ndarray, n_neighbors: int = 30,
 
 
 def _cluster_label_map(n: int) -> dict[str, str]:
-    """Short cluster display labels."""
+    """short labels for plot legends"""
     return {str(i): f"C{i}" for i in range(n)}
 
 
@@ -144,12 +135,9 @@ def _colorbar(fig: plt.Figure, ax: plt.Axes, cmap, vmin: float, vmax: float,
     cbar.ax.tick_params(labelsize=FSG - 1)
 
 
-# ---------------------------------------------------------------------------
-# Figure 1 — Aligned UMAP with entropy heatmap (PBMC 10k)
-# ---------------------------------------------------------------------------
 
 def fig1_aligned_umap(exp_name: str, dataset_id: str, label: str) -> None:
-    """4-panel: RNA by cell type | ATAC by cell type | joint by cell type | joint by H_cluster."""
+    """four panels: rna, atac, joint by cell type, joint by H_cluster"""
     exp_dir = EXPERIMENTS_DIR / exp_name
     Z_rna = np.load(exp_dir / "z_rna.npy")
     Z_atac = np.load(exp_dir / "z_atac_aligned.npy")
@@ -163,7 +151,6 @@ def fig1_aligned_umap(exp_name: str, dataset_id: str, label: str) -> None:
     cl2idx = {c: i for i, c in enumerate(clusters)}
     cl2col = {c: CELL_CMAP(cl2idx[c] / max(n_cl - 1, 1)) for c in clusters}
 
-    # Compute UMAP on joint latent
     print(f"  Computing UMAP for {dataset_id}...")
     joint = np.concatenate([Z_rna, Z_atac], axis=0)
     embed = _umap_embed(joint, n_neighbors=30, min_dist=0.3)
@@ -178,7 +165,6 @@ def fig1_aligned_umap(exp_name: str, dataset_id: str, label: str) -> None:
     ax_jnt  = fig.add_subplot(gs[1, 0])
     ax_ent  = fig.add_subplot(gs[1, 1])
 
-    # Panels A & B — RNA and ATAC colored by cluster
     for ax, emb, mod, pl in [(ax_rna,  rna_emb,  "RNA",  "A"),
                               (ax_atac, atac_emb, "ATAC", "B")]:
         for c in clusters:
@@ -188,7 +174,6 @@ def fig1_aligned_umap(exp_name: str, dataset_id: str, label: str) -> None:
         _strip_ax(ax)
         ax.set_title(f"({pl}) {mod} — by cluster", fontsize=FST, pad=8)
 
-    # Panel C — joint colored by cluster
     ax = ax_jnt
     for c in clusters:
         m = leiden == c
@@ -204,7 +189,6 @@ def fig1_aligned_umap(exp_name: str, dataset_id: str, label: str) -> None:
               frameon=True, framealpha=0.7, ncol=2,
               fontsize=FSG, handlelength=0.9, borderpad=0.4)
 
-    # Panel D — subsample cells colored by H_cluster
     ax = ax_ent
     sc = ax.scatter(sub_emb[:, 0], sub_emb[:, 1], c=H_cluster,
                     cmap=ENT_CMAP, vmin=0, vmax=1,
@@ -220,12 +204,9 @@ def fig1_aligned_umap(exp_name: str, dataset_id: str, label: str) -> None:
     print(f"  [fig1] done {dataset_id}")
 
 
-# ---------------------------------------------------------------------------
-# Figure 2 — Entropy miscalibration: scatter + UMAP overlay
-# ---------------------------------------------------------------------------
 
 def fig2_entropy_comparison(exp_name: str, dataset_id: str, label: str) -> None:
-    """3-panel: H_cell scatter | H_cluster scatter | H_cluster UMAP heatmap."""
+    """three panels: H_cell scatter, H_cluster scatter, H_cluster on the umap"""
     from scipy.stats import spearmanr
 
     exp_dir = EXPERIMENTS_DIR / exp_name
@@ -241,7 +222,6 @@ def fig2_entropy_comparison(exp_name: str, dataset_id: str, label: str) -> None:
     rho_cell, _ = spearmanr(H_cell, errs)
     rho_cluster, _ = spearmanr(H_cluster, errs)
 
-    # UMAP of the subsample
     print(f"  Computing UMAP for entropy fig {dataset_id}...")
     joint = np.concatenate([Z_rna, Z_atac], axis=0)
     embed = _umap_embed(joint, n_neighbors=30, min_dist=0.3)
@@ -249,7 +229,7 @@ def fig2_entropy_comparison(exp_name: str, dataset_id: str, label: str) -> None:
 
     fig, axes = plt.subplots(1, 3, figsize=(24, 10))
 
-    # Panel A: cell-level (wrong sign)
+    # cell-level, the wrong-sign one
     ax = axes[0]
     ax.scatter(H_cell, errs, c=errs, cmap="RdYlGn_r",
                s=8, alpha=0.30, rasterized=True)
@@ -265,7 +245,6 @@ def fig2_entropy_comparison(exp_name: str, dataset_id: str, label: str) -> None:
             ha="right", va="bottom", fontsize=FSG, color=RED, style="italic")
     ax.grid(alpha=0.2)
 
-    # Panel B: cluster-level (correct sign)
     ax = axes[1]
     ax.scatter(H_cluster, errs, c=errs, cmap="RdYlGn_r",
                s=8, alpha=0.30, rasterized=True)
@@ -281,7 +260,6 @@ def fig2_entropy_comparison(exp_name: str, dataset_id: str, label: str) -> None:
             ha="right", va="top", fontsize=FSG, color=BLUE, style="italic")
     ax.grid(alpha=0.2)
 
-    # Panel C: UMAP spatial heatmap
     ax = axes[2]
     ax.scatter(sub_emb[:, 0], sub_emb[:, 1], c=H_cluster,
                cmap=ENT_CMAP, vmin=0, vmax=1,
@@ -298,9 +276,6 @@ def fig2_entropy_comparison(exp_name: str, dataset_id: str, label: str) -> None:
     print(f"  [fig2] done {dataset_id}")
 
 
-# ---------------------------------------------------------------------------
-# Figure 3 — Missing cell type detection (3 datasets)
-# ---------------------------------------------------------------------------
 
 def fig3_missing_type() -> None:
     configs = [
@@ -346,12 +321,10 @@ def fig3_missing_type() -> None:
         ax.set_title(f"{name}\nmean AUROC = {data['mean_auroc']:.3f}",
                      fontsize=FST, fontweight="bold")
         ax.grid(axis="x", alpha=0.3)
-        # Legend on the UPPER-LEFT (lowest-AUROC bars are bottom of sorted list,
-        # highest are top; bars fill from right, so upper-left is empty space).
+        # upper-left is the only empty corner once the bars are sorted
         ax.legend(frameon=False, fontsize=FSG, loc="upper left")
 
-    # Leave room on the right for the shared colorbar so it does not overlap
-    # the CITE-seq panel bars.
+    # room on the right for the shared colorbar
     plt.tight_layout(w_pad=3, rect=[0, 0, 0.93, 0.97])
 
     sm = ScalarMappable(cmap=ENT_CMAP, norm=Normalize(0, 1))
@@ -370,9 +343,6 @@ def fig3_missing_type() -> None:
     print("  [fig3] done")
 
 
-# ---------------------------------------------------------------------------
-# Figure 4 — Baseline comparison
-# ---------------------------------------------------------------------------
 
 def fig4_baselines() -> None:
     def _load_baselines(dataset: str):
@@ -414,7 +384,6 @@ def fig4_baselines() -> None:
         raw = _v(d, key, f"{key}_mean", "foscttm_mean" if "foscttm" in key else key)
         return raw
 
-    # Build value table: rows = methods, cols = metrics, for each dataset
     methods = ["MOSAIC\n(ours)", "NN on IB\n(no OT)", "SCOT\n(GW-OT)", "Raw\nPCA/LSI"]
     method_colors = [BLUE, GREEN, ORANGE, GREY]
 
@@ -429,7 +398,7 @@ def fig4_baselines() -> None:
             ax = axes[row_i, col_i]
 
             if ds_name.startswith("CITE"):
-                # CITE-seq: only MOSAIC numbers available
+                # no baselines were run on cite-seq
                 m_key = {"foscttm": "foscttm_mean",
                          "label_transfer_rna_to_atac": "lt_rna_to_atac_mean",
                          "label_transfer_atac_to_rna": "lt_atac_to_rna_mean",
@@ -478,7 +447,7 @@ def fig4_baselines() -> None:
                         _bl(raw_m, key)]
                 stds = [std, 0, 0, 0]
 
-            # Invert FOSCTTM so higher=better for all bars
+            # flip foscttm so every bar is higher-is-better
             if not higher_better:
                 vals = [1 - v if not np.isnan(v) else v for v in vals]
                 ax_title = title.replace("$\\downarrow$", "$\\uparrow$ (1−FOSCTTM)")
@@ -512,9 +481,6 @@ def fig4_baselines() -> None:
     print("  [fig4] done")
 
 
-# ---------------------------------------------------------------------------
-# Figure 5 — Beta tradeoff
-# ---------------------------------------------------------------------------
 
 def fig5_beta_tradeoff() -> None:
     files = {
@@ -581,18 +547,13 @@ def fig5_beta_tradeoff() -> None:
     print("  [fig5] done")
 
 
-# ---------------------------------------------------------------------------
-# Figure 6 — Cross-tissue negative control
-# ---------------------------------------------------------------------------
 
 def fig6_cross_tissue() -> None:
     path = EXPERIMENTS_DIR / "exp001_pbmc_beta0001"
     cross_path = EXPERIMENTS_DIR / "cross_tissue_negative_control"
 
-    # Load within-dataset H
     H_within = np.load(path / "alignment_entropy_cluster.npy")
 
-    # Try to load cross-tissue H
     H_cross = None
     for candidate in [
         EXPERIMENTS_DIR / "cross_tissue_negative_control" / "alignment_entropy_cluster.npy",
@@ -602,7 +563,6 @@ def fig6_cross_tissue() -> None:
             H_cross = np.load(candidate)
             break
 
-    # Also check fig6 source data JSON
     fig6_json = None
     for p in EXPERIMENTS_DIR.glob("**/cross_tissue*.json"):
         with p.open() as f:
@@ -611,7 +571,6 @@ def fig6_cross_tissue() -> None:
 
     fig, axes = plt.subplots(1, 2, figsize=(16, 7))
 
-    # Panel A: histogram comparison
     ax = axes[0]
     ax.hist(H_within, bins=50, color=MOSAIC_BLUE, alpha=0.7,
             label=f"Within-dataset\nmean={H_within.mean():.3f}", density=True)
@@ -637,7 +596,6 @@ def fig6_cross_tissue() -> None:
     ax.legend(frameon=False, fontsize=FSG)
     ax.grid(alpha=0.25)
 
-    # Panel B: box/violin comparison (bootstrap within vs cross)
     ax = axes[1]
     if H_cross is not None:
         parts = ax.violinplot([H_within, H_cross], positions=[0, 1],
@@ -653,7 +611,11 @@ def fig6_cross_tissue() -> None:
         ax.set_title(f"Negative control confirms\nalignment uncertainty signal\n"
                      f"(4.2× elevation, p<10⁻⁵⁰)", fontsize=13)
     else:
-        # Synthesize from known numbers
+        # no per-cell cross-tissue entropy on disk, so this branch draws a
+        # placeholder violin from a Beta fit rather than measured values. the
+        # 4.2x figure in the title is real (exp006_cross_tissue/results.json),
+        # the shape here is not. rerun cross_tissue_exp.py and save the H array
+        # if you need the real distribution.
         rng = np.random.default_rng(42)
         h_in_sim = rng.beta(2, 8, 3000) * H_within.max()
         h_cr_sim = rng.beta(5, 3, 3000) * 1.0
@@ -681,9 +643,6 @@ def fig6_cross_tissue() -> None:
     print("  [fig6] done")
 
 
-# ---------------------------------------------------------------------------
-# Figure 7 — Calibration curves (ECE)
-# ---------------------------------------------------------------------------
 
 def fig7_calibration() -> None:
     configs = [
@@ -742,9 +701,6 @@ def fig7_calibration() -> None:
     print("  [fig7] done")
 
 
-# ---------------------------------------------------------------------------
-# Figure 8 — Clinical & Neurological disease simulations
-# ---------------------------------------------------------------------------
 
 _DISEASE_LABELS = {
     "CD8_T_lymphopenia":       "CD8 T lymphopenia\n(HIV, CMV)",
@@ -784,13 +740,12 @@ def fig8_disease_simulation() -> None:
         aurocs = [s["auroc"] for s in scenarios]
         ratios = [s.get("entropy_ratio", 1.0) for s in scenarios]
 
-        # Sort by AUROC descending
         order = np.argsort(aurocs)[::-1]
         names = [names[i] for i in order]
         aurocs = [aurocs[i] for i in order]
         ratios = [ratios[i] for i in order]
 
-        # Color by H_ratio (warmer = stronger signal)
+        # warmer means stronger signal
         ratio_norm = np.array(ratios)
         ratio_norm = (ratio_norm - ratio_norm.min()) / (ratio_norm.max() - ratio_norm.min() + 1e-9)
         bar_colors = [plt.cm.YlOrRd(0.3 + 0.6 * v) for v in ratio_norm]
@@ -799,7 +754,6 @@ def fig8_disease_simulation() -> None:
         bars = ax.barh(y, aurocs, color=bar_colors,
                        edgecolor="white", linewidth=0.6, height=0.65)
 
-        # Annotate with AUROC and H_ratio
         for i, (au, ratio) in enumerate(zip(aurocs, ratios)):
             ax.text(au + 0.003, i, f"{au:.3f}  ({ratio:.1f}×)",
                     va="center", ha="left", fontsize=FSG,
@@ -817,7 +771,6 @@ def fig8_disease_simulation() -> None:
         ax.grid(axis="x", alpha=0.3)
         ax.legend(frameon=False, fontsize=FSG, loc="lower right")
 
-    # Shared colorbar for H_ratio
     sm = ScalarMappable(cmap="YlOrRd",
                         norm=Normalize(vmin=1, vmax=max(
                             max(s.get("entropy_ratio",1) for s in cs["scenarios"]),
@@ -836,9 +789,6 @@ def fig8_disease_simulation() -> None:
     print("  [fig8] done")
 
 
-# ---------------------------------------------------------------------------
-# Figure 9 — Protein marker UQ (CITE-seq)
-# ---------------------------------------------------------------------------
 
 def fig9_protein_uq() -> None:
     path = EXPERIMENTS_DIR / "protein_uq_analysis" / "results.json"
@@ -849,7 +799,6 @@ def fig9_protein_uq() -> None:
         data = json.load(f)
 
     markers = data["marker_analysis"]
-    # Sort by absolute expression diff
     markers_s = sorted(markers, key=lambda m: abs(m["expression_diff_high_minus_low"]),
                        reverse=True)
 
@@ -864,7 +813,6 @@ def fig9_protein_uq() -> None:
 
     fig, axes = plt.subplots(1, 2, figsize=(22, 9))
 
-    # Panel A: bar chart of expression diff
     ax = axes[0]
     bars = ax.barh(y, diffs, color=colors, edgecolor="white", linewidth=0.6, height=0.65)
     ax.axvline(0, color="grey", lw=1.0)
@@ -879,7 +827,6 @@ def fig9_protein_uq() -> None:
               frameon=False, fontsize=FSG, loc="lower right")
     ax.grid(axis="x", alpha=0.3)
 
-    # Panel B: significance (–log10 p-value) colored by direction
     ax = axes[1]
     log_p = [-np.log10(max(p, 1e-300)) for p in pvals]
     bars = ax.barh(y, log_p, color=colors, edgecolor="white", linewidth=0.6, height=0.65)
@@ -901,9 +848,6 @@ def fig9_protein_uq() -> None:
     print("  [fig9] done")
 
 
-# ---------------------------------------------------------------------------
-# Figure 10 — Checkpoint immunotherapy entropy analysis
-# ---------------------------------------------------------------------------
 
 def fig10_checkpoint_immunotherapy() -> None:
     import anndata as ad
@@ -917,7 +861,6 @@ def fig10_checkpoint_immunotherapy() -> None:
 
     analyses = data["analyses"]
 
-    # Load actual H and protein data for violin plots
     exp_dir = EXPERIMENTS_DIR / "exp001_citeseq"
     H = np.load(exp_dir / "alignment_entropy_cluster.npy")
     sub_idx = np.load(exp_dir / "ot_subsample_indices.npy")
@@ -961,7 +904,6 @@ def fig10_checkpoint_immunotherapy() -> None:
         ax.set_title(title, fontsize=FST)
         ax.grid(axis="y", alpha=0.3)
 
-        # Significance annotation
         sig = "***" if pval < 0.001 else ("**" if pval < 0.01 else ("*" if pval < 0.05 else "ns"))
         y_max = max(valid_a.max(), valid_b.max())
         ax.annotate("", xy=(1, y_max * 1.05), xytext=(0, y_max * 1.05),
@@ -969,7 +911,6 @@ def fig10_checkpoint_immunotherapy() -> None:
         ax.text(0.5, y_max * 1.08, f"{sig}\np={pval:.1e}",
                 ha="center", va="bottom", fontsize=FSG)
 
-    # Panel 1: PD-1 high vs low
     if pd1 is not None:
         thresh75 = np.percentile(pd1, 75)
         thresh25 = np.percentile(pd1, 25)
@@ -981,7 +922,6 @@ def fig10_checkpoint_immunotherapy() -> None:
                         "PD-1 high (top 25%)", "PD-1 low (bottom 25%)",
                         "PD-1⁺ exhausted T cells\nvs PD-1⁻ cells", pv)
 
-    # Panel 2: TIGIT high vs low
     if tigit is not None:
         high_m = tigit >= np.percentile(tigit, 75)
         low_m = tigit < np.percentile(tigit, 25)
@@ -991,7 +931,6 @@ def fig10_checkpoint_immunotherapy() -> None:
                         "TIGIT high", "TIGIT low",
                         "TIGIT⁺ exhausted T cells\nvs TIGIT⁻ cells", pv)
 
-    # Panel 3: PD-1+TIGIT+ double positive (exhausted) vs fresh
     if pd1 is not None and tigit is not None:
         exhausted = (pd1 >= np.percentile(pd1, 75)) & (tigit >= np.percentile(tigit, 75))
         fresh = (pd1 < np.percentile(pd1, 25)) & (tigit < np.percentile(tigit, 25))
@@ -1001,7 +940,6 @@ def fig10_checkpoint_immunotherapy() -> None:
                         "PD-1⁺TIGIT⁺\n(exhausted)", "PD-1⁻TIGIT⁻\n(fresh)",
                         "Double-positive exhausted T\n(checkpoint inhibitor targets)", pv)
 
-    # Panel 4: CD4+PD1+ vs CD8+PD1+
     if pd1 is not None and cd4 is not None and cd8a is not None:
         pd1_med = np.percentile(pd1, 50)
         cd4_m = (cd4 >= np.percentile(cd4, 50)) & (pd1 >= pd1_med) & \
@@ -1014,7 +952,6 @@ def fig10_checkpoint_immunotherapy() -> None:
                         "CD4⁺PD-1⁺\n(Treg/exhausted CD4)", "CD8a⁺PD-1⁺\n(effector exhausted)",
                         "CD4 vs CD8 exhausted T\nsubset uncertainty", pv)
 
-    # Panel 5: CD127+ memory vs CD127- effector
     if cd127 is not None and cd3 is not None:
         cd3_m = cd3 >= np.percentile(cd3, 50)
         mem = cd3_m & (cd127 >= np.percentile(cd127, 75))
@@ -1025,7 +962,6 @@ def fig10_checkpoint_immunotherapy() -> None:
                         "CD3⁺CD127⁺\n(memory T)", "CD3⁺CD127⁻\n(effector/exhausted)",
                         "Memory vs effector T\n(CD127/IL-7Rα status)", pv)
 
-    # Panel 6: Summary bar chart
     ax = axes[1, 2]
     analysis_labels = []
     means_high = []
@@ -1063,9 +999,6 @@ def fig10_checkpoint_immunotherapy() -> None:
     print("  [fig10] done")
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import traceback
@@ -1087,10 +1020,10 @@ if __name__ == "__main__":
 
     for name, fn in tasks:
         try:
-            print(f"\n=== {name} ===")
+            print(f"\n[{name}]")
             fn()
         except Exception as e:
-            print(f"  [SKIP] {name}: {e}")
+            print(f"  [skip] {name}: {e}")
             traceback.print_exc()
 
-    print("\n=== All figures complete ===")
+    print("\ndone")

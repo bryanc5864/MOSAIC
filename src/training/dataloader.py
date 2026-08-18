@@ -2,22 +2,14 @@
 # Part of MOSAIC
 """Per-modality AnnData dataloader.
 
-Design invariant (enforced by the pair-leakage test in src/data/validate.py):
-  The training-time iterator for modality A has NO access to modality B.
-  Each modality is wrapped in its own Dataset; batches are sampled
-  independently with independent RNG seeds; and nothing in this module reads
-  the `pair_idx` field (only evaluation code does).
+The invariant that matters: modality A's iterator never touches modality B.
+Each modality gets its own Dataset, batches are drawn with independent RNGs,
+and nothing here reads pair_idx — only the evaluation code does.
 
-The `ModalityDataset` yields per-cell:
-  - x         : the modality's MLP-input feature vector (scaled log-norm for
-                RNA; log1p TF-IDF for ATAC).
-  - recon_tgt : the reconstruction target for the decoder (raw counts for
-                RNA, binarized for ATAC).
-  - y_cross   : the pre-computed low-dim summary of the OTHER modality, used
-                as the cross-modal prediction target.
-
-The three are pre-computed and stored on the AnnData object, so the dataset
-does not need to know which modality is which — it just reads the fields.
+Each item is x (encoder input), recon (decoder target: raw counts for RNA,
+binary for ATAC), and y_cross (the partner modality's cluster centroid). All
+three are precomputed on the AnnData, so this class doesn't care which
+modality it's holding.
 """
 
 from __future__ import annotations
@@ -32,17 +24,7 @@ from torch.utils.data import DataLoader, Dataset
 
 
 class ModalityDataset(Dataset):
-    """Single-modality Dataset over an AnnData.
-
-    Arguments:
-        adata:      a single modality AnnData. Must contain .X (features),
-                    a recon target layer (specified by `recon_layer`), and
-                    .obsm['y_cross'] (the cross-modal prediction target).
-        recon_layer: which layer to use as the reconstruction target. For
-                    RNA this is "counts"; for ATAC this is "binary".
-        indices:    optional int array selecting a subset of cells
-                    (e.g. for train/val/test splits).
-    """
+    """One modality's cells. recon_layer is "counts" for RNA, "binary" for ATAC."""
 
     def __init__(self, adata: ad.AnnData, recon_layer: str,
                  indices: np.ndarray | None = None):
@@ -52,9 +34,7 @@ class ModalityDataset(Dataset):
             self.indices = np.arange(adata.n_obs)
         else:
             self.indices = np.asarray(indices, dtype=np.int64)
-        # Preload everything as dense float32 torch tensors at init time.
-        # For 11K cells x 10K peaks this is ~450 MB — large but manageable
-        # and eliminates per-row sparse-to-dense conversion overhead.
+        # dense up front: ~450 MB at 11K x 10K, but no per-row densify later
         self._X = self._dense_tensor(adata.X)
         self._recon = self._dense_tensor(adata.layers[recon_layer])
         self._y_cross = torch.from_numpy(np.asarray(adata.obsm["y_cross"], dtype=np.float32))
@@ -70,10 +50,7 @@ class ModalityDataset(Dataset):
         return len(self.indices)
 
     def get_batch(self, batch_indices: np.ndarray) -> dict[str, torch.Tensor]:
-        """Vectorized batch access — pull many rows in one shot.
-
-        Preferred path used by the training loop (see train_ibvae.py).
-        """
+        """pull a whole batch at once; this is what the training loop uses"""
         rows = torch.from_numpy(np.asarray(batch_indices, dtype=np.int64))
         abs_rows = torch.from_numpy(self.indices[batch_indices].astype(np.int64))
         return {
@@ -83,8 +60,7 @@ class ModalityDataset(Dataset):
         }
 
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
-        # Kept for DataLoader compatibility; the training loop uses get_batch
-        # which is much faster.
+        # only here for DataLoader compat, get_batch is much faster
         row = int(self.indices[idx])
         return {
             "x": self._X[row],
@@ -95,11 +71,10 @@ class ModalityDataset(Dataset):
 
 def make_split_indices(n: int, val_frac: float = 0.1, seed: int = 0
                        ) -> tuple[np.ndarray, np.ndarray]:
-    """Return (train_idx, val_idx) from a random split of n cells.
+    """random (train_idx, val_idx) over n cells.
 
-    Note: this does NOT produce a test split. The full dataset is used for
-    OT-time matching during final evaluation; val exists only for early
-    stopping of the IB-VAE training loop.
+    No test split on purpose: final evaluation matches over all cells at OT
+    time, so val is only here to drive early stopping.
     """
     rng = np.random.default_rng(seed)
     perm = rng.permutation(n)
@@ -110,9 +85,7 @@ def make_split_indices(n: int, val_frac: float = 0.1, seed: int = 0
 def make_loader(ds: ModalityDataset, batch_size: int, shuffle: bool,
                 seed: int = 0, num_workers: int = 0, pin_memory: bool = True
                 ) -> DataLoader:
-    """Wrap a ModalityDataset in a DataLoader with a deterministic generator
-    when shuffling is enabled.
-    """
+    """DataLoader with a seeded generator when shuffling"""
     if shuffle:
         gen = torch.Generator()
         gen.manual_seed(seed)

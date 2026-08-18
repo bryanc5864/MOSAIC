@@ -1,23 +1,13 @@
 #!/usr/bin/env python3
 # MIT License
-# Part of MOSAIC - Exp 3: missing cell type detection
-"""Exp 3 - can MOSAIC's cluster-resolved entropy detect cells whose true
-cluster is absent from the target modality?
+"""Leave-one-cluster-out: does cluster entropy spot a missing cell type?
 
-Protocol:
-  1. Load the trained IB-VAE embeddings from exp001_pbmc_final.
-  2. Pick a target cluster k*.
-  3. Remove all ATAC cells in cluster k* (simulate absence in target modality).
-  4. Re-run Sinkhorn on the reduced set (RNA full, ATAC minus k*).
-  5. Compute cluster-resolved entropy.
-  6. Measure AUROC for the task:
-         "is this RNA cell of the removed type" vs. "cluster entropy"
-     Expectation: RNA cells of the removed type have higher cluster entropy
-     (they have no good partner in ATAC, the OT plan spreads mass across
-     wrong clusters). AUROC should be well above 0.5.
+For each candidate cluster, drop all its ATAC cells, rerun Sinkhorn against the
+full RNA side, and score AUROC for "this RNA cell has no partner left" against
+cluster entropy. Cells of the removed type should spread their transport mass
+over the wrong clusters and come out high-entropy.
 
-For a fair test, we repeat for each candidate cluster (one-at-a-time leave-out)
-and report the AUROC distribution.
+Repeated one cluster at a time; we report the AUROC distribution.
 """
 
 from __future__ import annotations
@@ -36,8 +26,7 @@ from src.utils.paths import EXPERIMENTS_DIR, PROCESSED_DIR
 
 def cluster_marginal(plan: np.ndarray, cluster_ids_target: np.ndarray
                       ) -> tuple[np.ndarray, np.ndarray]:
-    """Returns cluster entropy per source cell, and the per-cluster marginal
-    probability (n_src x n_clusters)."""
+    """cluster entropy per source cell plus the (n_src, n_clusters) marginal"""
     rs = plan.sum(axis=1, keepdims=True)
     rs[rs == 0] = 1e-30
     P = plan / rs
@@ -57,28 +46,20 @@ def run_leave_out_cluster(
         epsilon: float = 0.05, subsample_n: int = 3000,
         seed: int = 0,
 ) -> dict:
-    """Remove `target_cluster` from ATAC, run Sinkhorn, compute cluster
-    entropy. Return AUROC for detecting the removed type via entropy.
+    """Drop target_cluster from ATAC, realign, score detection AUROC.
 
-    We keep the RNA side complete; the ATAC side has the target cluster's
-    cells removed. For the AUROC, positive class = "this RNA cell is of
-    the removed type" (no partner in ATAC), negative = any other cell.
-
-    The subsample restricts the expensive Sinkhorn to `subsample_n` cells
-    from the RNA side. We pick the subsample to include EVERY cell of the
-    removed type (else there's nothing to detect) plus a random sample
-    from the other clusters to reach `subsample_n`.
+    RNA stays complete; positive class is "this RNA cell is of the removed
+    type". The subsample keeps every cell of the removed type (otherwise
+    there's nothing to detect) and fills up to subsample_n at random.
     """
     rng = np.random.default_rng(seed)
 
-    # Cells in target cluster (to detect)
     target_mask = labels == target_cluster
     n_target = int(target_mask.sum())
     if n_target < 5:
         return {"target_cluster": target_cluster, "n_target": n_target,
                 "auroc": float("nan"), "note": "too few target cells"}
 
-    # RNA subsample: all target cells + random sample of others
     other_indices = np.where(~target_mask)[0]
     n_others = min(subsample_n - n_target, len(other_indices))
     other_sample = rng.choice(other_indices, size=n_others, replace=False)
@@ -89,9 +70,8 @@ def run_leave_out_cluster(
 
     Z_rna_sub = Z_rna[rna_sub]
 
-    # ATAC: keep everything EXCEPT the target cluster
+    # atac loses the target cluster entirely
     atac_keep_mask = labels != target_cluster
-    # Also subsample ATAC to roughly the same size
     atac_kept_indices = np.where(atac_keep_mask)[0]
     atac_sample_n = min(subsample_n, len(atac_kept_indices))
     atac_sub_indices = rng.choice(atac_kept_indices, size=atac_sample_n, replace=False)
@@ -101,14 +81,11 @@ def run_leave_out_cluster(
     print(f"  [leave-out {target_cluster}] RNA {len(rna_sub)} (target={n_target}) "
           f"vs ATAC {len(atac_sub_indices)} (target removed)")
 
-    # Run Sinkhorn
     result = sinkhorn_align(Z_rna_sub, Z_atac_sub, epsilon=epsilon,
                             n_iter=200, normalize="median")
 
-    # Cluster-resolved entropy
     H_cluster, _, _ = cluster_marginal(result.plan, labels_atac_sub)
 
-    # AUROC for detecting the removed type via entropy
     try:
         auroc = float(roc_auc_score(is_target_rna.astype(int), H_cluster))
     except ValueError:
@@ -141,10 +118,9 @@ def main() -> int:
     rna = ad.read_h5ad(PROCESSED_DIR / f"{args.dataset}_rna.h5ad")
     labels = rna.obs["cell_type"].astype(str).values
 
-    # Per-cluster stats to pick candidates
     unique_clusters = sorted(np.unique(labels), key=lambda c: int(c))
     sizes = {c: int((labels == c).sum()) for c in unique_clusters}
-    # Only test clusters with enough cells to get a meaningful AUROC
+    # too few cells and the auroc is noise
     candidates = [c for c in unique_clusters if 30 <= sizes[c] <= 1500]
     print(f"dataset {args.dataset}: {len(unique_clusters)} clusters, "
           f"testing {len(candidates)} leave-out experiments")
@@ -159,7 +135,6 @@ def main() -> int:
               f"other: {r.get('mean_entropy_other', 'nan'):.3f}")
         results.append(r)
 
-    # Aggregate
     valid = [r["auroc_cluster_entropy"] for r in results
              if r.get("auroc_cluster_entropy") is not None
              and not np.isnan(r["auroc_cluster_entropy"])]
@@ -178,7 +153,7 @@ def main() -> int:
     with out_path.open("w") as f:
         json.dump(aggregate, f, indent=2)
 
-    print(f"\n=== Exp 3 summary ({args.dataset}) ===")
+    print(f"\n[summary] missing-type, {args.dataset}")
     print(f"clusters tested: {aggregate['n_clusters_tested']}")
     print(f"mean AUROC: {aggregate['mean_auroc']:.4f}")
     print(f"median AUROC: {aggregate['median_auroc']:.4f}")

@@ -1,26 +1,16 @@
 # MIT License
 # Part of MOSAIC
-"""Post-hoc latent alignment between independently-trained modality encoders.
+"""Post-hoc latent alignment between the two independently-trained encoders.
 
-When two IB-VAEs are trained with no joint constraint on their latent spaces,
-each encoder produces a valid per-modality embedding but the two latent clouds
-typically live in different regions of the 64-d space. The OT cost matrix
-between them is then near-uniform, and Sinkhorn returns a near-uniform plan
-with maximum row entropy - which destroys the per-cell uncertainty signal.
+Nothing ties the two IB-VAE latent spaces together during training, so the two
+clouds usually sit in different regions of the 64-d space. The OT cost matrix
+then comes out near-uniform and Sinkhorn returns a max-entropy plan, which kills
+the per-cell uncertainty signal.
 
-This module provides a Procrustes-style alignment that uses *cluster centroids*
-(computed from a shared clustering of the two modalities) to estimate a single
-orthogonal rotation that maps one modality's latent into the other's frame.
-
-Implementation notes:
-  - We use orthogonal Procrustes (no scaling, no translation beyond centering),
-    so the per-cluster geometry is preserved.
-  - The alignment is fit on cluster CENTROIDS, not on individual cells. This
-    matches the plan's design intent: alignment should reflect cluster
-    correspondence, not memorize per-cell pairings.
-  - In the paired benchmark setting we use the leiden cluster IDs that
-    preprocess.py copies between modalities. In a true unpaired setting, the
-    same approach could be applied with joint clustering or external labels.
+Fix is an orthogonal Procrustes rotation fit on cluster centroids rather than
+individual cells, so within-cluster geometry survives. On the paired benchmarks
+the cluster ids are the leiden labels preprocess.py copies across modalities; a
+genuinely unpaired run would need joint clustering or external labels.
 """
 
 from __future__ import annotations
@@ -44,25 +34,17 @@ def fit_orthogonal_procrustes(Z_src: np.ndarray, Z_tgt: np.ndarray,
                                labels_src: np.ndarray, labels_tgt: np.ndarray,
                                include_scale: bool = False,
                                ) -> ProcrustesAlignment:
-    """Fit a similarity transform (rotation + optional isotropic scale + translation)
-    that aligns the SRC modality's latent centroids onto the TGT modality's centroids.
+    """Align src latent centroids onto tgt centroids.
 
-    Both modalities must use the same set of cluster labels (this is true in
-    the MOSAIC paired-benchmark setup because preprocess.py propagates leiden
-    clusters from RNA to ATAC via the known pairing).
+    Both modalities have to share a cluster label set, which holds on the paired
+    benchmarks because preprocess.py propagates leiden from RNA to ATAC.
 
-    With include_scale=True, this is the closed-form similarity Procrustes
-    (Schoenemann 1966, Sibson 1978), which handles both the rotation and the
-    overall scale mismatch.
-
-    DEFAULT IS include_scale=False (rotation only). Why: on PBMC 10k we
-    empirically found that including isotropic scale over-compresses the
-    ATAC cloud into a tighter region, which brings cluster centroids into
-    perfect alignment but destroys within-cluster geometry. The result is
-    great cluster-centroid residual (0.49 vs 1.75) but terrible downstream
-    label transfer (0.19/0.55 vs 0.68/0.74 on run004 → run005). Rotation
-    alone preserves the per-cell geometry and does better on all practical
-    metrics, at the cost of a slightly worse centroid fit.
+    include_scale=True gives the closed-form similarity Procrustes (Schoenemann
+    1966, Sibson 1978). It defaults to False: on PBMC 10k the isotropic scale
+    over-compresses the ATAC cloud, which nails the centroid residual (0.49 vs
+    1.75) but wrecks within-cluster geometry and label transfer (0.19/0.55 vs
+    0.68/0.74, run004 -> run005). Rotation alone is worse on centroids and
+    better on everything that matters.
     """
     labels_src = np.asarray(labels_src).astype(str)
     labels_tgt = np.asarray(labels_tgt).astype(str)
@@ -73,21 +55,18 @@ def fit_orthogonal_procrustes(Z_src: np.ndarray, Z_tgt: np.ndarray,
     src_centroids = np.stack([Z_src[labels_src == c].mean(axis=0) for c in common])
     tgt_centroids = np.stack([Z_tgt[labels_tgt == c].mean(axis=0) for c in common])
 
-    # Center both
     src_mean = src_centroids.mean(axis=0)
     tgt_mean = tgt_centroids.mean(axis=0)
     A = src_centroids - src_mean       # (K, d)
     B = tgt_centroids - tgt_mean       # (K, d)
 
-    # Orthogonal Procrustes: R = argmin ||A R - B||_F  s.t. R orthogonal.
-    # Closed form: SVD of A^T B = U S V^T  ->  R = U V^T.
+    # closed form: svd of A^T B = U S V^T, then R = U V^T
     M = A.T @ B                        # (d, d)
     U, S, Vt = np.linalg.svd(M, full_matrices=False)
     R = U @ Vt
 
     if include_scale:
-        # Isotropic scale: c = trace(diag(S)) / ||A||_F^2
-        # Minimizes ||c * A R - B||_F^2.
+        # minimizes ||c A R - B||_F^2
         denom = float((A ** 2).sum())
         scale = float(S.sum() / denom) if denom > 0 else 1.0
     else:
@@ -111,24 +90,15 @@ def apply_alignment(Z: np.ndarray, alignment: ProcrustesAlignment) -> np.ndarray
     return alignment.scale * (Z_centered @ alignment.rotation) + alignment.tgt_mean
 
 
-# ----------------------------------------------------------------------------
-# Smoke tests
-# ----------------------------------------------------------------------------
-
-
 def _test_recover_rotation():
-    """If src is a known rotation of tgt with shared cluster centroids,
-    fit_orthogonal_procrustes should recover the inverse rotation.
-    """
+    """known rotation in, inverse rotation out"""
     rng = np.random.default_rng(0)
     d = 8
     K = 6
     n_per = 30
     centroids = rng.normal(0, 5, size=(K, d))
-    # Random orthogonal rotation
     A = rng.normal(0, 1, size=(d, d))
     Q, _ = np.linalg.qr(A)
-    # Build src and tgt clusters: tgt has centroids, src has rotated centroids
     tgt_data = []
     src_data = []
     labels = []
@@ -145,7 +115,6 @@ def _test_recover_rotation():
     align = fit_orthogonal_procrustes(Z_src, Z_tgt, labels, labels)
     Z_aligned = apply_alignment(Z_src, align)
 
-    # Per-cluster centroid distance after alignment should be ~0
     err = np.mean([
         np.linalg.norm(Z_aligned[labels == c].mean(0) - Z_tgt[labels == c].mean(0))
         for c in [f"c{k}" for k in range(K)]
@@ -155,7 +124,7 @@ def _test_recover_rotation():
     assert err < 0.1, f"Procrustes failed to align centroids: {err}"
     print("[ok] Procrustes alignment recovers known rotation")
 
-    # Scale-mismatch test: src is rotated AND scaled by 0.5 vs tgt
+    # now src is also scaled by 0.5
     src_data_scaled = []
     for k in range(K):
         c_src = (centroids[k] @ Q) * 0.5

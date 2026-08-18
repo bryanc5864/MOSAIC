@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 # MIT License
-# Part of MOSAIC - multi-seed aggregation for W5 fix
-"""Aggregate multi-seed results into mean +/- std summaries.
+"""Collapse several seeds' results.json into mean +/- std.
 
-Given a list of (seed, exp_name) tuples for a single dataset, loads each
-results.json and computes mean +/- std for every primary metric. Writes
-a single aggregate JSON and a markdown table to stdout.
-
-Usage:
     python -m scripts.aggregate_seeds --dataset pbmc10k_multiome \\
         --runs exp001_pbmc_final:0 exp001_pbmc_seed1:1 exp001_pbmc_seed2:2
 """
@@ -60,7 +54,7 @@ def main() -> int:
             "entropy_rho": m["entropy_error_corr"]["spearman_rho"],
             "wall_time_sec": res["wall_time_sec"],
         })
-        # Also try to load cluster entropy analysis
+        # cluster entropy analysis is optional
         cea = EXPERIMENTS_DIR / exp_name / "cluster_entropy_analysis.json"
         if cea.exists():
             with cea.open() as f:
@@ -101,7 +95,7 @@ def main() -> int:
     with out_path.open("w") as f:
         json.dump(aggregated, f, indent=2)
 
-    print(f"\n=== {label} (n_seeds = {len(seeds)}) ===")
+    print(f"\n{label}, n_seeds = {len(seeds)}")
     print(f"{'metric':28s} | {'mean':>9s} +/- {'std':>7s}")
     print("-" * 60)
     for key, pretty in [

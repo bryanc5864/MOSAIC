@@ -1,21 +1,10 @@
 # MIT License
 # Part of MOSAIC
-"""Top-level experiment runner for MOSAIC.
+"""End-to-end experiment runner.
 
-An "experiment" here is:
-  1. Load the processed RNA and ATAC AnnDatas for a dataset.
-  2. Train IBVAE_RNA (via train_ibvae).
-  3. Train IBVAE_ATAC (via train_ibvae).
-  4. Load both final embeddings (z_rna, z_atac).
-  5. Run entropic OT alignment on the two embeddings.
-  6. Compute metrics:
-       - FOSCTTM
-       - label transfer accuracy (RNA -> ATAC via top-k in latent)
-       - joint clustering ARI
-       - entropy-error Spearman correlation
-  7. Save results.json and append a row to TRAINING_LOG.md / RESULTS.md.
-
-This is the workhorse of Exp 1 (and forms the basis for Exp 2-4).
+Trains both modalities' IB-VAEs, Procrustes-aligns the two latents, runs the
+entropic OT, then scores FOSCTTM, label transfer, joint-clustering ARI, and the
+entropy-error correlation into experiments/<name>/results.json.
 """
 
 from __future__ import annotations
@@ -58,8 +47,7 @@ def run_experiment(dataset_id: str, exp_name: str, *,
 
     t0 = time.time()
 
-    # ---- 1. Train RNA IB-VAE ----
-    print("\n--- Training RNA IB-VAE ---")
+    print("\n[train] rna ib-vae")
     rna_cfg = TrainConfig(
         modality="rna",
         processed_path=str(rna_path),
@@ -70,8 +58,7 @@ def run_experiment(dataset_id: str, exp_name: str, *,
     )
     rna_result = train(rna_cfg)
 
-    # ---- 2. Train ATAC IB-VAE ----
-    print("\n--- Training ATAC IB-VAE ---")
+    print("\n[train] atac ib-vae")
     atac_cfg = TrainConfig(
         modality="atac",
         processed_path=str(atac_path),
@@ -82,7 +69,6 @@ def run_experiment(dataset_id: str, exp_name: str, *,
     )
     atac_result = train(atac_cfg)
 
-    # ---- 3. Load embeddings and metadata ----
     Z_rna = np.load(rna_result["embeddings"])
     Z_atac = np.load(atac_result["embeddings"])
     rna = ad.read_h5ad(rna_path)
@@ -92,10 +78,9 @@ def run_experiment(dataset_id: str, exp_name: str, *,
     labels_a = rna.obs["cell_type"].astype(str).values
     labels_b = atac.obs["cell_type"].astype(str).values
 
-    # ---- 4a. Optional Procrustes alignment of ATAC latent onto RNA frame ----
     procrustes_info: dict = {}
     if procrustes:
-        print("\n--- Procrustes alignment (ATAC -> RNA frame) ---")
+        print("\n[align] procrustes, atac into the rna frame")
         proc = fit_orthogonal_procrustes(
             Z_src=Z_atac, Z_tgt=Z_rna,
             labels_src=labels_b, labels_tgt=labels_a,
@@ -111,20 +96,16 @@ def run_experiment(dataset_id: str, exp_name: str, *,
         Z_atac_aligned = Z_atac
         procrustes_info = {"applied": False}
 
-    # ---- 4b. Sinkhorn alignment on a subsample ----
-    # Memory note: for N ~ 11000 the full NxN cost matrix is ~1 GB at float64
-    # and POT's Sinkhorn iterations allocate several times that in intermediate
-    # log/exp buffers. On a 16 GB workstation (with ~5 GB already held by the
-    # training process) this reliably OOM-kills the interpreter silently. We
-    # therefore run OT on a reproducible subsample of `ot_subsample` cells
-    # per modality. FOSCTTM / label transfer / ARI are computed on the FULL
-    # embeddings since they don't need the OT plan. The per-cell entropy
-    # calibration metric (Exp 2) is computed on the subsample.
+    # OT runs on a seeded subsample: at N ~ 11000 the float64 cost matrix is
+    # ~1 GB and POT's intermediate buffers are several times that, which
+    # silently OOM-kills the interpreter on a 16 GB box while training still
+    # holds memory. Foscttm / label transfer / ARI don't need the plan, so they
+    # stay on the full embeddings; only the entropy calibration is on the subset.
     n_cells_total = Z_rna.shape[0]
     n_sub = min(ot_subsample, n_cells_total)
     sub_rng = np.random.default_rng(seed)
     sub_idx = sub_rng.choice(n_cells_total, size=n_sub, replace=False)
-    print(f"\n--- Running Sinkhorn alignment on {n_sub}/{n_cells_total} subsample ---")
+    print(f"\n[align] sinkhorn on {n_sub}/{n_cells_total} cells")
     align = sinkhorn_align(
         Z_rna[sub_idx], Z_atac_aligned[sub_idx], epsilon=epsilon,
     )
@@ -134,20 +115,14 @@ def run_experiment(dataset_id: str, exp_name: str, *,
     np.save(exp_dir / "ot_subsample_indices.npy", sub_idx.astype(np.int64))
     np.save(exp_dir / "z_atac_aligned.npy", Z_atac_aligned.astype(np.float32))
 
-    # ---- 5. Compute metrics on the post-alignment embeddings ----
-    # FOSCTTM / label transfer / ARI use the FULL aligned embeddings.
-    # Entropy calibration uses only the OT subsample (entropy is only
-    # defined for the cells on which we ran Sinkhorn).
-    print("\n--- Computing metrics ---")
+    print("\n[eval] metrics")
     foscttm_res = foscttm(Z_rna, Z_atac_aligned, pair_a, pair_b)
     lt_rna_to_atac = label_transfer_accuracy(Z_rna, labels_a, Z_atac_aligned, labels_b, k=15)
     lt_atac_to_rna = label_transfer_accuracy(Z_atac_aligned, labels_b, Z_rna, labels_a, k=15)
     ari = joint_clustering_ari(Z_rna, Z_atac_aligned, labels_a, labels_b,
                                 n_clusters=len(np.unique(labels_a)), seed=seed)
 
-    # For entropy calibration, restrict the full-set evaluation to the
-    # subsampled cells. pair_a/pair_b for the RNA subsample point into the
-    # ATAC subsample's pair_idx (the subsample is the same indices in both).
+    # same subsample indices on both sides, so pair_idx still lines up
     pair_a_sub = pair_a[sub_idx]
     pair_b_sub = pair_b[sub_idx]
     ent_corr = entropy_error_corr(
@@ -184,7 +159,7 @@ def run_experiment(dataset_id: str, exp_name: str, *,
     with (exp_dir / "results.json").open("w") as f:
         json.dump(results, f, indent=2, default=str)
 
-    print("\n=== Results ===")
+    print("\n[results]")
     print(f"  FOSCTTM (mean)              : {foscttm_res['foscttm_mean']:.4f}")
     print(f"  Label transfer RNA->ATAC    : {lt_rna_to_atac:.4f}")
     print(f"  Label transfer ATAC->RNA    : {lt_atac_to_rna:.4f}")
@@ -196,7 +171,7 @@ def run_experiment(dataset_id: str, exp_name: str, *,
 
 
 if __name__ == "__main__":
-    p = argparse.ArgumentParser(description="Run a MOSAIC experiment end to end")
+    p = argparse.ArgumentParser(description="run one alignment experiment end to end")
     p.add_argument("--dataset", required=True)
     p.add_argument("--name", required=True, help="experiment directory name")
     p.add_argument("--epochs", type=int, default=200)

@@ -1,24 +1,16 @@
 #!/usr/bin/env python3
 # MIT License
 # Part of MOSAIC
-"""Rare cell type detection analysis.
+"""Does cluster entropy penalize rare cell types just for being rare?
 
-Clinical context: Rare cell types (plasmacytoid dendritic cells, regulatory
-T cells, plasma cells, NK-T cells) are diagnostically important but routinely
-missed or misclassified in flow cytometry due to low abundance and marker
-overlap. MOSAIC's cluster-resolved entropy may flag rare cells as uncertain
-even when they ARE present, because low cluster density means fewer candidates
-in the OT plan.
-
-Analysis:
-1. Correlate cluster entropy with cluster size (do rare clusters have higher entropy?)
-2. For PBMC: compare AUROC of rare vs. abundant clusters in leave-one-out study
-3. For CITE-seq: identify which rare protein-defined populations have high entropy
-4. Multi-dataset summary: is rare-cell entropy a consistent pattern?
+Rare populations (pDCs, Tregs, plasma cells) matter diagnostically, and a low
+cluster density means fewer candidates in the OT plan, so the entropy could
+flag them as uncertain even when they are present. This checks whether that
+happens, by correlating cluster size against mean H_cluster across all three
+datasets.
 """
 from __future__ import annotations
 import json, sys, os
-sys.path.insert(0, 'C:/Users/Maozer/projects/MOSAIC')
 
 import numpy as np
 import anndata as ad
@@ -65,12 +57,10 @@ def analyze_dataset(dataset_id, exp_id, label):
 
     per_cluster.sort(key=lambda x: x["n_full"])
 
-    # Correlation: cluster size vs mean entropy
     sizes = np.array([r["n_full"] for r in per_cluster])
     entropies = np.array([r["mean_H"] for r in per_cluster])
     rho, pval = stats.spearmanr(sizes, entropies)
 
-    # Rare vs abundant
     median_size = np.median(sizes)
     rare_mask = sizes < median_size
     rare_H = entropies[rare_mask]
@@ -98,11 +88,11 @@ def analyze_dataset(dataset_id, exp_id, label):
 def main():
     results = []
     for dataset_id, exp_id, label in CONFIGS:
-        print(f"\n=== {label} ===")
+        print(f"\n[dataset] {label}")
         r = analyze_dataset(dataset_id, exp_id, label)
         results.append(r)
         if "error" in r:
-            print(f"  ERROR: {r['error']}")
+            print(f"  failed: {r['error']}")
             continue
         print(f"  Size-entropy Spearman rho={r['size_entropy_spearman_rho']:.3f}  p={r['size_entropy_spearman_p']:.2e}")
         print(f"  Rare clusters: mean H={r['rare_vs_abundant_H']['rare_mean_H']:.4f}")
@@ -122,7 +112,7 @@ def main():
     os.makedirs("experiments/rare_cell_detection", exist_ok=True)
     with open("experiments/rare_cell_detection/results.json", "w") as f:
         json.dump(output, f, indent=2)
-    print("\nSaved experiments/rare_cell_detection/results.json")
+    print("\nsaved experiments/rare_cell_detection/results.json")
     return 0
 
 if __name__ == "__main__":

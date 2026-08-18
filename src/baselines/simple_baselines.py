@@ -1,23 +1,14 @@
 # MIT License
 # Part of MOSAIC
-"""Fast, memory-efficient baselines for MOSAIC comparison.
+"""Cheap baselines, same compute envelope as the main runner.
 
-These are implemented to fit the same compute envelope as MOSAIC's
-experiment_runner: dense 3000 x 3000 cost matrices, regular Sinkhorn
-(no log-domain), no O(n^3) Gromov-Wasserstein iterations.
+Dense 3000 x 3000 cost matrices, plain Sinkhorn, no Gromov-Wasserstein.
 
-Methods:
-  1. RawFeaturesOT  - Sinkhorn on raw PCA (RNA) / LSI (ATAC) features.
-                     This is MOSAIC with the IB-VAE ablated (§ 4.3 Exp 4a).
-                     It's also the standard approach from SCOT-style methods
-                     without the Gromov-Wasserstein geodesic computation.
-  2. NN_on_IB       - IB-VAE latent embeddings + Procrustes + kNN matching
-                     instead of Sinkhorn. This ablates the OT component.
-                     (§ 4.3 Exp 4b.)
-  3. uniPort        - The installed uniPort library with default settings.
+  RawFeaturesOT  raw PCA (RNA) / LSI (ATAC), i.e. the IB-VAE ablated
+  NN_on_IB       IB latent + Procrustes but nearest-neighbour instead of OT
+  uniPort        the uniPort library at its defaults
 
-All three are evaluated on the same subsample of cells that MOSAIC's main
-Exp 1 used, using the same metrics. Fair comparison.
+All three run on the same cell subsample and the same metrics as Exp 1.
 """
 
 from __future__ import annotations
@@ -57,40 +48,29 @@ def _evaluate(Z_a: np.ndarray, Z_b: np.ndarray,
     }
 
 
-# ---------------------------------------------------------------------------
-# Baseline 1: Raw PCA + LSI + Sinkhorn (no IB-VAE)
-# ---------------------------------------------------------------------------
-
-
 def baseline_raw_ot(rna: ad.AnnData, atac: ad.AnnData,
                      labels_sub: np.ndarray, pair_a_sub: np.ndarray,
                      pair_b_sub: np.ndarray, sub_idx: np.ndarray,
                      seed: int) -> dict:
-    """MOSAIC without the IB-VAE: use PCA / LSI features directly.
+    """The pipeline with the IB-VAE ablated: PCA / LSI features straight in.
 
-    Pad the smaller feature space (PCA 50) and the larger (LSI 50) into a
-    common 64-dim space by zero-padding if needed. If both are 50-d, use
-    them as-is (no Procrustes — different modalities' PCs aren't
-    comparable, which is precisely why MOSAIC's IB-VAE maps them into a
-    shared target space first). We instead Procrustes-align directly on
-    the raw features using the cluster centroids.
+    Zero-pads whichever side is narrower, then Procrustes-aligns on cluster
+    centroids. Raw PCs across modalities aren't comparable, which is the whole
+    reason the IB-VAE maps them into a shared target space first.
     """
     t0 = time.time()
     Z_rna = np.asarray(rna.obsm["X_pca"], dtype=np.float32)[sub_idx]
     Z_atac = np.asarray(atac.obsm["X_lsi"], dtype=np.float32)[sub_idx]
-    # Pad to common dim
     d = max(Z_rna.shape[1], Z_atac.shape[1])
     if Z_rna.shape[1] < d:
         Z_rna = np.hstack([Z_rna, np.zeros((Z_rna.shape[0], d - Z_rna.shape[1]), dtype=Z_rna.dtype)])
     if Z_atac.shape[1] < d:
         Z_atac = np.hstack([Z_atac, np.zeros((Z_atac.shape[0], d - Z_atac.shape[1]), dtype=Z_atac.dtype)])
-    # Procrustes-align ATAC onto RNA frame using shared cluster centroids
     proc = fit_orthogonal_procrustes(
         Z_src=Z_atac, Z_tgt=Z_rna,
         labels_src=labels_sub, labels_tgt=labels_sub,
     )
     Z_atac_aligned = apply_alignment(Z_atac, proc)
-    # Standard Sinkhorn (we don't use the plan here, just the embeddings)
     metrics = _evaluate(Z_rna, Z_atac_aligned, pair_a_sub, pair_b_sub,
                          labels_sub, seed=seed)
     return {
@@ -101,18 +81,13 @@ def baseline_raw_ot(rna: ad.AnnData, atac: ad.AnnData,
     }
 
 
-# ---------------------------------------------------------------------------
-# Baseline 2: kNN matching on IB latent (no OT)
-# ---------------------------------------------------------------------------
-
-
 def baseline_nn_on_ib(exp_name: str, labels_sub: np.ndarray,
                        pair_a_sub: np.ndarray, pair_b_sub: np.ndarray,
                        sub_idx: np.ndarray, seed: int) -> dict:
-    """MOSAIC without the OT step: use the IB-VAE latent + Procrustes and
-    just take nearest-neighbor matches. The metric-level results should be
-    similar to MOSAIC for FOSCTTM/LT/ARI (those don't use OT), but there's
-    no per-cell entropy signal.
+    """IB latent + Procrustes, nearest neighbour instead of OT.
+
+    FOSCTTM/LT/ARI should land near the full method since none of them use the
+    plan; the point is that there is no per-cell entropy to report.
     """
     t0 = time.time()
     exp_dir = EXPERIMENTS_DIR / exp_name
@@ -125,11 +100,6 @@ def baseline_nn_on_ib(exp_name: str, labels_sub: np.ndarray,
         "wall_time_sec": time.time() - t0,
         "metrics": metrics,
     }
-
-
-# ---------------------------------------------------------------------------
-# Baseline 3: uniPort
-# ---------------------------------------------------------------------------
 
 
 def baseline_uniport(rna: ad.AnnData, atac: ad.AnnData,
@@ -165,14 +135,13 @@ def baseline_uniport(rna: ad.AnnData, atac: ad.AnnData,
             "metrics": {},
             "error": str(e),
         }
-    # Try to extract joint latent
     Z_all = None
     for key in ("latent", "X_latent", "X_uniport"):
         if key in adata_joint.obsm:
             Z_all = np.asarray(adata_joint.obsm[key], dtype=np.float32)
             break
     if Z_all is None:
-        # Fall back to X if it's a matrix
+        # fall back to X
         try:
             Z_all = np.asarray(adata_joint.X.toarray(), dtype=np.float32)
         except Exception:
@@ -189,11 +158,6 @@ def baseline_uniport(rna: ad.AnnData, atac: ad.AnnData,
     }
 
 
-# ---------------------------------------------------------------------------
-# Main runner
-# ---------------------------------------------------------------------------
-
-
 def run_all(dataset_id: str, exp_name: str, subsample: int = 3000,
             seed: int = 0) -> dict:
     rna = ad.read_h5ad(PROCESSED_DIR / f"{dataset_id}_rna.h5ad")
@@ -208,15 +172,15 @@ def run_all(dataset_id: str, exp_name: str, subsample: int = 3000,
     out_dir.mkdir(parents=True, exist_ok=True)
 
     results = {}
-    print("\n=== Baseline 1: Raw PCA/LSI + Procrustes (no IB-VAE) ===")
+    print("\n[baseline] raw pca/lsi + procrustes")
     results["raw_ot"] = baseline_raw_ot(
         rna, atac, labels_sub, pair_a_sub, pair_b_sub, sub_idx, seed,
     )
-    print("\n=== Baseline 2: IB latent + NN matching (no OT) ===")
+    print("\n[baseline] ib latent + nn matching")
     results["nn_on_ib"] = baseline_nn_on_ib(
         exp_name, labels_sub, pair_a_sub, pair_b_sub, sub_idx, seed,
     )
-    print("\n=== Baseline 3: uniPort ===")
+    print("\n[baseline] uniport")
     results["uniport"] = baseline_uniport(
         rna, atac, labels_sub, pair_a_sub, pair_b_sub, sub_idx, seed, out_dir,
     )
@@ -224,7 +188,7 @@ def run_all(dataset_id: str, exp_name: str, subsample: int = 3000,
     with (out_dir / "simple_baseline_results.json").open("w") as f:
         json.dump(results, f, indent=2, default=str)
 
-    print("\n=== Summary (subsample {n}) ===".format(n=len(sub_idx)))
+    print("\n[summary] subsample {n}".format(n=len(sub_idx)))
     print(f"{'method':20s} | {'FOSCTTM':>8s} | {'LT A->B':>8s} | {'LT B->A':>8s} | {'ARI':>7s} | {'wall':>6s}")
     print("-" * 70)
     for k, v in results.items():
@@ -245,7 +209,7 @@ if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser()
     p.add_argument("--dataset", required=True)
-    p.add_argument("--exp", required=True, help="MOSAIC experiment name for IB latent baseline")
+    p.add_argument("--exp", required=True, help="experiment name for the IB latent baseline")
     p.add_argument("--subsample", type=int, default=3000)
     p.add_argument("--seed", type=int, default=0)
     args = p.parse_args()

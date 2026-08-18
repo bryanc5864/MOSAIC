@@ -1,16 +1,10 @@
 # MIT License
 # Part of MOSAIC
-"""Validation checks for processed multi-omics datasets.
+"""Sanity checks on the processed datasets.
 
-Runs three kinds of checks:
-  1. Shape / type sanity (non-empty, no NaN/Inf, matching cell counts).
-  2. Pairing integrity (pair_idx matches between RNA and ATAC).
-  3. Pair-leakage test — simulates the training DataLoader and verifies that
-     no code path exposes the paired index from one modality while loading
-     the other. This is enforced by design: the training pipeline reads the
-     two modalities as *independent* AnnDatas with shuffled indices.
-
-Also renders sanity UMAPs to figures/data_sanity/<dataset_id>_*.png.
+Shapes and NaNs, pairing integrity, and a pair-integrity check that shuffles the
+two modalities independently and confirms pair_idx no longer lines up row-wise.
+Also drops sanity UMAPs into figures/data_sanity/.
 """
 
 from __future__ import annotations
@@ -29,11 +23,11 @@ from src.utils.paths import FIGURES_DIR, PROCESSED_DIR
 
 
 def _green(msg: str) -> str:
-    return f"  ✔ {msg}"
+    return f"  [ok] {msg}"
 
 
 def _red(msg: str) -> str:
-    return f"  ✗ {msg}"
+    return f"  [fail] {msg}"
 
 
 def load_processed(dataset_id: str) -> tuple[ad.AnnData, ad.AnnData]:
@@ -50,7 +44,6 @@ def check_shapes(rna: ad.AnnData, atac: ad.AnnData) -> list[str]:
     if rna.n_obs != atac.n_obs:
         errors.append(f"n_obs mismatch: rna {rna.n_obs} vs atac {atac.n_obs}")
     print(_green(f"rna {rna.shape}, atac {atac.shape}"))
-    # NaN / Inf
     if np.asarray(rna.X.sum(axis=1)).size > 0:
         rna_any_nan = np.any(np.isnan(rna.X.data)) if hasattr(rna.X, "data") else np.any(np.isnan(rna.X))
         if rna_any_nan:
@@ -76,13 +69,12 @@ def check_pairing(rna: ad.AnnData, atac: ad.AnnData) -> list[str]:
     if "pair_idx" not in rna.obs or "pair_idx" not in atac.obs:
         errors.append("pair_idx missing from obs")
         return errors
-    # After joint QC, pair_idx values must be equal row-wise
+    # after joint qc these must match row-wise
     if not np.array_equal(rna.obs["pair_idx"].values, atac.obs["pair_idx"].values):
         errors.append("pair_idx columns differ between RNA and ATAC after QC")
     else:
         print(_green(f"pair_idx aligned across modalities (min={rna.obs['pair_idx'].min()}, "
                      f"max={rna.obs['pair_idx'].max()})"))
-    # Same obs_names
     if not np.array_equal(rna.obs_names.values, atac.obs_names.values):
         errors.append("obs_names differ between RNA and ATAC")
     else:
@@ -106,11 +98,10 @@ def check_cross_modal_targets(rna: ad.AnnData, atac: ad.AnnData) -> list[str]:
 
 
 def pair_leakage_test(rna: ad.AnnData, atac: ad.AnnData) -> list[str]:
-    """Simulate the training dataloader: shuffle each modality independently
-    (different seeds) and confirm that the *training iterator* cannot see the
-    pair index. We construct two shuffled orderings and verify that pair_idx
-    is no longer aligned row-wise — i.e., a model consuming them in row order
-    has no access to pairings.
+    """Shuffle each modality independently and confirm pair_idx stops lining up.
+
+    This is a pair-integrity check on the data, not a proof about the training
+    code; that pair_idx is only read post-training was verified by inspection.
     """
     errors: list[str] = []
     print("[check] pair-leakage simulation")
@@ -118,24 +109,23 @@ def pair_leakage_test(rna: ad.AnnData, atac: ad.AnnData) -> list[str]:
     rng_b = np.random.default_rng(67890)
     perm_a = rng_a.permutation(rna.n_obs)
     perm_b = rng_b.permutation(atac.n_obs)
-    # After independent permutations, pair_idx at row i must DIFFER between modalities for at least 99% of rows
+    # want >= 99% of rows to disagree after independent shuffles
     rna_shuf = rna.obs["pair_idx"].values[perm_a]
     atac_shuf = atac.obs["pair_idx"].values[perm_b]
     disagree_rate = (rna_shuf != atac_shuf).mean()
     if disagree_rate < 0.99:
-        errors.append(f"independent shuffles left {1 - disagree_rate:.3%} of rows aligned — "
-                      f"indicates suspicious correlation between indices")
+        errors.append(f"independent shuffles left {1 - disagree_rate:.3%} of rows aligned, "
+                      f"which suggests the indices are correlated")
     else:
-        print(_green(f"independent shuffles disagree on {disagree_rate:.3%} of rows — no leakage path"))
+        print(_green(f"independent shuffles disagree on {disagree_rate:.3%} of rows"))
     return errors
 
 
 def sanity_umaps(dataset_id: str, rna: ad.AnnData, atac: ad.AnnData) -> Path:
-    """Render colored UMAPs for each modality (leiden clusters)."""
+    """one umap per modality, colored by leiden"""
     out_dir = FIGURES_DIR / "data_sanity"
     out_dir.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(1, 2, figsize=(12, 5), dpi=120)
-    # Re-use scanpy's umap plotting inline for consistent style
     for ax, (mod, a) in zip(axes, [("RNA", rna), ("ATAC", atac)]):
         coords = a.obsm.get("X_umap")
         if coords is None:
@@ -149,7 +139,7 @@ def sanity_umaps(dataset_id: str, rna: ad.AnnData, atac: ad.AnnData) -> Path:
             ax.scatter(coords[mask, 0], coords[mask, 1], s=2, c=[cmap(i)], label=lab, alpha=0.7)
         ax.set_xlabel("UMAP 1")
         ax.set_ylabel("UMAP 2")
-        ax.set_title(f"{mod} — {len(unique)} leiden clusters")
+        ax.set_title(f"{mod}: {len(unique)} leiden clusters")
         ax.set_xticks([])
         ax.set_yticks([])
     plt.suptitle(f"{dataset_id}: per-modality UMAPs (paired cell labels)", y=1.02)
@@ -162,11 +152,11 @@ def sanity_umaps(dataset_id: str, rna: ad.AnnData, atac: ad.AnnData) -> Path:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Validate processed MOSAIC dataset")
+    p = argparse.ArgumentParser(description="validate a processed dataset")
     p.add_argument("dataset", help="Dataset id")
     args = p.parse_args()
 
-    print(f"=== Validating {args.dataset} ===")
+    print(f"[validate] {args.dataset}")
     rna, atac = load_processed(args.dataset)
     all_errors: list[str] = []
     all_errors += check_shapes(rna, atac)
@@ -176,11 +166,11 @@ def main() -> int:
     sanity_umaps(args.dataset, rna, atac)
 
     if all_errors:
-        print("\nFAILED:")
+        print("\nfailed:")
         for e in all_errors:
             print(_red(e))
         return 1
-    print("\nPASSED — all checks green")
+    print("\npassed")
     return 0
 
 

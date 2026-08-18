@@ -1,26 +1,15 @@
 # MIT License
 # Part of MOSAIC
-"""Train a single-modality IB-VAE end to end.
+"""Train one modality's IB-VAE end to end.
 
-Inputs:
-  - processed AnnData for the modality
-  - hyperparameters (from config yaml or programmatic kwargs)
+Takes a processed AnnData plus hyperparameters and writes a checkpoint, a
+per-epoch loss log, and the latent embedding for every cell into
+experiments/<exp>/.
 
-Produces:
-  - trained model state_dict (saved under experiments/<exp>/ckpt_<modality>.pt)
-  - per-epoch loss log (saved to experiments/<exp>/train_log_<modality>.json)
-  - final latent embedding for ALL cells (saved as experiments/<exp>/z_<modality>.npy)
-
-Training protocol (RESEARCH_PLAN.md section 3.4):
-  - AdamW optimizer, lr=1e-3, weight_decay=1e-4
-  - Cosine schedule with 10-epoch linear warmup
-  - Batch size 512
-  - KL beta ramps linearly from 0 to beta over first 30 epochs
-  - Early stopping on validation cross-modal prediction MSE, patience=15
-  - All seeds set
-
-Deterministic except for cuDNN kernel selection, which is disabled via
-torch.use_deterministic_algorithms where possible.
+AdamW at lr 1e-3 / wd 1e-4, cosine schedule with 10 epochs of linear warmup,
+batch 512, KL beta ramped linearly over the first 30 epochs, early stopping on
+val cross-modal MSE with patience 15. Deterministic apart from cuDNN kernel
+choice, which we ask torch to pin where it can.
 """
 
 from __future__ import annotations
@@ -40,19 +29,12 @@ from src.models.ib_vae import IBVAE_ATAC, IBVAE_RNA
 from src.training.dataloader import ModalityDataset, make_split_indices
 
 
-# ----------------------------------------------------------------------------
-# Config
-# ----------------------------------------------------------------------------
-
-
 @dataclass
 class TrainConfig:
-    # Required
     modality: str                    # "rna" or "atac"
     processed_path: str              # path to the h5ad file
     out_dir: str                     # where to save outputs
 
-    # Optimization
     batch_size: int = 512
     lr: float = 1e-3
     weight_decay: float = 1e-4
@@ -64,24 +46,17 @@ class TrainConfig:
     patience: int = 15
     val_frac: float = 0.1
 
-    # Model
     latent_dim: int = 64
     hidden_enc: tuple[int, ...] = (512, 256)
     hidden_dec: tuple[int, ...] = (256, 512)
     dropout: float = 0.1
 
-    # Reproducibility
     seed: int = 0
     device: str = "cuda"
 
 
-# ----------------------------------------------------------------------------
-# Helpers
-# ----------------------------------------------------------------------------
-
-
 def _cosine_lr(step: int, total_steps: int, warmup_steps: int, base_lr: float) -> float:
-    """Linear warmup then cosine decay to 0."""
+    """linear warmup then cosine decay to 0"""
     if step < warmup_steps:
         return base_lr * (step + 1) / max(warmup_steps, 1)
     progress = (step - warmup_steps) / max(total_steps - warmup_steps, 1)
@@ -89,20 +64,18 @@ def _cosine_lr(step: int, total_steps: int, warmup_steps: int, base_lr: float) -
 
 
 def _beta_schedule(epoch: int, warmup: int, target_beta: float) -> float:
-    """Linear warmup of KL weight from 0 to target over `warmup` epochs."""
+    """ramp the KL weight from 0 to target over `warmup` epochs"""
     if epoch >= warmup:
         return target_beta
     return target_beta * (epoch + 1) / max(warmup, 1)
 
 
 def _set_seed(seed: int) -> None:
-    """Set all RNG seeds and request deterministic cuDNN kernels.
+    """Seed everything and ask for deterministic cuDNN kernels.
 
-    Note: cuDNN deterministic mode disables algorithm autotuning, which
-    slightly slows convolution-heavy models. MOSAIC uses MLPs only, so the
-    cost is negligible. We request `warn_only=True` from
-    use_deterministic_algorithms so torch will warn (not error) on any op
-    without a deterministic kernel.
+    Determinism costs autotuning, which would matter for convnets; this is all
+    MLPs so it doesn't. warn_only=True so an op with no deterministic kernel
+    warns instead of blowing up.
     """
     import random
     random.seed(seed)
@@ -114,12 +87,7 @@ def _set_seed(seed: int) -> None:
     try:
         torch.use_deterministic_algorithms(True, warn_only=True)
     except Exception:
-        pass  # torch versions before 1.8 don't support this
-
-
-# ----------------------------------------------------------------------------
-# Main training loop
-# ----------------------------------------------------------------------------
+        pass  # not available before torch 1.8
 
 
 def train(cfg: TrainConfig) -> dict:
@@ -136,13 +104,9 @@ def train(cfg: TrainConfig) -> dict:
 
     train_idx, val_idx = make_split_indices(n_cells, val_frac=cfg.val_frac, seed=cfg.seed)
     recon_layer = "counts" if cfg.modality == "rna" else "binary"
-    # One shared dataset (all cells) — the train/val/full "datasets" only
-    # differ in which indices the training loop iterates over. This avoids
-    # re-allocating the dense tensors three times.
+    # one dataset for everything; train/val differ only in which indices we walk
     full_ds = ModalityDataset(adata, recon_layer=recon_layer, indices=None)
-    # Move the full feature and target tensors onto the device once. For
-    # PBMC 10k this is ~50 MB (RNA) or ~450 MB (ATAC); well within the
-    # 10 GB budget on the RTX 3080. Skips CPU->GPU transfer per batch.
+    # park everything on the gpu once, skips a host copy every batch
     X_dev = full_ds._X.to(device, non_blocking=True)
     recon_dev = full_ds._recon.to(device, non_blocking=True)
     yc_dev = full_ds._y_cross.to(device, non_blocking=True)
@@ -191,7 +155,6 @@ def train(cfg: TrainConfig) -> dict:
     for epoch in range(cfg.n_epochs):
         beta = _beta_schedule(epoch, cfg.beta_warmup_epochs, cfg.beta)
 
-        # ----- train -----
         model.train()
         sum_tot = sum_rec = sum_kl = sum_pred = 0.0
         n_batches = 0
@@ -221,7 +184,6 @@ def train(cfg: TrainConfig) -> dict:
             "train_pred": sum_pred / max(n_batches, 1),
         }
 
-        # ----- val -----
         model.eval()
         val_pred = 0.0
         val_tot = 0.0
@@ -271,13 +233,12 @@ def train(cfg: TrainConfig) -> dict:
                   f"best val_pred={best_val:.4f} @ epoch {best_epoch+1}")
             break
 
-    # Restore best checkpoint
     if best_state_dict is not None:
         model.load_state_dict(best_state_dict)
     else:
-        best_epoch = epoch  # no early stop, use final
+        best_epoch = epoch  # never early-stopped, so the last one is best
 
-    # ----- full-data embedding -----
+    # embed every cell with the restored weights
     model.eval()
     embeddings = np.zeros((n_cells, cfg.latent_dim), dtype=np.float32)
     with torch.no_grad():
@@ -287,7 +248,6 @@ def train(cfg: TrainConfig) -> dict:
             mu, _ = model.encoder(x)
             embeddings[start:end] = mu.detach().cpu().numpy()
 
-    # ----- save -----
     ckpt_path = out_dir / f"ckpt_{cfg.modality}.pt"
     emb_path = out_dir / f"z_{cfg.modality}.npy"
     log_path = out_dir / f"train_log_{cfg.modality}.json"

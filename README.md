@@ -1,135 +1,137 @@
-# Calibrated Per-Cell Uncertainty for Unpaired Single-Cell Multi-Omics Integration
+# Calibrated per-cell uncertainty for unpaired single-cell multi-omics integration
 
-**Authors**: Anonymous (double-blind review)
-**License**: MIT
-**Submitted to**: Machine Learning for Healthcare (MLHC) 2026
+Single-cell atlases measure RNA, chromatin accessibility, and surface proteins on
+overlapping but non-identical cells. Methods that computationally match cells across
+those modalities return one best-guess alignment and say nothing about how much to
+trust any individual match, so a wrong match propagates silently into cell-type calls,
+regulatory inference, and biomarker discovery.
 
-📄 **Paper**: [`mlhc_submission/main.pdf`](mlhc_submission/main.pdf) · LaTeX source in [`mlhc_submission/main.tex`](mlhc_submission/main.tex)
+This repository treats the alignment as a probabilistic problem and attaches a per-cell
+uncertainty score to every match. The score is the entropy of the entropic-OT transport
+plan after marginalizing each row over *partner cluster labels* rather than over
+individual partner cells. That marginalization matters: raw row entropy is
+anti-correlated with true alignment error (Spearman -0.65 on PBMC), because cells in
+dense clusters have both many plausible partners and a very close true partner. Taking
+the cluster marginal first removes the confound and flips the sign.
 
-> This repository is anonymized for double-blind review. Author, affiliation, and funding information will be added after the review period.
+The pipeline is three stages. Each modality is compressed to 64 dimensions by its own
+information-bottleneck VAE with a cluster-centroid cross-modal prediction head. An
+orthogonal Procrustes rotation, fit in closed form on cluster centroids, brings the two
+latent spaces into a common frame. Sinkhorn OT then produces the transport plan, and the
+cluster-marginal entropy of each row is the uncertainty score.
 
----
+## Install
 
-## What this is
-
-Single-cell disease atlases are built by measuring different molecular properties of cells — gene expression (RNA), chromatin accessibility (ATAC), and surface proteins — but almost never on the same individual cell. Existing methods that computationally match cells across these modalities return a single best-guess alignment with no indication of confidence. A wrong match propagates silently into every downstream analysis: cell-type discovery, regulatory inference, and biomarker identification.
-
-This project introduces a method that treats unpaired multi-omics alignment as a probabilistic problem and outputs a **per-cell uncertainty score** alongside each match. The key technical contribution is *cluster-resolved alignment entropy* — a calibrated signal obtained by marginalizing the optimal-transport plan over partner cluster labels rather than individual cells, which corrects a fundamental directional miscalibration in naive row-entropy scores.
-
----
-
-## Key results
-
-| Dataset | FOSCTTM ↓ | Label Transfer ↑ | ARI ↑ | Missing-type AUROC ↑ |
-|---|---|---|---|---|
-| PBMC immune (11,303 cells) | 0.194 | 0.664 / 0.694 | 0.651 | 0.960 |
-| Mouse brain E18 (4,531 cells) | 0.052 | 0.960 / 0.967 | 0.932 | 0.995 |
-| PBMC CITE-seq (10,000 cells) | 0.094 | 0.872 / 0.960 | 0.791 | 0.946 |
-
-- Wrong-cluster detection AUROC: **0.88–0.95** across all datasets
-- Cross-tissue negative control: **4.2× higher** entropy than valid within-dataset alignments
-- PD-1⁺TIGIT⁺ exhausted T cells (checkpoint inhibitor targets) have significantly higher uncertainty than fresh T cells (*p* = 9.2 × 10⁻⁵)
-
----
-
-## Method overview
-
-The pipeline has three stages:
-
-1. **Per-modality encoding** — Each modality (RNA or ATAC) is independently compressed to a 64-dimensional latent representation using an information-bottleneck variational autoencoder. A cluster-centroid cross-modal prediction head forces both representations into a compatible space without per-cell memorization.
-
-2. **Procrustes alignment** — An orthogonal rotation is fit in closed form (SVD) to align the two latent coordinate systems using cluster-centroid landmarks.
-
-3. **Entropic optimal transport + uncertainty** — A Sinkhorn transport plan is computed between the aligned latents. For each cell, the transport mass is marginalized over partner *cluster labels* (not individual cells) and the entropy of that cluster distribution is the uncertainty score $H_\text{cluster} \in [0, 1]$.
-
----
-
-## Repository structure
-
-```
-.
-├── LICENSE
-├── README.md
-├── CITATION.cff
-├── requirements.txt
-├── src/
-│   ├── models/               # IB-VAE encoder/decoder definitions
-│   ├── data/                 # Preprocessing and data loading
-│   ├── training/             # Training loops and logging
-│   ├── evaluation/           # FOSCTTM, label-transfer, ARI, cluster entropy
-│   └── utils/                # Paths, Sinkhorn solver, helpers
-├── scripts/                  # Experiment runners and figure generation
-├── experiments/              # JSON results for every experiment
-├── figures/                  # Publication-quality figures (PNG + PDF)
-└── mlhc_submission/          # MLHC 2026 paper (LaTeX + compiled PDF)
-    ├── main.tex
-    ├── main.pdf
-    ├── references.bib
-    └── figures/
-```
-
----
-
-## Reproducing the results
-
-All experiments were run on a single NVIDIA RTX 3080 (16 GB). Wall time: ~120 s (PBMC), ~50 s (brain), ~95 s (CITE-seq) per alignment run.
+Python 3.11 and a single GPU. Runs take roughly two minutes per alignment.
 
 ```bash
-# 1. Install dependencies (Python 3.11+ recommended)
 pip install -r requirements.txt
-
-# 2. Run the primary alignment experiment for a dataset
-python scripts/run_experiment.py --dataset pbmc10k_multiome --beta 0.001
-
-# 3. Multi-seed replication (seeds 0-9 for PBMC; 0-2 for Brain/CITE-seq)
-python scripts/run_experiment.py --dataset brain3k_multiome --beta 0.001 --seed 0
-python scripts/aggregate_seeds.py --dataset brain3k_multiome --beta 0.001
-
-# 4. Downstream experiments
-python scripts/missing_type_exp.py           # leave-one-cluster-out
-python scripts/cross_tissue_exp.py           # PBMC RNA x Brain ATAC control
-python scripts/clinical_disease_sim.py       # 5 immunodeficiency scenarios
-python scripts/neuro_disease_sim.py          # 5 CNS disease scenarios
-python scripts/checkpoint_immunotherapy_analysis.py
-python scripts/protein_uq_analysis.py
-python scripts/rare_cell_detection.py
-
-# 5. Regenerate every figure in the paper
-python scripts/generate_all_figures.py
 ```
 
-### Mapping paper claims to artifacts
+SCOT and uniPort need a separate environment pinned to `numpy<2`, because uniPort 1.3
+still calls `np.Inf`. See `scripts/run_uniport_venv.py`.
 
-| Paper claim | Aggregate JSON |
-|---|---|
-| PBMC 10-seed alignment metrics | `experiments/aggregate_pbmc10k_multiome_beta0001_10seed.json` |
-| Brain 3-seed alignment metrics | `experiments/aggregate_brain3k_multiome_beta0.001.json` |
-| CITE-seq 3-seed alignment metrics | `experiments/aggregate_citeseq_3seed.json` |
-| Missing cell-type detection AUROC | `experiments/*/exp003_missing_type.json` |
-| Cross-tissue negative control | `experiments/exp006_cross_tissue/results.json` |
-| Calibration curves (ECE, Brier) | `experiments/*/calibration_analysis.json` |
-| Immunodeficiency simulation | `experiments/clinical_disease_sim/results.json` |
-| Neurological disease simulation | `experiments/neuro_disease_sim/results.json` |
-| Checkpoint-immunotherapy entropy | `experiments/checkpoint_immunotherapy/results.json` |
-| Protein marker UQ analysis | `experiments/protein_uq_analysis/results.json` |
-| Rare-cell sanity check | `experiments/rare_cell_detection/results.json` |
+## Run
 
-All random seeds are set deterministically (NumPy, PyTorch, cuDNN). Baselines (SCOT, uniPort) use a separate virtual environment pinned to `numpy<2`; see `scripts/run_uniport_venv.py`.
+Everything imports from `src/`, so run from the repository root with the root on the
+path.
 
----
+```bash
+# download and preprocess one benchmark
+python -m src.data.datasets --which pbmc10k_multiome
+python -m src.data.preprocess pbmc10k_multiome
+python -m src.data.validate pbmc10k_multiome
+
+# train both encoders, align, and score
+python -m src.training.run_experiment \
+    --dataset pbmc10k_multiome --name exp001_pbmc_beta0001 --beta 0.001
+
+# per-cell cluster entropy for that run
+PYTHONPATH=. python scripts/cluster_resolved_entropy.py \
+    --exp exp001_pbmc_beta0001 --dataset pbmc10k_multiome
+
+# multi-seed summary
+PYTHONPATH=. python scripts/aggregate_seeds.py --dataset pbmc10k_multiome \
+    --runs exp001_pbmc_beta0001:0 exp001_pbmc_beta0001_seed1:1 exp001_pbmc_beta0001_seed2:2
+```
+
+Downstream experiments follow the same pattern: `missing_type_exp.py` (leave one cluster
+out), `cross_tissue_exp.py` (PBMC RNA against brain ATAC), `clinical_disease_sim.py` and
+`neuro_disease_sim.py` (population knockouts), `protein_uq_analysis.py`,
+`checkpoint_immunotherapy_analysis.py`, `rare_cell_detection.py`, `ablation_sweep.py`.
+`generate_all_figures.py` rebuilds every paper figure from the JSON in `experiments/`.
+
+## Results
+
+Multi-seed alignment quality, mean plus or minus standard deviation. These come from
+`experiments/aggregate_*.json`.
+
+| dataset | config | FOSCTTM (lower better) | label transfer A→B | B→A | ARI |
+|---|---|---|---|---|---|
+| PBMC 10k multiome | β=0.001, 10 seeds | 0.118 ± 0.008 | 0.913 ± 0.074 | 0.909 ± 0.035 | 0.724 ± 0.103 |
+| PBMC 10k multiome | β=0.01, 3 seeds | 0.188 ± 0.006 | 0.689 ± 0.005 | 0.771 ± 0.029 | 0.687 ± 0.009 |
+| E18 brain 5k multiome | β=0.001, 3 seeds | 0.049 ± 0.002 | 0.962 ± 0.002 | 0.966 ± 0.010 | 0.935 ± 0.003 |
+| PBMC CITE-seq | β=0.001, 3 seeds | 0.091 ± 0.003 | 0.874 ± 0.006 | 0.951 ± 0.009 | 0.766 ± 0.018 |
+
+SCOT, the closest baseline, gets FOSCTTM 0.248 on PBMC and 0.475 on brain; its
+Gromov-Wasserstein solver does not converge on the brain or protein data. uniPort comes
+out worse than random (FOSCTTM above 0.5) on all three, which we attribute to its
+diagonal-integration assumption of a shared feature space.
+
+For the uncertainty signal itself: cluster entropy separates wrong from right cluster
+assignments with AUROC 0.883 ± 0.010 (PBMC β=0.01), 0.896 ± 0.026 (PBMC β=0.001), and
+0.946 ± 0.017 (brain). In leave-one-cluster-out, where a whole population is removed
+from the target modality, mean detection AUROC is 0.960 on PBMC, 0.995 on brain, and
+0.946 on CITE-seq; the one bad case on CITE-seq (AUROC 0.32) is a cluster nearly
+redundant with another one still present. Aligning PBMC RNA against brain ATAC, where
+nothing should match, raises mean cluster entropy to 0.635 against 0.153 within PBMC,
+about a fourfold increase. Population-knockout simulations average AUROC 0.952 across
+five immunodeficiency scenarios and 0.993 across five neurological ones.
+
+The score discriminates well but is not calibrated as a probability: expected
+calibration error runs 0.050 to 0.160 depending on configuration. Platt scaling or
+isotonic regression on held-out data is the right fix if you need real probabilities.
+
+## Caveats worth reading before you trust a number
+
+The cross-modal prediction target is a cluster centroid, and the cluster labels on the
+ATAC side are copied from the paired RNA side (`src/data/preprocess.py`,
+`add_cross_modal_targets`). Cell-level pairing never reaches the training loop, and the
+evaluation metrics are unaffected, but cluster-level paired information does enter
+training. On a genuinely unpaired dataset you would have to cluster one modality alone
+or supply external labels, and the numbers above should not be read as a fully unpaired
+result.
+
+The right-hand violin panel of `figures/fig6_cross_tissue_negative_control.png` is drawn
+from a Beta distribution, not from measured data: `generate_all_figures.py` falls back to
+a placeholder shape when the per-cell cross-tissue entropy array is absent, which it
+always is because the `.npy` outputs are gitignored. The fourfold ratio in that figure's
+title is real and traces to `experiments/exp006_cross_tissue/results.json`; the
+distribution shape and the `p<10^-50` annotation are not. Rerun `cross_tissue_exp.py`
+and save the entropy array if you need the real distribution.
+
+In the checkpoint-immunotherapy analysis, only the PD-1+TIGIT+ double-positive versus
+double-negative contrast is significant (p = 9.2e-5, entropy ratio 1.19). PD-1 alone
+(p = 0.30) and TIGIT alone (p = 1.0) are not.
+
+PBMC ARI at β=0.001 has a standard deviation of 0.10 across ten seeds, driven by KMeans
+initialization on a more continuous latent. Treat that column as indicative.
 
 ## Data
 
-All three benchmarks are publicly released demonstration datasets from 10x Genomics with no identifying patient information. Data paths are configured in `src/utils/paths.py`; raw data is expected under `data/raw/`.
+Three public 10x Genomics demonstration datasets, no patient-identifying information.
+URLs live in `src/data/datasets.py`; downloads land in `data/raw/` and processed
+AnnData in `data/processed/`, both gitignored.
 
-| Dataset | Modalities | Cells (paired) | Clusters | Source |
-|---|---|---|---|---|
-| PBMC 10k | RNA + ATAC | 11,303 | 18 | 10x Genomics Multiome demo |
-| E18 mouse brain 5k | RNA + ATAC | 4,531 | 20 | 10x Genomics Multiome demo |
-| PBMC 10k CITE-seq | RNA + 14 ADT proteins | ~10,000 | 16 | 10x Genomics CITE-seq demo |
+| dataset | modalities | cells | clusters |
+|---|---|---|---|
+| PBMC 10k multiome | RNA + ATAC | 11,303 | 18 |
+| E18 mouse brain 5k multiome | RNA + ATAC | 4,531 | 20 |
+| PBMC 10k CITE-seq | RNA + 14 ADT proteins | ~7,900 | 16 |
 
----
+## Paper
 
-## License
+`mlhc_submission/` holds the MLHC 2026 submission (LaTeX plus compiled PDF);
+`icml_workshop/` holds a four-page short version. Both are anonymized for review.
 
-MIT License — Copyright (c) 2026 (authors anonymized for review)
+MIT licensed.

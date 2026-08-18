@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 # MIT License
-# Part of MOSAIC - uniPort baseline in isolated venv
-"""Run uniPort as a baseline in a venv with numpy 1.x.
+"""uniPort baseline, run from a separate numpy 1.x venv.
 
-uniPort 1.3 uses `np.Inf` which was removed in numpy 2.0. This script is
-designed to be run from `venv_uniport/Scripts/python.exe` rather than the
-main Python, so it has its own numpy 1.x and scanpy installation.
+uniPort 1.3 still calls np.Inf, which numpy 2.0 removed, so this has to run
+under its own interpreter rather than the main env. Metrics are reimplemented
+inline here for the same reason.
 
-Usage:
     venv_uniport/Scripts/python.exe scripts/run_uniport_venv.py \\
         --dataset pbmc10k_multiome --subsample 3000 --seed 0
 
-Output written to experiments/baselines_<dataset>/uniport_venv_results.json
-and also saves per-metric values so the main environment's aggregator can
-pick them up.
+Writes experiments/baselines_<dataset>/uniport_venv_results.json.
 """
 
 from __future__ import annotations
@@ -27,7 +23,7 @@ from pathlib import Path
 import anndata as ad
 import numpy as np
 
-# Path fix for imports from the main repo's src/
+# so the main repo's src/ is importable
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
@@ -95,7 +91,7 @@ def main():
     import uniport as up
 
     processed = ROOT / "data" / "processed"
-    # Prefer the _uniport variant (uns-stripped for venv compatibility) if present
+    # the _uniport variant has .uns stripped, which the venv's anndata needs
     rna_path = processed / f"{args.dataset}_rna_uniport.h5ad"
     atac_path = processed / f"{args.dataset}_atac_uniport.h5ad"
     if not rna_path.exists():
@@ -136,11 +132,10 @@ def main():
         out = {"method": "uniPort", "error": str(e), "wall_time_sec": time.time() - t0}
         with (out_dir / "uniport_venv_results.json").open("w") as f:
             json.dump(out, f, indent=2)
-        print(f"uniPort FAILED: {e}")
+        print(f"uniport failed: {e}")
         return 1
     wall = time.time() - t0
 
-    # Extract latent
     Z_all = None
     for key in ("latent", "X_latent", "X_uniport"):
         if key in adata_joint.obsm:
@@ -180,7 +175,7 @@ def main():
     with (out_dir / "uniport_venv_results.json").open("w") as f_out:
         json.dump(out, f_out, indent=2)
 
-    print(f"\n=== uniPort on {args.dataset} ({n} cells, seed {args.seed}) ===")
+    print(f"\n[uniport] {args.dataset}, {n} cells, seed {args.seed}")
     print(f"  FOSCTTM     : {f['foscttm_mean']:.4f}")
     print(f"  LT RNA->ATAC: {lt_ab:.4f}")
     print(f"  LT ATAC->RNA: {lt_ba:.4f}")

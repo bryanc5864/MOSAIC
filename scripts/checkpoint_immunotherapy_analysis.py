@@ -1,27 +1,18 @@
 #!/usr/bin/env python3
 # MIT License
 # Part of MOSAIC
-"""Immune checkpoint biomarker analysis (CITE-seq).
+"""Checkpoint biomarkers on CITE-seq: is the alignment trustworthy there?
 
-PD-1 and TIGIT are immune checkpoint receptors expressed on exhausted T cells.
-Their expression predicts response to checkpoint inhibitor immunotherapy
-(anti-PD-1/anti-TIGIT antibodies). MOSAIC's cluster-resolved entropy for
-these cells reveals whether transcriptome-to-protein alignment is reliable
-for checkpoint immunotherapy biomarker detection.
+PD-1 and TIGIT mark exhausted T cells and predict checkpoint-inhibitor response.
+This gates cells on the protein readout and compares their cluster entropy
+against the marker-negative population, plus CD4 vs CD8 exhausted subsets and
+CD127 memory vs effector.
 
-Analysis:
-1. Identify PD-1+ and TIGIT+ cells from CITE-seq protein expression
-2. Compare their cluster-resolved entropy to PD-1-/TIGIT- cells
-3. Test whether high-entropy cells are enriched among checkpoint-high cells
-4. Analyze CD4+PD-1+ (Treg-exhausted) vs CD8a+PD-1+ (effector-exhausted) subsets
-5. Report AUROC for "is this cell a checkpoint-high cell" using H_cluster
-
-Clinical relevance: cells where transcriptome and protein disagree on checkpoint
-status are the most uncertain for immunotherapy response prediction.
+Note the single-marker splits (PD-1 alone, TIGIT alone) come out
+non-significant; only the double-positive contrast separates.
 """
 from __future__ import annotations
 import json, sys, os
-sys.path.insert(0, 'C:/Users/Maozer/projects/MOSAIC')
 
 import numpy as np
 import scipy.sparse as sp
@@ -34,7 +25,6 @@ from src.utils.paths import EXPERIMENTS_DIR, PROCESSED_DIR
 EXP_ID = "exp001_citeseq"
 DATASET = "citeseq_pbmc"
 
-# Protein markers relevant to immunotherapy
 CHECKPOINT_MARKERS = {
     "PD-1_TotalSeqB": "T cell exhaustion / checkpoint target",
     "TIGIT_TotalSeqB": "T cell exhaustion / checkpoint target",
@@ -56,7 +46,7 @@ def main():
     prot = ad.read_h5ad(PROCESSED_DIR / f"{DATASET}_atac.h5ad")
     rna = ad.read_h5ad(PROCESSED_DIR / f"{DATASET}_rna.h5ad")
 
-    H = H_full  # 3000 cells (OT subsample)
+    H = H_full  # the ot subsample, 3000 cells
     prot_sub = prot[sub_idx]
     rna_sub = rna[sub_idx]
 
@@ -83,7 +73,7 @@ def main():
     results = {"experiment": "checkpoint_immunotherapy", "dataset": DATASET,
                "source_exp": EXP_ID, "n_cells": n, "analyses": []}
 
-    # 1. PD-1 high vs low entropy
+    # each marker on its own: top vs bottom quartile
     for marker_name, vals, label in [
         ("PD-1_TotalSeqB", pd1, "PD-1+ exhausted T"),
         ("TIGIT_TotalSeqB", tigit, "TIGIT+ exhausted T"),
@@ -110,7 +100,7 @@ def main():
             "clinical_interpretation": f"Higher entropy in checkpoint-high cells suggests transcriptome-proteome discordance for {label} identification",
         })
 
-    # 2. PD-1+TIGIT+ double positive (exhausted) vs PD-1-TIGIT- (not exhausted)
+    # double positive exhausted vs double negative fresh
     if pd1 is not None and tigit is not None:
         pd1_75 = np.percentile(pd1, 75)
         tigit_75 = np.percentile(tigit, 75)
@@ -129,7 +119,7 @@ def main():
             "clinical_interpretation": "Exhausted T cells (checkpoint immunotherapy targets) have higher alignment uncertainty",
         })
 
-    # 3. CD4+PD-1+ (Treg/exhausted CD4) vs CD8a+PD-1+ (effector-exhausted CD8)
+    # treg-exhausted vs effector-exhausted
     if pd1 is not None and cd4 is not None and cd8a is not None:
         pd1_med = np.percentile(pd1, 50)
         cd4_med = np.percentile(cd4, 50)
@@ -149,7 +139,7 @@ def main():
                 "clinical_interpretation": "Differential uncertainty between CD4 and CD8 exhausted T cell subsets",
             })
 
-    # 4. CD127+ memory T (favorable prognosis) vs CD127- effector/exhausted
+    # memory vs terminally differentiated effector
     if cd127 is not None and cd3 is not None:
         cd3_med = np.percentile(cd3, 50)
         cd127_75 = np.percentile(cd127, 75)
@@ -175,7 +165,7 @@ def main():
     with open(out_path, "w") as f:
         json.dump(results, f, indent=2)
 
-    print("\n=== Checkpoint Immunotherapy Analysis ===")
+    print("\n[summary] checkpoint markers")
     for a in results["analyses"]:
         print(f"\n{a['analysis']}:")
         print(f"  {a['label']}")
@@ -186,7 +176,7 @@ def main():
         elif "mean_H_exhausted" in a:
             print(f"  H exhausted={a['mean_H_exhausted']:.4f}  H fresh={a['mean_H_fresh']:.4f}  ratio={a.get('H_ratio','nan'):.2f}x")
             print(f"  Mann-Whitney p: {a['mannwhitney_p_greater']:.2e}")
-    print(f"\nSaved: {out_path}")
+    print(f"\nsaved {out_path}")
     return 0
 
 if __name__ == "__main__":

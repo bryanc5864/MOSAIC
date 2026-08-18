@@ -47,3 +47,19 @@ tasks/
 
 # Figures: keep PNGs, skip PDFs (half the size for clone)
 figures/*.pdf
+
+# Checkpoints and model artifacts
+*.pt
+*.pth
+*.ckpt
+checkpoints/
+
+# Logs and run trackers
+logs/
+*.log
+wandb/
+runs/
+
+# Notebooks / node
+.ipynb_checkpoints/
+node_modules/

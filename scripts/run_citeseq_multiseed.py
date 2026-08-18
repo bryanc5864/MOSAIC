@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # MIT License
 # Part of MOSAIC
-"""Run CITE-seq experiment at multiple seeds for 3-seed statistical reporting."""
+"""Run the CITE-seq experiment at seeds 1 and 2, then aggregate all three."""
 
 from __future__ import annotations
 
@@ -28,9 +28,7 @@ def main() -> int:
             print(f"Seed {seed} already done, skipping.")
             continue
 
-        print(f"\n{'='*60}")
-        print(f"Running CITE-seq, seed={seed}")
-        print(f"{'='*60}")
+        print(f"\n[run] cite-seq, seed={seed}")
 
         result = run_experiment(
             dataset_id=DATASET,
@@ -47,8 +45,7 @@ def main() -> int:
         )
         print(f"Seed {seed} done. FOSCTTM={result['metrics']['foscttm']['foscttm_mean']:.4f}")
 
-    # Aggregate 3 seeds (0, 1, 2)
-    print("\n--- Aggregating 3 seeds ---")
+    print("\n[aggregate] 3 seeds")
     exp_names = ["exp001_citeseq", "exp001_citeseq_seed1", "exp001_citeseq_seed2"]
     results = []
     for name in exp_names:
@@ -56,7 +53,7 @@ def main() -> int:
         if p.exists():
             results.append(json.loads(p.read_text()))
         else:
-            print(f"WARNING: {p} not found, skipping from aggregate")
+            print(f"{p} not found, skipping")
 
     if not results:
         print("No results to aggregate.")
@@ -102,12 +99,12 @@ def main() -> int:
     with out_path.open("w") as f:
         json.dump(aggregate, f, indent=2)
 
-    print(f"\n=== CITE-seq 3-seed Aggregate ===")
+    print("\n[summary] cite-seq, 3 seeds")
     print(f"FOSCTTM:  {aggregate['foscttm_mean']:.4f} ± {aggregate['foscttm_std']:.4f}")
     print(f"LT RNA→P: {aggregate['lt_rna_to_atac_mean']:.4f} ± {aggregate['lt_rna_to_atac_std']:.4f}")
     print(f"LT P→RNA: {aggregate['lt_atac_to_rna_mean']:.4f} ± {aggregate['lt_atac_to_rna_std']:.4f}")
     print(f"ARI:      {aggregate['joint_ari_mean']:.4f} ± {aggregate['joint_ari_std']:.4f}")
-    print(f"Saved: {out_path}")
+    print(f"saved {out_path}")
     return 0
 
 

@@ -1,23 +1,15 @@
 #!/usr/bin/env python3
 # MIT License
 # Part of MOSAIC
-"""Clinical disease simulation experiment.
+"""Immunodeficiency simulation on the PBMC benchmark.
 
-Maps PBMC leiden clusters to clinical immune cell types and simulates
-immunodeficiency / disease states by removing entire clinical populations
-from the target (ATAC) modality. Tests whether MOSAIC's cluster-resolved
-entropy flags RNA cells whose immune population is absent from the reference.
+Maps leiden clusters onto clinical immune populations and knocks each one out
+of the ATAC side: CD8 T lymphopenia, NK deficiency, B cell aplasia,
+monocytopenia, Treg deficiency. Same machinery as missing_type_exp, but the
+removed sets are clinically motivated rather than one cluster at a time.
 
-Disease scenarios modelled:
-  CD8 T lymphopenia    — clusters 0, 14 (CD8A/B high, NKG7, GNLY)
-  NK cell deficiency   — cluster 4 (NCAM1/CD56 high, GNLY high)
-  B cell aplasia       — clusters 11, 15 (MS4A1/CD20 high)
-  Monocytopenia        — cluster 6 (CD14 high, LYZ high)
-  Treg deficiency      — cluster 5 (FOXP3 high, IL2RA high)
-
-Each scenario: remove the target population from ATAC, rerun Sinkhorn on
-full RNA vs. reduced ATAC, compute cluster-resolved entropy, report AUROC
-for discriminating removed cells by entropy score.
+Each scenario reruns Sinkhorn on full RNA vs reduced ATAC and reports the AUROC
+for picking out the orphaned cells by cluster entropy.
 """
 
 from __future__ import annotations
@@ -32,7 +24,6 @@ from sklearn.metrics import roc_auc_score
 from src.models.ot_align import sinkhorn_align
 from src.utils.paths import EXPERIMENTS_DIR, PROCESSED_DIR
 
-# ── Clinical population definitions ──────────────────────────────────────────
 CLINICAL_SCENARIOS = [
     {
         "name": "CD8_T_lymphopenia",
@@ -66,7 +57,7 @@ CLINICAL_SCENARIOS = [
     },
 ]
 
-EXP_ID = "exp001_pbmc_beta0001"   # use 10-seed best: seed 0
+EXP_ID = "exp001_pbmc_beta0001"   # seed 0 of the 10-seed set
 DATASET = "pbmc10k_multiome"
 SUBSAMPLE_N = 3000
 EPSILON = 0.05
@@ -103,7 +94,7 @@ def run_clinical_scenario(
         return {**scenario, "n_target": n_target, "auroc": float("nan"),
                 "note": "too few target cells"}
 
-    # RNA subsample: ALL target cells + random others to reach SUBSAMPLE_N
+    # keep every target cell, fill the rest at random
     other_idx = np.where(~target_mask)[0]
     n_others = min(SUBSAMPLE_N - n_target, len(other_idx))
     other_sample = rng.choice(other_idx, size=n_others, replace=False)
@@ -114,7 +105,7 @@ def run_clinical_scenario(
     is_target_rna = target_mask[rna_sub]
     Z_rna_sub = Z_rna[rna_sub]
 
-    # ATAC: remove the entire target clinical population
+    # atac loses the whole population
     atac_keep = np.where(~target_mask)[0]
     atac_n = min(SUBSAMPLE_N, len(atac_keep))
     atac_sub = rng.choice(atac_keep, size=atac_n, replace=False)
@@ -167,7 +158,7 @@ def main() -> int:
 
     results = []
     for scenario in CLINICAL_SCENARIOS:
-        print(f"\n=== {scenario['name']} ===")
+        print(f"\n[scenario] {scenario['name']}")
         print(f"  Clinical context: {scenario['description']}")
         print(f"  Removing ATAC clusters: {scenario['clusters']}")
         r = run_clinical_scenario(Z_rna, Z_atac, labels, scenario, rng)
@@ -197,7 +188,7 @@ def main() -> int:
     with out_path.open("w") as f:
         json.dump(output, f, indent=2)
 
-    print(f"\n=== Clinical Disease Simulation Summary ===")
+    print("\n[summary] immunodeficiency scenarios")
     print(f"Scenarios: {len(valid_aurocs)} valid")
     print(f"Mean AUROC: {output['mean_auroc']:.4f}")
     print(f"Range: [{output['min_auroc']:.4f}, {output['max_auroc']:.4f}]")
@@ -205,7 +196,7 @@ def main() -> int:
         print(f"  {r['name']}: AUROC={r.get('auroc', 'nan'):.4f} "
               f"H_ratio={r.get('entropy_ratio', 'nan'):.2f}x "
               f"(n={r.get('n_target', '?')})")
-    print(f"\nSaved: {out_path}")
+    print(f"\nsaved {out_path}")
     return 0
 
 

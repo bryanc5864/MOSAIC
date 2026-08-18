@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 # MIT License
 # Part of MOSAIC
-"""Sweep Sinkhorn epsilon over the saved embeddings of an existing experiment.
+"""Sweep Sinkhorn epsilon over an already-trained run's embeddings.
 
-Useful because epsilon does not affect the IB-VAE training or the embeddings;
-only the OT plan and per-cell entropy depend on it. We can thus retroactively
-sweep epsilon on a single trained run without retraining.
+Epsilon touches only the OT plan and the entropy, not the IB-VAE, so this can
+be done after the fact with no retraining.
 
-Usage:
     python -m scripts.sweep_epsilon --exp run004_procrustes
 """
 
@@ -42,13 +40,11 @@ def main() -> int:
         Z_atac = np.load(exp_dir / "z_atac.npy")
     print(f"loaded Z_rna {Z_rna.shape}, Z_atac {Z_atac.shape}")
 
-    # Pair indices for entropy calibration
     rna = ad.read_h5ad(PROCESSED_DIR / f"{args.dataset}_rna.h5ad")
     atac = ad.read_h5ad(PROCESSED_DIR / f"{args.dataset}_atac.h5ad")
     pair_a = rna.obs["pair_idx"].values.astype(np.int64)
     pair_b = atac.obs["pair_idx"].values.astype(np.int64)
 
-    # Diagnostic: distribution of cost matrix entries
     from src.models.ot_align import normalize_cost, pairwise_sqeuclidean
     C = pairwise_sqeuclidean(Z_rna, Z_atac)
     print(f"\ncost matrix raw: shape {C.shape}, "
@@ -58,18 +54,16 @@ def main() -> int:
     print(f"cost matrix normalized to [0,1]: "
           f"min {Cn.min():.3f}, mean {Cn.mean():.3f}, std {Cn.std():.3f}")
 
-    # Per-row diagnostics on unnormalized cost
     row_min = C.min(axis=1)
     row_max = C.max(axis=1)
     row_range = row_max - row_min
     print(f"row range (max-min) on raw cost: "
           f"mean {row_range.mean():.3f}, std {row_range.std():.3f}")
 
-    # FOSCTTM is constant across epsilon -- compute once.
+    # foscttm doesn't depend on epsilon
     f = foscttm(Z_rna, Z_atac, pair_a, pair_b)
     print(f"\nFOSCTTM (constant across epsilon): {f['foscttm_mean']:.4f}")
 
-    # Sweep
     print("\nepsilon  | mean H | std H  | top1 prob | corr  rho | n_iter ok")
     print("---------+--------+--------+-----------+-----------+----------")
     rows = []
